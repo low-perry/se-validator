@@ -1,31 +1,178 @@
 {
   "items": [
     {
-      "identity": "JSON-SKU-1",
-      "title": "Blue JSON Shirt",
-      "web_url": "https://shop.example.com/products/json-blue-shirt",
+      "identity": "json-SKU-1",
+      "title": "Blue Shirt",
+      "web_url": "https://shop.example.com/products/blue-shirt",
       "category": [
-        ["Apparel", "Men", "T-shirts"]
+        ["Apparel", "Men", "T-shirts"],
+        ["Collections", "New Arrivals"]
       ],
       "brand": "Example Brand",
       "availability": 1,
       "availability_rank": 3,
-      "item_group_id": "JSON-SHIRT-1",
-      "price_eur": "29.90 EUR"
+      "item_group_id": "json-SHIRT-1",
+      "price_eur": "29.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-1.jpg"
     },
     {
-      "identity": "JSON-SKU-2",
-      "title": "Red JSON Shirt",
-      "web_url": "https://shop.example.com/products/json-red-shirt",
+      "identity": "json-SKU-2",
+      "title": "Red Shirt",
+      "web_url": "https://shop.example.com/products/red-shirt",
       "category": [
-        ["Apparel", "Men", "T-shirts"]
+        ["Apparel", "Men", "T-shirts"],
+        ["Collections", "Sale"]
       ],
       "brand": "Example Brand",
       "availability": 0,
       "availability_rank": 15,
-      "item_group_id": "JSON-SHIRT-1",
-      "price_eur": "29.90 EUR"
+      "item_group_id": "json-SHIRT-1",
+      "price_eur": "29.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-2.jpg"
+    },
+    {
+      "identity": "json-SKU-3",
+      "title": "Black Hoodie",
+      "web_url": "https://shop.example.com/products/black-hoodie",
+      "category": [
+        ["Apparel", "Men", "Hoodies"],
+        ["Collections", "Essentials"]
+      ],
+      "brand": "Example Brand",
+      "availability": 1,
+      "availability_rank": 1,
+      "item_group_id": "json-HOODIE-1",
+      "price_eur": "59.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-3.jpg"
+    },
+    {
+      "identity": "json-SKU-4",
+      "title": "Gray Hoodie",
+      "web_url": "https://shop.example.com/products/gray-hoodie",
+      "category": [
+        ["Apparel", "Men", "Hoodies"]
+      ],
+      "brand": "Example Brand",
+      "availability": 1,
+      "availability_rank": 5,
+      "item_group_id": "json-HOODIE-1",
+      "price_eur": "59.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-4.jpg"
+    },
+    {
+      "identity": "json-SKU-5",
+      "title": "Summer Dress",
+      "web_url": "https://shop.example.com/products/summer-dress",
+      "category": [
+        ["Apparel", "Women", "Dresses"],
+        ["Collections", "Summer"]
+      ],
+      "brand": "Northwind",
+      "availability": 1,
+      "availability_rank": 2,
+      "item_group_id": "json-DRESS-1",
+      "price_eur": "79.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-5.jpg"
+    },
+    {
+      "identity": "json-SKU-6",
+      "title": "Black Dress",
+      "web_url": "https://shop.example.com/products/black-dress",
+      "category": [
+        ["Apparel", "Women", "Dresses"]
+      ],
+      "brand": "Northwind",
+      "availability": 0,
+      "availability_rank": 15,
+      "item_group_id": "json-DRESS-1",
+      "price_eur": "84.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-6.jpg"
+    },
+    {
+      "identity": "json-SKU-7",
+      "title": "White Womens Tee",
+      "web_url": "https://shop.example.com/products/white-womens-tee",
+      "category": [
+        ["Apparel", "Women", "T-shirts"],
+        ["Collections", "Essentials"]
+      ],
+      "brand": "Northwind",
+      "availability": 1,
+      "availability_rank": 1,
+      "item_group_id": "json-WTEE-1",
+      "price_eur": "24.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-7.jpg"
+    },
+    {
+      "identity": "json-SKU-8",
+      "title": "Green Womens Tee",
+      "web_url": "https://shop.example.com/products/green-womens-tee",
+      "category": [
+        ["Apparel", "Women", "T-shirts"]
+      ],
+      "brand": "Northwind",
+      "availability": 1,
+      "availability_rank": 4,
+      "item_group_id": "json-WTEE-1",
+      "price_eur": "24.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-8.jpg"
+    },
+    {
+      "identity": "json-SKU-9",
+      "title": "Canvas Tote Bag",
+      "web_url": "https://shop.example.com/products/canvas-tote-bag",
+      "category": [
+        ["Accessories", "Bags"],
+        ["Collections", "Essentials"]
+      ],
+      "brand": "CarryCo",
+      "availability": 1,
+      "availability_rank": 2,
+      "price_eur": "19.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-9.jpg"
+    },
+    {
+      "identity": "json-SKU-10",
+      "title": "Leather Backpack",
+      "web_url": "https://shop.example.com/products/leather-backpack",
+      "category": [
+        ["Accessories", "Bags"]
+      ],
+      "brand": "CarryCo",
+      "availability": 1,
+      "availability_rank": 6,
+      "price_eur": "99.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-10.jpg"
+    },
+    {
+      "identity": "json-SKU-11",
+      "title": "Black Running Sneaker",
+      "web_url": "https://shop.example.com/products/black-running-sneaker",
+      "category": [
+        ["Footwear", "Sneakers"],
+        ["Collections", "New Arrivals"]
+      ],
+      "brand": "Swift",
+      "availability": 1,
+      "availability_rank": 1,
+      "item_group_id": "json-SNEAKER-1",
+      "price_eur": "119.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-11.jpg"
+    },
+    {
+      "identity": "json-SKU-12",
+      "title": "White Running Sneaker",
+      "web_url": "https://shop.example.com/products/white-running-sneaker",
+      "category": [
+        ["Footwear", "Sneakers"],
+        ["Collections", "Sale"]
+      ],
+      "brand": "Swift",
+      "availability": 1,
+      "availability_rank": 2,
+      "item_group_id": "json-SNEAKER-1",
+      "price_eur": "119.90 EUR",
+      "image_link_l": "https://shop.example.com/images/sku-12.jpg"
     }
   ]
 }
-

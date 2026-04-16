@@ -12,11 +12,85 @@
       "hierarchy": "Apparel"
     },
     {
-      "identity": "json-cat-tshirts",
+      "identity": "json-cat-men-tshirts",
       "title": "T-shirts",
       "web_url": "https://shop.example.com/categories/apparel/men/t-shirts",
       "hierarchy": "Apparel | Men"
+    },
+    {
+      "identity": "json-cat-men-hoodies",
+      "title": "Hoodies",
+      "web_url": "https://shop.example.com/categories/apparel/men/hoodies",
+      "hierarchy": "Apparel | Men"
+    },
+    {
+      "identity": "json-cat-women",
+      "title": "Women",
+      "web_url": "https://shop.example.com/categories/apparel/women",
+      "hierarchy": "Apparel"
+    },
+    {
+      "identity": "json-cat-women-dresses",
+      "title": "Dresses",
+      "web_url": "https://shop.example.com/categories/apparel/women/dresses",
+      "hierarchy": "Apparel | Women"
+    },
+    {
+      "identity": "json-cat-women-tshirts",
+      "title": "T-shirts",
+      "web_url": "https://shop.example.com/categories/apparel/women/t-shirts",
+      "hierarchy": "Apparel | Women"
+    },
+    {
+      "identity": "json-cat-accessories",
+      "title": "Accessories",
+      "web_url": "https://shop.example.com/categories/accessories"
+    },
+    {
+      "identity": "json-cat-bags",
+      "title": "Bags",
+      "web_url": "https://shop.example.com/categories/accessories/bags",
+      "hierarchy": "Accessories"
+    },
+    {
+      "identity": "json-cat-footwear",
+      "title": "Footwear",
+      "web_url": "https://shop.example.com/categories/footwear"
+    },
+    {
+      "identity": "json-cat-sneakers",
+      "title": "Sneakers",
+      "web_url": "https://shop.example.com/categories/footwear/sneakers",
+      "hierarchy": "Footwear"
+    },
+    {
+      "identity": "json-cat-collections",
+      "title": "Collections",
+      "web_url": "https://shop.example.com/categories/collections"
+    },
+    {
+      "identity": "json-cat-collections-new-arrivals",
+      "title": "New Arrivals",
+      "web_url": "https://shop.example.com/categories/collections/new-arrivals",
+      "hierarchy": "Collections"
+    },
+    {
+      "identity": "json-cat-collections-sale",
+      "title": "Sale",
+      "web_url": "https://shop.example.com/categories/collections/sale",
+      "hierarchy": "Collections"
+    },
+    {
+      "identity": "json-cat-collections-essentials",
+      "title": "Essentials",
+      "web_url": "https://shop.example.com/categories/collections/essentials",
+      "hierarchy": "Collections"
+    },
+    {
+      "identity": "json-cat-collections-summer",
+      "title": "Summer",
+      "web_url": "https://shop.example.com/categories/collections/summer",
+      "hierarchy": "Collections"
     }
   ]
 }
-
