@@ -84,22 +84,47 @@ function normalizeContentUpdate(artifact: CatalogArtifact): NormalizedCatalogObj
 
   return artifact.parsed.objects.map((record, index) => {
     const fields = isRecord(record) && isRecord(record.fields) ? record.fields : {};
+    const contentType = isRecord(record) ? stringValue(record.type) : undefined;
 
     return {
       sourcePath: artifact.path,
       sourceKind: artifact.sourceKind,
       role: artifact.role,
-      objectType: "content-object" as const,
+      objectType: objectTypeFromContentType(contentType),
       index,
       identity: isRecord(record) ? stringValue(record.identity) : undefined,
       title: stringValue(fields.title),
       webUrl: stringValue(fields.web_url),
       fields,
-      categoryPaths: [],
-      itemGroupId: undefined,
+      categoryPaths: categoryPathsFromContentUpdate(record),
+      itemGroupId: stringValue(fields.item_group_id),
       raw: record
     };
   });
+}
+
+function categoryPathsFromContentUpdate(record: unknown): string[] {
+  if (!isRecord(record) || !Array.isArray(record.nested)) return [];
+
+  return record.nested
+    .filter(isRecord)
+    .filter((nested) => stringValue(nested.type)?.toLowerCase() === "category")
+    .map(categoryPathFromNestedCategory)
+    .filter((path): path is string => Boolean(path));
+}
+
+function categoryPathFromNestedCategory(category: Record<string, unknown>): string | undefined {
+  if (!isRecord(category.fields)) return undefined;
+
+  const ancestorTitles = Array.isArray(category.fields.ancestors)
+    ? category.fields.ancestors
+        .map((ancestor) => (isRecord(ancestor) && isRecord(ancestor.fields) ? stringValue(ancestor.fields.title) : undefined))
+        .filter((title): title is string => Boolean(title))
+    : [];
+  const leafTitle = stringValue(category.fields.title);
+  if (!leafTitle) return undefined;
+
+  return normalizeCategoryPath([...ancestorTitles, leafTitle].join(" | "));
 }
 
 function flattenFeedRecord(record: Record<string, unknown>): Record<string, unknown> {
@@ -134,6 +159,15 @@ function objectTypeFromRole(role: string): NormalizedCatalogObject["objectType"]
   if (role === "brand-feed") return "brand";
   if (role === "article-feed") return "article";
   return "product";
+}
+
+function objectTypeFromContentType(type: string | undefined): NormalizedCatalogObject["objectType"] {
+  const normalizedType = type?.toLowerCase();
+  if (normalizedType === "item" || normalizedType === "product") return "product";
+  if (normalizedType === "category") return "category";
+  if (normalizedType === "brand") return "brand";
+  if (normalizedType === "article") return "article";
+  return "content-object";
 }
 
 export function toArray(value: unknown): unknown[] {

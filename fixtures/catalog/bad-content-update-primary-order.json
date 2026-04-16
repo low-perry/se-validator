@@ -1,0 +1,65 @@
+{
+  "objects": [
+    {
+      "identity": "BAD-CONTENT-PRIMARY-1",
+      "type": "item",
+      "fields": {
+        "title": "Primary Category Order Mismatch",
+        "web_url": "https://shop.example.com/products/bad-content-primary-1",
+        "category": [
+          ["Apparel", "Men", "T-shirts"],
+          ["Collections", "New Arrivals"]
+        ],
+        "availability": 1,
+        "availability_rank": 3
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-collections-new-arrivals",
+          "fields": {
+            "title": "New Arrivals",
+            "web_url": "https://shop.example.com/categories/collections/new-arrivals",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-men-tshirts",
+          "primary": true,
+          "fields": {
+            "title": "T-shirts",
+            "web_url": "https://shop.example.com/categories/apparel/men/t-shirts",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-men",
+                "fields": {
+                  "title": "Men",
+                  "web_url": "https://shop.example.com/categories/apparel/men"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

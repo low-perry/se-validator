@@ -1,0 +1,758 @@
+{
+  "objects": [
+    {
+      "identity": "content-cat-apparel",
+      "type": "category",
+      "fields": {
+        "title": "Apparel",
+        "web_url": "https://shop.example.com/categories/apparel"
+      }
+    },
+    {
+      "identity": "content-cat-men",
+      "type": "category",
+      "fields": {
+        "title": "Men",
+        "web_url": "https://shop.example.com/categories/apparel/men",
+        "hierarchy": ["Apparel"]
+      }
+    },
+    {
+      "identity": "content-cat-men-tshirts",
+      "type": "category",
+      "fields": {
+        "title": "T-shirts",
+        "web_url": "https://shop.example.com/categories/apparel/men/t-shirts",
+        "hierarchy": ["Apparel", "Men"]
+      }
+    },
+    {
+      "identity": "content-cat-men-hoodies",
+      "type": "category",
+      "fields": {
+        "title": "Hoodies",
+        "web_url": "https://shop.example.com/categories/apparel/men/hoodies",
+        "hierarchy": ["Apparel", "Men"]
+      }
+    },
+    {
+      "identity": "content-cat-women",
+      "type": "category",
+      "fields": {
+        "title": "Women",
+        "web_url": "https://shop.example.com/categories/apparel/women",
+        "hierarchy": ["Apparel"]
+      }
+    },
+    {
+      "identity": "content-cat-women-dresses",
+      "type": "category",
+      "fields": {
+        "title": "Dresses",
+        "web_url": "https://shop.example.com/categories/apparel/women/dresses",
+        "hierarchy": ["Apparel", "Women"]
+      }
+    },
+    {
+      "identity": "content-cat-women-tshirts",
+      "type": "category",
+      "fields": {
+        "title": "T-shirts",
+        "web_url": "https://shop.example.com/categories/apparel/women/t-shirts",
+        "hierarchy": ["Apparel", "Women"]
+      }
+    },
+    {
+      "identity": "content-cat-accessories",
+      "type": "category",
+      "fields": {
+        "title": "Accessories",
+        "web_url": "https://shop.example.com/categories/accessories"
+      }
+    },
+    {
+      "identity": "content-cat-bags",
+      "type": "category",
+      "fields": {
+        "title": "Bags",
+        "web_url": "https://shop.example.com/categories/accessories/bags",
+        "hierarchy": ["Accessories"]
+      }
+    },
+    {
+      "identity": "content-cat-footwear",
+      "type": "category",
+      "fields": {
+        "title": "Footwear",
+        "web_url": "https://shop.example.com/categories/footwear"
+      }
+    },
+    {
+      "identity": "content-cat-sneakers",
+      "type": "category",
+      "fields": {
+        "title": "Sneakers",
+        "web_url": "https://shop.example.com/categories/footwear/sneakers",
+        "hierarchy": ["Footwear"]
+      }
+    },
+    {
+      "identity": "content-cat-collections",
+      "type": "category",
+      "fields": {
+        "title": "Collections",
+        "web_url": "https://shop.example.com/categories/collections"
+      }
+    },
+    {
+      "identity": "content-cat-collections-new-arrivals",
+      "type": "category",
+      "fields": {
+        "title": "New Arrivals",
+        "web_url": "https://shop.example.com/categories/collections/new-arrivals",
+        "hierarchy": ["Collections"]
+      }
+    },
+    {
+      "identity": "content-cat-collections-sale",
+      "type": "category",
+      "fields": {
+        "title": "Sale",
+        "web_url": "https://shop.example.com/categories/collections/sale",
+        "hierarchy": ["Collections"]
+      }
+    },
+    {
+      "identity": "content-cat-collections-essentials",
+      "type": "category",
+      "fields": {
+        "title": "Essentials",
+        "web_url": "https://shop.example.com/categories/collections/essentials",
+        "hierarchy": ["Collections"]
+      }
+    },
+    {
+      "identity": "content-cat-collections-summer",
+      "type": "category",
+      "fields": {
+        "title": "Summer",
+        "web_url": "https://shop.example.com/categories/collections/summer",
+        "hierarchy": ["Collections"]
+      }
+    },
+    {
+      "identity": "content-SKU-1",
+      "type": "item",
+      "fields": {
+        "title": "Blue Shirt",
+        "web_url": "https://shop.example.com/products/blue-shirt",
+        "brand": "Example Brand",
+        "availability": 1,
+        "availability_rank": 3,
+        "item_group_id": "content-SHIRT-1",
+        "price": 29.9,
+        "image_link_l": "https://shop.example.com/images/sku-1.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-men-tshirts",
+          "fields": {
+            "title": "T-shirts",
+            "web_url": "https://shop.example.com/categories/apparel/men/t-shirts",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-men",
+                "fields": {
+                  "title": "Men",
+                  "web_url": "https://shop.example.com/categories/apparel/men"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-collections-new-arrivals",
+          "fields": {
+            "title": "New Arrivals",
+            "web_url": "https://shop.example.com/categories/collections/new-arrivals",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-2",
+      "type": "item",
+      "fields": {
+        "title": "Red Shirt",
+        "web_url": "https://shop.example.com/products/red-shirt",
+        "brand": "Example Brand",
+        "availability": 0,
+        "availability_rank": 15,
+        "item_group_id": "content-SHIRT-1",
+        "price": 29.9,
+        "image_link_l": "https://shop.example.com/images/sku-2.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-men-tshirts",
+          "fields": {
+            "title": "T-shirts",
+            "web_url": "https://shop.example.com/categories/apparel/men/t-shirts",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-men",
+                "fields": {
+                  "title": "Men",
+                  "web_url": "https://shop.example.com/categories/apparel/men"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-collections-sale",
+          "fields": {
+            "title": "Sale",
+            "web_url": "https://shop.example.com/categories/collections/sale",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-3",
+      "type": "item",
+      "fields": {
+        "title": "Black Hoodie",
+        "web_url": "https://shop.example.com/products/black-hoodie",
+        "brand": "Example Brand",
+        "availability": 1,
+        "availability_rank": 1,
+        "item_group_id": "content-HOODIE-1",
+        "price": 59.9,
+        "image_link_l": "https://shop.example.com/images/sku-3.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-men-hoodies",
+          "fields": {
+            "title": "Hoodies",
+            "web_url": "https://shop.example.com/categories/apparel/men/hoodies",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-men",
+                "fields": {
+                  "title": "Men",
+                  "web_url": "https://shop.example.com/categories/apparel/men"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-collections-essentials",
+          "fields": {
+            "title": "Essentials",
+            "web_url": "https://shop.example.com/categories/collections/essentials",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-4",
+      "type": "item",
+      "fields": {
+        "title": "Gray Hoodie",
+        "web_url": "https://shop.example.com/products/gray-hoodie",
+        "brand": "Example Brand",
+        "availability": 1,
+        "availability_rank": 5,
+        "item_group_id": "content-HOODIE-1",
+        "price": 59.9,
+        "image_link_l": "https://shop.example.com/images/sku-4.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-men-hoodies",
+          "fields": {
+            "title": "Hoodies",
+            "web_url": "https://shop.example.com/categories/apparel/men/hoodies",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-men",
+                "fields": {
+                  "title": "Men",
+                  "web_url": "https://shop.example.com/categories/apparel/men"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-5",
+      "type": "item",
+      "fields": {
+        "title": "Summer Dress",
+        "web_url": "https://shop.example.com/products/summer-dress",
+        "brand": "Northwind",
+        "availability": 1,
+        "availability_rank": 2,
+        "item_group_id": "content-DRESS-1",
+        "price": 79.9,
+        "image_link_l": "https://shop.example.com/images/sku-5.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-women-dresses",
+          "fields": {
+            "title": "Dresses",
+            "web_url": "https://shop.example.com/categories/apparel/women/dresses",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-women",
+                "fields": {
+                  "title": "Women",
+                  "web_url": "https://shop.example.com/categories/apparel/women"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-collections-summer",
+          "fields": {
+            "title": "Summer",
+            "web_url": "https://shop.example.com/categories/collections/summer",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-6",
+      "type": "item",
+      "fields": {
+        "title": "Black Dress",
+        "web_url": "https://shop.example.com/products/black-dress",
+        "brand": "Northwind",
+        "availability": 0,
+        "availability_rank": 15,
+        "item_group_id": "content-DRESS-1",
+        "price": 84.9,
+        "image_link_l": "https://shop.example.com/images/sku-6.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-women-dresses",
+          "fields": {
+            "title": "Dresses",
+            "web_url": "https://shop.example.com/categories/apparel/women/dresses",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-women",
+                "fields": {
+                  "title": "Women",
+                  "web_url": "https://shop.example.com/categories/apparel/women"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-7",
+      "type": "item",
+      "fields": {
+        "title": "White Womens Tee",
+        "web_url": "https://shop.example.com/products/white-womens-tee",
+        "brand": "Northwind",
+        "availability": 1,
+        "availability_rank": 1,
+        "item_group_id": "content-WTEE-1",
+        "price": 24.9,
+        "image_link_l": "https://shop.example.com/images/sku-7.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-women-tshirts",
+          "fields": {
+            "title": "T-shirts",
+            "web_url": "https://shop.example.com/categories/apparel/women/t-shirts",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-women",
+                "fields": {
+                  "title": "Women",
+                  "web_url": "https://shop.example.com/categories/apparel/women"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-collections-essentials",
+          "fields": {
+            "title": "Essentials",
+            "web_url": "https://shop.example.com/categories/collections/essentials",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-8",
+      "type": "item",
+      "fields": {
+        "title": "Green Womens Tee",
+        "web_url": "https://shop.example.com/products/green-womens-tee",
+        "brand": "Northwind",
+        "availability": 1,
+        "availability_rank": 4,
+        "item_group_id": "content-WTEE-1",
+        "price": 24.9,
+        "image_link_l": "https://shop.example.com/images/sku-8.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-women-tshirts",
+          "fields": {
+            "title": "T-shirts",
+            "web_url": "https://shop.example.com/categories/apparel/women/t-shirts",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "content-cat-women",
+                "fields": {
+                  "title": "Women",
+                  "web_url": "https://shop.example.com/categories/apparel/women"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-9",
+      "type": "item",
+      "fields": {
+        "title": "Canvas Tote Bag",
+        "web_url": "https://shop.example.com/products/canvas-tote-bag",
+        "brand": "CarryCo",
+        "availability": 1,
+        "availability_rank": 2,
+        "price": 19.9,
+        "image_link_l": "https://shop.example.com/images/sku-9.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-bags",
+          "fields": {
+            "title": "Bags",
+            "web_url": "https://shop.example.com/categories/accessories/bags",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-accessories",
+                "fields": {
+                  "title": "Accessories",
+                  "web_url": "https://shop.example.com/categories/accessories"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-collections-essentials",
+          "fields": {
+            "title": "Essentials",
+            "web_url": "https://shop.example.com/categories/collections/essentials",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-10",
+      "type": "item",
+      "fields": {
+        "title": "Leather Backpack",
+        "web_url": "https://shop.example.com/products/leather-backpack",
+        "brand": "CarryCo",
+        "availability": 1,
+        "availability_rank": 6,
+        "price": 99.9,
+        "image_link_l": "https://shop.example.com/images/sku-10.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-bags",
+          "fields": {
+            "title": "Bags",
+            "web_url": "https://shop.example.com/categories/accessories/bags",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-accessories",
+                "fields": {
+                  "title": "Accessories",
+                  "web_url": "https://shop.example.com/categories/accessories"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-11",
+      "type": "item",
+      "fields": {
+        "title": "Black Running Sneaker",
+        "web_url": "https://shop.example.com/products/black-running-sneaker",
+        "brand": "Swift",
+        "availability": 1,
+        "availability_rank": 1,
+        "item_group_id": "content-SNEAKER-1",
+        "price": 119.9,
+        "image_link_l": "https://shop.example.com/images/sku-11.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-sneakers",
+          "fields": {
+            "title": "Sneakers",
+            "web_url": "https://shop.example.com/categories/footwear/sneakers",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-footwear",
+                "fields": {
+                  "title": "Footwear",
+                  "web_url": "https://shop.example.com/categories/footwear"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-collections-new-arrivals",
+          "fields": {
+            "title": "New Arrivals",
+            "web_url": "https://shop.example.com/categories/collections/new-arrivals",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "identity": "content-SKU-12",
+      "type": "item",
+      "fields": {
+        "title": "White Running Sneaker",
+        "web_url": "https://shop.example.com/products/white-running-sneaker",
+        "brand": "Swift",
+        "availability": 1,
+        "availability_rank": 2,
+        "item_group_id": "content-SNEAKER-1",
+        "price": 119.9,
+        "image_link_l": "https://shop.example.com/images/sku-12.jpg"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "content-cat-sneakers",
+          "fields": {
+            "title": "Sneakers",
+            "web_url": "https://shop.example.com/categories/footwear/sneakers",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-footwear",
+                "fields": {
+                  "title": "Footwear",
+                  "web_url": "https://shop.example.com/categories/footwear"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "category",
+          "identity": "content-cat-collections-sale",
+          "fields": {
+            "title": "Sale",
+            "web_url": "https://shop.example.com/categories/collections/sale",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "content-cat-collections",
+                "fields": {
+                  "title": "Collections",
+                  "web_url": "https://shop.example.com/categories/collections"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

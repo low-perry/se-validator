@@ -220,6 +220,9 @@ function validateContentUpdateShape(catalog: NormalizedCatalog): ValidationFindi
       }
 
       if (Array.isArray(record.nested)) {
+        findings.push(...validateContentUpdateNestedCategoryUniqueness(artifact.path, index, record.nested));
+        findings.push(...validateContentUpdatePrimaryCategoryOrder(artifact.path, index, record));
+
         if (record.nested.length > 10) {
           findings.push(
             createFinding({
@@ -247,6 +250,14 @@ function validateContentUpdateShape(catalog: NormalizedCatalog): ValidationFindi
             }
           }
 
+          if ("fields" in nested && !isRecord(nested.fields)) {
+            findings.push(contentShapeFinding(artifact.path, index, `nested[${nestedIndex}].fields must be an object.`));
+          }
+
+          if (stringValue(nested.type)?.toLowerCase() === "category") {
+            findings.push(...validateContentUpdateNestedCategory(artifact.path, index, nested, nestedIndex));
+          }
+
           if (isRecord(nested.fields) && "ancestors" in nested.fields && !Array.isArray(nested.fields.ancestors)) {
             findings.push(
               createFinding({
@@ -261,12 +272,228 @@ function validateContentUpdateShape(catalog: NormalizedCatalog): ValidationFindi
               })
             );
           }
+
+          if (isRecord(nested.fields) && Array.isArray(nested.fields.ancestors)) {
+            nested.fields.ancestors.forEach((ancestor, ancestorIndex) => {
+              findings.push(
+                ...validateContentUpdateCategoryAncestor(artifact.path, index, nestedIndex, ancestor, ancestorIndex)
+              );
+            });
+          }
         });
       }
     });
 
     return findings;
   });
+}
+
+function validateContentUpdateNestedCategoryUniqueness(
+  path: string,
+  objectIndex: number,
+  nestedRecords: unknown[]
+): ValidationFinding[] {
+  const findings: ValidationFinding[] = [];
+  const identities = new Map<string, number>();
+  const categoryPaths = new Map<string, number>();
+
+  nestedRecords.forEach((nested, nestedIndex) => {
+    if (!isRecord(nested) || stringValue(nested.type)?.toLowerCase() !== "category") return;
+
+    const identity = stringValue(nested.identity);
+    if (identity) {
+      const firstIndex = identities.get(identity);
+      if (firstIndex !== undefined) {
+        findings.push(
+          createFinding({
+            id: "CONTENT_UPDATE_DUPLICATE_NESTED_CATEGORY",
+            severity: "P1",
+            title: "Content Update product repeats a nested category identity",
+            message: `objects[${objectIndex}] repeats nested category identity "${identity}" at nested[${firstIndex}] and nested[${nestedIndex}].`,
+            evidencePath: `${path}:objects[${objectIndex}].nested[${nestedIndex}]`,
+            remediation: "Send each category path once per product. Repeated category identities can create ambiguous category paths.",
+            docs: ["indexing/data-layout.md", "indexing/api/v1/content-update.mdx"],
+            confidence: 0.85
+          })
+        );
+      } else {
+        identities.set(identity, nestedIndex);
+      }
+    }
+
+    const categoryPath = contentNestedCategoryPath(nested);
+    if (!categoryPath) return;
+
+    const firstPathIndex = categoryPaths.get(categoryPath);
+    if (firstPathIndex !== undefined) {
+      findings.push(
+        createFinding({
+          id: "CONTENT_UPDATE_DUPLICATE_NESTED_CATEGORY_PATH",
+          severity: "P1",
+          title: "Content Update product repeats a nested category path",
+          message: `objects[${objectIndex}] repeats nested category path "${categoryPath}" at nested[${firstPathIndex}] and nested[${nestedIndex}].`,
+          evidencePath: `${path}:objects[${objectIndex}].nested[${nestedIndex}]`,
+          remediation: "Send each category hierarchy once per product.",
+          docs: ["indexing/data-layout.md", "indexing/api/v1/content-update.mdx"],
+          confidence: 0.85
+        })
+      );
+    } else {
+      categoryPaths.set(categoryPath, nestedIndex);
+    }
+  });
+
+  return findings;
+}
+
+function validateContentUpdatePrimaryCategoryOrder(
+  path: string,
+  objectIndex: number,
+  record: Record<string, unknown>
+): ValidationFinding[] {
+  if (!Array.isArray(record.nested)) return [];
+
+  const nestedCategories = record.nested.filter(
+    (nested): nested is Record<string, unknown> =>
+      isRecord(nested) && stringValue(nested.type)?.toLowerCase() === "category"
+  );
+  if (nestedCategories.length <= 1) return [];
+
+  const findings: ValidationFinding[] = [];
+  const primaryMarkers = nestedCategories
+    .map((category, categoryIndex) => ({ category, categoryIndex, primary: contentPrimaryMarker(category) }))
+    .filter((entry) => entry.primary === true);
+
+  if (primaryMarkers.length > 1) {
+    findings.push(
+      createFinding({
+        id: "CONTENT_UPDATE_PRIMARY_CATEGORY_AMBIGUOUS",
+        severity: "P1",
+        title: "Content Update item has multiple primary category markers",
+        message: `objects[${objectIndex}] marks ${primaryMarkers.length} nested categories as primary.`,
+        evidencePath: `${path}:objects[${objectIndex}].nested`,
+        remediation: "Use nested category order as the primary-category signal, or mark exactly one category as primary and place it first.",
+        docs: ["indexing/data-layout.md", "product-listing/api/v1.md"],
+        confidence: 0.85
+      })
+    );
+  }
+
+  const markedPrimary = primaryMarkers[0];
+  if (markedPrimary && markedPrimary.categoryIndex !== 0) {
+    const markedPath = contentNestedCategoryPath(markedPrimary.category) ?? `nested[${markedPrimary.categoryIndex}]`;
+    findings.push(
+      createFinding({
+        id: "CONTENT_UPDATE_PRIMARY_CATEGORY_NOT_FIRST",
+        severity: "P1",
+        title: "Content Update primary category marker is not first",
+        message: `objects[${objectIndex}] marks "${markedPath}" as primary, but category_path uses the first nested category as the primary hierarchy.`,
+        evidencePath: `${path}:objects[${objectIndex}].nested[${markedPrimary.categoryIndex}]`,
+        remediation: "Move the canonical category hierarchy to nested[0]. Put secondary category hierarchies after it.",
+        docs: ["indexing/data-layout.md", "product-listing/api/v1.md"],
+        confidence: 0.9
+      })
+    );
+  }
+
+  if (isRecord(record.fields) && "category" in record.fields) {
+    const declaredCategoryPaths = categoryPathsFromContentCategoryField(record.fields.category);
+    const firstDeclaredPath = declaredCategoryPaths[0];
+    const firstNestedPath = contentNestedCategoryPath(nestedCategories[0]!);
+
+    if (firstDeclaredPath && firstNestedPath && firstDeclaredPath !== firstNestedPath) {
+      findings.push(
+        createFinding({
+          id: "CONTENT_UPDATE_PRIMARY_CATEGORY_ORDER_MISMATCH",
+          severity: "P1",
+          title: "Content Update declared category order disagrees with nested category order",
+          message: `objects[${objectIndex}] declares "${firstDeclaredPath}" first in fields.category, but nested[0] resolves to "${firstNestedPath}".`,
+          evidencePath: `${path}:objects[${objectIndex}].nested[0]`,
+          remediation: "Make the first nested category match the canonical category path, or remove fields.category and rely on nested category order.",
+          docs: ["indexing/data-layout.md", "product-listing/api/v1.md"],
+          confidence: 0.85
+        })
+      );
+    }
+  }
+
+  return findings;
+}
+
+function validateContentUpdateNestedCategory(
+  path: string,
+  objectIndex: number,
+  nested: Record<string, unknown>,
+  nestedIndex: number
+): ValidationFinding[] {
+  const findings: ValidationFinding[] = [];
+  const fields = isRecord(nested.fields) ? nested.fields : undefined;
+  if (!fields) return findings;
+
+  if (!stringValue(nested.identity)) {
+    findings.push(contentNestedCategoryFinding(path, objectIndex, nestedIndex, "Nested category is missing identity."));
+  }
+
+  if (!stringValue(fields.title)) {
+    findings.push(contentNestedCategoryFinding(path, objectIndex, nestedIndex, "Nested category fields.title is missing."));
+  }
+
+  if (!stringValue(fields.web_url)) {
+    findings.push(contentNestedCategoryFinding(path, objectIndex, nestedIndex, "Nested category fields.web_url is missing."));
+  }
+
+  return findings;
+}
+
+function validateContentUpdateCategoryAncestor(
+  path: string,
+  objectIndex: number,
+  nestedIndex: number,
+  ancestor: unknown,
+  ancestorIndex: number
+): ValidationFinding[] {
+  const evidencePath = `${path}:objects[${objectIndex}].nested[${nestedIndex}].fields.ancestors[${ancestorIndex}]`;
+
+  if (!isRecord(ancestor)) {
+    return [
+      createFinding({
+        id: "CONTENT_UPDATE_CATEGORY_ANCESTOR_SHAPE",
+        severity: "P1",
+        title: "Content Update category ancestor is not an object",
+        message: `objects[${objectIndex}].nested[${nestedIndex}].fields.ancestors[${ancestorIndex}] is not an object.`,
+        evidencePath,
+        remediation: "Each ancestor must be a category object with type, identity, and fields.title.",
+        docs: ["indexing/data-layout.md", "indexing/api/v1/content-update.mdx"],
+        confidence: 0.9
+      })
+    ];
+  }
+
+  const findings: ValidationFinding[] = [];
+  const fields = isRecord(ancestor.fields) ? ancestor.fields : undefined;
+
+  if (stringValue(ancestor.type)?.toLowerCase() !== "category") {
+    findings.push(contentAncestorFinding(evidencePath, "Category ancestor type should be category."));
+  }
+
+  if (!stringValue(ancestor.identity)) {
+    findings.push(contentAncestorFinding(evidencePath, "Category ancestor identity is missing."));
+  }
+
+  if (!fields) {
+    findings.push(contentAncestorFinding(evidencePath, "Category ancestor fields must be an object."));
+    return findings;
+  }
+
+  if (!stringValue(fields.title)) {
+    findings.push(contentAncestorFinding(evidencePath, "Category ancestor fields.title is missing."));
+  }
+
+  if (!stringValue(fields.web_url)) {
+    findings.push(contentAncestorFinding(evidencePath, "Category ancestor fields.web_url is missing."));
+  }
+
+  return findings;
 }
 
 function validateCategoryFeedFlatness(catalog: NormalizedCatalog): ValidationFinding[] {
@@ -292,7 +519,7 @@ function validateCategoryPairing(catalog: NormalizedCatalog): ValidationFinding[
 
   if (products.length === 0) return [];
 
-  if (categories.length === 0 || products.every((product) => product.categoryPaths.length === 0)) {
+  if (products.every((product) => product.categoryPaths.length === 0)) {
     return [
       createFinding({
         id: "CATEGORY_PAIRING_EVIDENCE_MISSING",
@@ -308,9 +535,30 @@ function validateCategoryPairing(catalog: NormalizedCatalog): ValidationFinding[
     ];
   }
 
+  if (categories.length === 0) {
+    const categoryPathsAreSelfContainedContentUpdateEvidence = products.every(
+      (product) => product.categoryPaths.length === 0 || product.role === "content-update"
+    );
+    if (categoryPathsAreSelfContainedContentUpdateEvidence) return [];
+
+    return [
+      createFinding({
+        id: "CATEGORY_PAIRING_EVIDENCE_MISSING",
+        severity: "P1",
+        state: "unknown",
+        title: "Cannot verify product/category pairing",
+        message: "A product feed has category paths, but no category feed evidence is available.",
+        evidencePath: "catalog.categoryPaths",
+        remediation: "Provide both product feed category paths and a category feed to validate exact hierarchy/title matching.",
+        docs: ["indexing/feeds.md"],
+        confidence: 0.65
+      })
+    ];
+  }
+
   const categoryPaths = new Set(
     categories.map((category) => {
-      const hierarchy = stringValue(category.fields.hierarchy);
+      const hierarchy = categoryHierarchyValue(category.fields.hierarchy);
       return normalizeCategoryPath(hierarchy ? `${hierarchy} | ${category.title ?? ""}` : category.title ?? "");
     })
   );
@@ -462,9 +710,87 @@ function xmlValueShapes(value: unknown): string[] {
   });
 }
 
+function categoryHierarchyValue(value: unknown): string | undefined {
+  if (Array.isArray(value)) {
+    const parts = value.map(stringValue).filter((part): part is string => Boolean(part));
+    return parts.length > 0 ? parts.join(" | ") : undefined;
+  }
+
+  return stringValue(value);
+}
+
 function xmlAttributeValue(value: unknown, attributeName: string): string | undefined {
   if (!isRecord(value)) return undefined;
   return stringValue(value[`@_${attributeName}`])?.toLowerCase();
+}
+
+function contentNestedCategoryPath(category: Record<string, unknown>): string | undefined {
+  if (!isRecord(category.fields)) return undefined;
+
+  const ancestorTitles = Array.isArray(category.fields.ancestors)
+    ? category.fields.ancestors
+        .map((ancestor) => (isRecord(ancestor) && isRecord(ancestor.fields) ? stringValue(ancestor.fields.title) : undefined))
+        .filter((title): title is string => Boolean(title))
+    : [];
+  const leafTitle = stringValue(category.fields.title);
+  if (!leafTitle) return undefined;
+
+  return normalizeCategoryPath([...ancestorTitles, leafTitle].join(" | "));
+}
+
+function contentPrimaryMarker(category: Record<string, unknown>): boolean | undefined {
+  const marker = category.primary ?? (isRecord(category.fields) ? category.fields.primary : undefined);
+  if (typeof marker === "boolean") return marker;
+  if (typeof marker === "number") return marker === 1;
+  if (typeof marker === "string") {
+    const normalized = marker.trim().toLowerCase();
+    if (["true", "1", "yes"].includes(normalized)) return true;
+    if (["false", "0", "no"].includes(normalized)) return false;
+  }
+
+  return undefined;
+}
+
+function categoryPathsFromContentCategoryField(value: unknown): string[] {
+  return toArray(value)
+    .map((category) => {
+      if (Array.isArray(category)) return category.map(String).join(" | ");
+      if (typeof category === "string") return category;
+      return undefined;
+    })
+    .filter((path): path is string => Boolean(path))
+    .map(normalizeCategoryPath);
+}
+
+function contentNestedCategoryFinding(
+  path: string,
+  objectIndex: number,
+  nestedIndex: number,
+  message: string
+): ValidationFinding {
+  return createFinding({
+    id: "CONTENT_UPDATE_NESTED_CATEGORY_SHAPE",
+    severity: "P1",
+    title: "Content Update nested category is incomplete",
+    message,
+    evidencePath: `${path}:objects[${objectIndex}].nested[${nestedIndex}]`,
+    remediation: "Nested categories should include type, identity, fields.title, fields.web_url, and ordered fields.ancestors when they are not top-level categories.",
+    docs: ["indexing/data-layout.md", "indexing/api/v1/content-update.mdx"],
+    confidence: 0.9
+  });
+}
+
+function contentAncestorFinding(evidencePath: string, message: string): ValidationFinding {
+  return createFinding({
+    id: "CONTENT_UPDATE_CATEGORY_ANCESTOR_SHAPE",
+    severity: "P1",
+    title: "Content Update category ancestor is incomplete",
+    message,
+    evidencePath,
+    remediation: "Each category ancestor should have type category, a stable identity, and fields with title and web_url.",
+    docs: ["indexing/data-layout.md", "indexing/api/v1/content-update.mdx"],
+    confidence: 0.9
+  });
 }
 
 function contentShapeFinding(path: string, index: number, message: string): ValidationFinding {

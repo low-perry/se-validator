@@ -14,10 +14,12 @@ yarn validate catalog fixtures/catalog/invalid-html-attribute-feed.xml
 yarn validate catalog fixtures/catalog/mixed-category-shape-feed.xml fixtures/catalog/good-categories.xml
 yarn validate catalog fixtures/catalog/missing-primary-feed.xml fixtures/catalog/good-categories.xml
 yarn validate catalog fixtures/catalog/bad-content-update.json
+yarn validate catalog fixtures/catalog/bad-content-update-primary-order.json
 yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-categories.xml
 yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-feed-cat.xml
 yarn validate catalog fixtures/catalog/good-json-feed.json fixtures/catalog/good-json-categories.json
 yarn validate catalog fixtures/catalog/good-content-update.json
+yarn validate catalog fixtures/catalog/good-content-update-full.json
 yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-json-categories.json
 ```
 
