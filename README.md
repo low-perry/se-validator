@@ -10,8 +10,11 @@ Catalog validation accepts XML feeds, JSON feeds, or Content Update payloads, de
 yarn validate catalog fixtures/catalog/bad-feed.xml fixtures/catalog/bad-categories.xml
 yarn validate catalog fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-json-categories.json
 yarn validate catalog fixtures/catalog/cross-type-duplicate-feed.json fixtures/catalog/cross-type-duplicate-categories.json
+yarn validate catalog fixtures/catalog/invalid-html-attribute-feed.xml
+yarn validate catalog fixtures/catalog/mixed-category-shape-feed.xml fixtures/catalog/good-categories.xml
 yarn validate catalog fixtures/catalog/bad-content-update.json
 yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-categories.xml
+yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-feed-cat.xml
 yarn validate catalog fixtures/catalog/good-json-feed.json fixtures/catalog/good-json-categories.json
 yarn validate catalog fixtures/catalog/good-content-update.json
 yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-json-categories.json
@@ -22,4 +25,5 @@ yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catal
 ```bash
 yarn typecheck
 yarn validate catalog <paths...>
+yarn validate catalog "https://raw.githubusercontent.com/<org>/<repo>/<branch>/<path-to-feed.xml>"
 ```

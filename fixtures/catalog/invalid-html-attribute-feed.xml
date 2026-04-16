@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item>
+    <identity>HTML-ATTR-1</identity>
+    <title>Product With Raw HTML Attribute</title>
+    <web_url>https://shop.example.com/products/html-attr</web_url>
+    <description><img src="https://shop.example.com/image.jpg" crossorigin></description>
+  </item>
+</items>
+

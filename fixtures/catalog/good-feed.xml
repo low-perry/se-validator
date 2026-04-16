@@ -4,7 +4,7 @@
     <identity>SKU-1</identity>
     <title>Blue Shirt</title>
     <web_url>https://shop.example.com/products/blue-shirt</web_url>
-    <category primary="true">Apparel | Men | T-shirts</category>
+    <category>Apparel | Men | T-shirts</category>
     <brand>Example Brand</brand>
     <availability>1</availability>
     <availability_rank>3</availability_rank>
@@ -23,4 +23,3 @@
     <price_eur>29.90 EUR</price_eur>
   </item>
 </items>
-

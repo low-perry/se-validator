@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item>
+    <identity>MIXED-1</identity>
+    <title>First Mixed Shape Product</title>
+    <web_url>https://shop.example.com/products/mixed-1</web_url>
+    <category primary="true">Apparel | Men | T-shirts</category>
+  </item>
+  <item>
+    <identity>MIXED-2</identity>
+    <title>Second Mixed Shape Product</title>
+    <web_url>https://shop.example.com/products/mixed-2</web_url>
+    <category>Apparel | Men | T-shirts</category>
+  </item>
+</items>
+

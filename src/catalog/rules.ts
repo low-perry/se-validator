@@ -14,6 +14,7 @@ type CatalogRule = (catalog: NormalizedCatalog) => ValidationFinding[];
 export const catalogRules: CatalogRule[] = [
   validateRecognizedArtifacts,
   validateRequiredFields,
+  validateXmlMixedElementShapes,
   validateIdentityUniqueness,
   validateContentUpdateShape,
   validateCategoryFeedFlatness,
@@ -29,10 +30,10 @@ function validateRecognizedArtifacts(catalog: NormalizedCatalog): ValidationFind
       return createFinding({
         id: "CATALOG_ARTIFACT_PARSE_ERROR",
         severity: "P0",
-        title: "Catalog artifact could not be parsed",
+        title: parseErrorTitle(artifact.parseError, artifact.path),
         message: artifact.parseError,
         evidencePath: artifact.path,
-        remediation: "Fix the XML/JSON syntax before validating catalog semantics.",
+        remediation: parseErrorRemediation(artifact.parseError, artifact.path),
         docs: ["indexing/feeds.md", "indexing/api/v1/content-update.mdx"],
         confidence: 0.98
       });
@@ -74,6 +75,53 @@ function validateRequiredFields(catalog: NormalizedCatalog): ValidationFinding[]
       confidence: 0.95
     });
   });
+}
+
+function validateXmlMixedElementShapes(catalog: NormalizedCatalog): ValidationFinding[] {
+  const findings: ValidationFinding[] = [];
+  const objectsBySource = new Map<string, NormalizedCatalogObject[]>();
+
+  for (const object of catalog.objects) {
+    if (object.sourceKind !== "feed-xml" || !isRecord(object.raw)) continue;
+    const key = `${object.sourcePath}:${object.role}`;
+    objectsBySource.set(key, [...(objectsBySource.get(key) ?? []), object]);
+  }
+
+  for (const [sourceKey, objects] of objectsBySource) {
+    const shapesByField = new Map<string, Set<string>>();
+
+    for (const object of objects) {
+      if (!isRecord(object.raw)) continue;
+
+      for (const [field, rawValue] of Object.entries(object.raw)) {
+        if (field.startsWith("@_")) continue;
+        const shapes = shapesByField.get(field) ?? new Set<string>();
+        for (const shape of xmlValueShapes(rawValue)) {
+          shapes.add(shape);
+        }
+        shapesByField.set(field, shapes);
+      }
+    }
+
+    for (const [field, shapes] of shapesByField) {
+      if (!(shapes.has("primitive") && shapes.has("text-with-attributes"))) continue;
+
+      findings.push(
+        createFinding({
+          id: "XML_MIXED_ELEMENT_SHAPE",
+          severity: "P0",
+          title: "XML element is sometimes plain text and sometimes an attributed object",
+          message: `${sourceKey} uses <${field}> as both plain text and text with attributes. Feed mappers can traverse one shape and then crash on the other with a primitive/nesting error.`,
+          evidencePath: `${sourceKey}.${field}`,
+          remediation: `Make <${field}> structurally consistent across all records. For a simple sample feed, remove attributes like primary="true" from <${field}>. If attributes are required, use the same attribute structure for every occurrence or confirm the importer mapping supports mixed XML element shapes.`,
+          docs: ["indexing/feeds.md"],
+          confidence: 0.9
+        })
+      );
+    }
+  }
+
+  return findings;
 }
 
 function validateIdentityUniqueness(catalog: NormalizedCatalog): ValidationFinding[] {
@@ -379,6 +427,17 @@ function validateFieldNames(catalog: NormalizedCatalog): ValidationFinding[] {
   );
 }
 
+function xmlValueShapes(value: unknown): string[] {
+  return toArray(value).map((entry) => {
+    if (isRecord(entry) && "#text" in entry && Object.keys(entry).some((key) => key.startsWith("@_"))) {
+      return "text-with-attributes";
+    }
+
+    if (isRecord(entry)) return "object";
+    return "primitive";
+  });
+}
+
 function contentShapeFinding(path: string, index: number, message: string): ValidationFinding {
   return createFinding({
     id: "CONTENT_UPDATE_SHAPE_INVALID",
@@ -390,6 +449,36 @@ function contentShapeFinding(path: string, index: number, message: string): Vali
     docs: ["indexing/api/v1/content-update.mdx", "indexing/data-layout.md"],
     confidence: 0.9
   });
+}
+
+function parseErrorTitle(parseError: string, path: string): string {
+  if (looksLikeGithubBlobUrl(path)) {
+    return "GitHub page URL was parsed instead of the raw feed file";
+  }
+
+  if (parseError.includes("boolean attribute")) {
+    return "XML contains an HTML-style boolean attribute";
+  }
+
+  return "Catalog artifact could not be parsed";
+}
+
+function parseErrorRemediation(parseError: string, path: string): string {
+  if (looksLikeGithubBlobUrl(path)) {
+    return "Use the raw GitHub file URL, not the GitHub blob/page URL. Change https://github.com/<org>/<repo>/blob/<branch>/<path> to https://raw.githubusercontent.com/<org>/<repo>/<branch>/<path>, or open the file on GitHub and copy the Raw link.";
+  }
+
+  const booleanAttributeMatch = parseError.match(/boolean attribute '([^']+)' is not allowed/);
+  if (booleanAttributeMatch) {
+    const attributeName = booleanAttributeMatch[1];
+    return `XML requires every attribute to have a value. Replace ${attributeName} with ${attributeName}="anonymous" or ${attributeName}="" where appropriate, or wrap raw HTML snippets in CDATA.`;
+  }
+
+  return "Fix the XML/JSON syntax before validating catalog semantics. If a field contains HTML, escape it or wrap it in CDATA.";
+}
+
+function looksLikeGithubBlobUrl(path: string): boolean {
+  return path.startsWith("https://github.com/") && path.includes("/blob/");
 }
 
 function label(object: NormalizedCatalogObject): string {
