@@ -66,6 +66,20 @@ export function detectCatalogArtifact(path: string, raw: string): CatalogArtifac
   const parsed = JSON.parse(raw) as unknown;
   const rootKey = firstObjectKey(parsed);
 
+  if (Array.isArray(parsed)) {
+    const role = roleFromJsonArray(path, parsed);
+    return {
+      path,
+      raw,
+      parsed,
+      rootKey: undefined,
+      parseError: undefined,
+      sourceKind: "feed-json",
+      role,
+      confidence: role === "unknown" ? 0.35 : 0.82
+    };
+  }
+
   if (isRecord(parsed) && Array.isArray(parsed.objects)) {
     return {
       path,
@@ -96,6 +110,24 @@ function roleFromRootKey(rootKey: string | undefined): CatalogArtifactRole {
   if (rootKey === "categories") return "category-feed";
   if (rootKey === "brands") return "brand-feed";
   if (rootKey === "articles") return "article-feed";
+  return "unknown";
+}
+
+function roleFromJsonArray(path: string, records: unknown[]): CatalogArtifactRole {
+  const lowerPath = path.toLowerCase();
+
+  if (lowerPath.includes("categor")) return "category-feed";
+  if (lowerPath.includes("brand")) return "brand-feed";
+  if (lowerPath.includes("article")) return "article-feed";
+
+  const recordObjects = records.filter(isRecord);
+  if (recordObjects.some((record) => "category" in record || "item_group_id" in record || "availability" in record)) {
+    return "product-feed";
+  }
+
+  if (recordObjects.some((record) => "hierarchy" in record)) return "category-feed";
+  if (lowerPath.includes("item") || lowerPath.includes("product") || lowerPath.includes("feed")) return "product-feed";
+
   return "unknown";
 }
 

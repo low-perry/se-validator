@@ -39,17 +39,12 @@ function normalizeArtifact(artifact: CatalogArtifact): NormalizedCatalogObject[]
     return normalizeContentUpdate(artifact);
   }
 
-  if (!isRecord(artifact.parsed) || !artifact.rootKey) return [];
-  const root = artifact.parsed[artifact.rootKey];
   const itemKeys = roleItemKey[artifact.role as keyof typeof roleItemKey];
   if (!itemKeys) return [];
 
-  const records = Array.isArray(root)
-    ? root
-    : itemKeys.flatMap((key) => {
-        if (!isRecord(root)) return [];
-        return toArray(root[key]);
-      });
+  const records = Array.isArray(artifact.parsed)
+    ? artifact.parsed
+    : recordsFromWrappedFeed(artifact, itemKeys);
 
   return records.filter(isRecord).map((record, index) => {
     const fields = flattenFeedRecord(record);
@@ -69,6 +64,18 @@ function normalizeArtifact(artifact: CatalogArtifact): NormalizedCatalogObject[]
       itemGroupId: stringValue(fields.item_group_id),
       raw: record
     };
+  });
+}
+
+function recordsFromWrappedFeed(artifact: CatalogArtifact, itemKeys: readonly string[]): unknown[] {
+  if (!isRecord(artifact.parsed) || !artifact.rootKey) return [];
+
+  const root = artifact.parsed[artifact.rootKey];
+  if (Array.isArray(root)) return root;
+
+  return itemKeys.flatMap((key) => {
+    if (!isRecord(root)) return [];
+    return toArray(root[key]);
   });
 }
 

@@ -1,5 +1,4 @@
-{
-  "items": [
+[
     {
       "identity": "json-SKU-1",
       "title": "Blue Shirt",
@@ -174,5 +173,4 @@
       "price_eur": "119.90 EUR",
       "image_link_l": "https://shop.example.com/images/sku-12.jpg"
     }
-  ]
-}
+]

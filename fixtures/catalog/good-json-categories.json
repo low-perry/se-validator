@@ -1,5 +1,4 @@
-{
-  "categories": [
+[
     {
       "identity": "json-cat-apparel",
       "title": "Apparel",
@@ -92,5 +91,4 @@
       "web_url": "https://shop.example.com/categories/collections/summer",
       "hierarchy": "Collections"
     }
-  ]
-}
+]
