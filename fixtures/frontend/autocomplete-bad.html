@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <input id="search-input" autocomplete="off" />
+    <div id="autocomplete-results"></div>
+
+    <script>
+      const TRACKER_ID = "757876-1071971";
+      const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";
+      const TOP_ITEMS_API_URL = "https://live.luigisbox.com/v1/top_items";
+      const searchInput = document.getElementById("search-input");
+      const resultsContainer = document.getElementById("autocomplete-results");
+
+      async function getSuggestions(query) {
+        const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+          search: query,
+          type: "item:six",
+        })}`);
+        const data = await response.json();
+
+        if (!data.hits || data.hits.length === 0) {
+          resultsContainer.textContent = "No results";
+          return;
+        }
+
+        renderResults(data.hits);
+        trackAutocompleteView(query, data.hits);
+      }
+
+      async function getTopItemsSuggestions() {
+        const response = await fetch(`${TOP_ITEMS_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+          type: "item:5",
+        })}`);
+        const data = await response.json();
+        renderResults(data.hits);
+        trackAutocompleteView("", data.hits);
+      }
+
+      function renderResults(hits) {
+        resultsContainer.innerHTML = "";
+        hits.forEach((item) => {
+          const itemButton = document.createElement("button");
+          itemButton.className = "result-item";
+          itemButton.dataset.itemId = item.attributes.title;
+          itemButton.textContent = item.attributes.title;
+          resultsContainer.appendChild(itemButton);
+        });
+      }
+
+      function trackAutocompleteView(query, hits) {
+        window.dataLayer.push({
+          event: "view_item_list",
+          ecommerce: {
+            item_list_name: "Autocomplete",
+            items: hits.map((hit) => ({
+              item_id: hit.attributes.title,
+              item_name: hit.attributes.title,
+            })),
+          },
+        });
+      }
+
+      searchInput.addEventListener("input", (event) => getSuggestions(event.target.value));
+      searchInput.addEventListener("focus", getTopItemsSuggestions);
+    </script>
+  </body>
+</html>

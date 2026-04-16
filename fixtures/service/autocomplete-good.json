@@ -1,0 +1,92 @@
+{
+  "service": "autocomplete-api",
+  "checks": [
+    {
+      "name": "Autocomplete query suggestions for shirts",
+      "endpoint": "autocomplete",
+      "request": {
+        "url": "https://live.luigisbox.com/autocomplete/v2",
+        "params": {
+          "tracker_id": "757876-1071971",
+          "q": "shirt",
+          "type": "item:6,category:3,query:5",
+          "hit_fields": "title,web_url,price,image_link_l"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "minResults": 6,
+        "resultTypes": ["item", "category"],
+        "containsIdentities": ["SKU-1", "json-SKU-1", "content-SKU-1"],
+        "requiredRootFields": ["hits", "guid"],
+        "requiredHitFields": ["url", "type"],
+        "requiredAttributeFields": ["title", "web_url"],
+        "requireGuid": true
+      },
+      "analytics": {
+        "viewListName": "Autocomplete",
+        "clickAction": "click",
+        "noResultsEventRequired": true,
+        "notes": [
+          "Send the Autocomplete view after rendering hits.",
+          "Send the same Autocomplete view with an empty items array when hits is empty.",
+          "Send click/select analytics when a rendered suggestion is selected."
+        ]
+      }
+    },
+    {
+      "name": "Top items shown on empty search focus",
+      "endpoint": "top_items",
+      "request": {
+        "url": "https://live.luigisbox.com/v1/top_items",
+        "params": {
+          "tracker_id": "757876-1071971",
+          "type": "item:5,category:3",
+          "hit_fields": "title,web_url,price,image_link_l"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "minResults": 5,
+        "resultTypes": ["item", "category"],
+        "containsIdentities": ["SKU-1"],
+        "requiredRootFields": ["hits", "recommendation_id"],
+        "requiredHitFields": ["url", "type"],
+        "requiredAttributeFields": ["title", "web_url"],
+        "requireRecommendationId": true
+      },
+      "analytics": {
+        "viewListName": "Recommendation",
+        "recommendationPlacement": "autocomplete_popup",
+        "clickAction": "click",
+        "notes": [
+          "Top items shown inside autocomplete are Recommendation impressions, not Autocomplete impressions.",
+          "Use autocomplete_popup as the RecommenderClientId/Recommender placement."
+        ]
+      }
+    },
+    {
+      "name": "Trending queries for placeholder or initial guidance",
+      "endpoint": "trending_queries",
+      "request": {
+        "url": "https://live.luigisbox.com/v2/trending_queries",
+        "params": {
+          "tracker_id": "757876-1071971"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "minResults": 7
+      },
+      "analytics": {
+        "viewListName": "Search Results",
+        "clickRunsSearch": true,
+        "notes": [
+          "Displaying trending queries does not need its own view event.",
+          "Trending queries are configured in the Luigi's Box dashboard; this tracker currently expects seven configured suggestions.",
+          "When a user clicks a trending query, run the search and track the resulting Search Results view."
+        ]
+      }
+    }
+  ]
+}

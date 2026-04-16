@@ -1,0 +1,62 @@
+{
+  "service": "autocomplete-api",
+  "checks": [
+    {
+      "name": "Autocomplete missing type and wrong analytics list",
+      "endpoint": "autocomplete",
+      "request": {
+        "url": "https://live.luigisbox.com/autocomplete/v2",
+        "params": {
+          "tracker_id": "757876-1071971",
+          "q": "shirt"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "minResults": 1,
+        "requireGuid": true
+      },
+      "analytics": {
+        "viewListName": "Search Results"
+      }
+    },
+    {
+      "name": "Top items with invalid type count",
+      "endpoint": "top_items",
+      "request": {
+        "url": "https://live.luigisbox.com/v1/top_items",
+        "params": {
+          "tracker_id": "757876-1071971",
+          "type": "item:six"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "minResults": 1,
+        "requireRecommendationId": true
+      },
+      "analytics": {
+        "viewListName": "Autocomplete"
+      }
+    },
+    {
+      "name": "Trending queries with empty tracker and autocomplete analytics",
+      "endpoint": "trending_queries",
+      "request": {
+        "url": "https://live.luigisbox.com/v2/trending_queries",
+        "params": {
+          "tracker_id": "",
+          "q": "shirt",
+          "type": "item:3"
+        }
+      },
+      "expect": {
+        "status": 200,
+        "minResults": 3
+      },
+      "analytics": {
+        "viewListName": "Autocomplete"
+      }
+    }
+  ]
+}

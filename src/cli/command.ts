@@ -4,6 +4,8 @@ import { Command } from "commander";
 import type { ValidationFinding } from "../core/types.js";
 import { validateCatalog } from "../catalog/validate.js";
 import { validateAnalytics } from "../analytics/validate.js";
+import { validateService } from "../service/validate.js";
+import { validateFrontend } from "../frontend/validate.js";
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -65,6 +67,68 @@ export async function runCli(argv: string[]): Promise<void> {
       }
 
       const output = formatAnalyticsReport(report);
+      console.log(output);
+
+      if (options.report) {
+        await writeReport(options.report, output);
+        console.log(`\nReport written to ${options.report}`);
+      }
+
+      if (report.summary.P0 > 0) {
+        process.exitCode = 2;
+      }
+    });
+
+  validate
+    .command("service")
+    .description("Validate live service API checks, starting with Autocomplete API")
+    .argument("<paths...>", "Service profile path(s)")
+    .option("--json", "Print machine-readable JSON")
+    .option("--report <path>", "Write a human-readable report file")
+    .action(async (paths: string[], options: { json?: boolean; report?: string }) => {
+      const report = await validateService(paths);
+
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+        if (options.report) {
+          await writeReport(options.report, JSON.stringify(report, null, 2));
+          console.error(`Report written to ${options.report}`);
+        }
+        return;
+      }
+
+      const output = formatServiceReport(report);
+      console.log(output);
+
+      if (options.report) {
+        await writeReport(options.report, output);
+        console.log(`\nReport written to ${options.report}`);
+      }
+
+      if (report.summary.P0 > 0) {
+        process.exitCode = 2;
+      }
+    });
+
+  validate
+    .command("frontend")
+    .description("Validate frontend autocomplete API and analytics evidence")
+    .argument("<paths...>", "Frontend HTML/JS evidence path(s)")
+    .option("--json", "Print machine-readable JSON")
+    .option("--report <path>", "Write a human-readable report file")
+    .action(async (paths: string[], options: { json?: boolean; report?: string }) => {
+      const report = await validateFrontend(paths);
+
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+        if (options.report) {
+          await writeReport(options.report, JSON.stringify(report, null, 2));
+          console.error(`Report written to ${options.report}`);
+        }
+        return;
+      }
+
+      const output = formatFrontendReport(report);
       console.log(output);
 
       if (options.report) {
@@ -145,6 +209,98 @@ function formatCatalogReport(report: Awaited<ReturnType<typeof validateCatalog>>
   if (report.findings.length === 0) {
     lines.push("");
     lines.push("No findings. Catalog evidence passes the current rule set.");
+    return lines.join("\n");
+  }
+
+  for (const severity of ["P0", "P1", "P2"] as const) {
+    const findings = report.findings.filter((finding) => finding.severity === severity);
+    if (findings.length === 0) continue;
+
+    lines.push("");
+    lines.push(`${severity} Findings`);
+    for (const finding of findings) {
+      lines.push(...formatFinding(finding));
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function formatServiceReport(report: Awaited<ReturnType<typeof validateService>>): string {
+  const lines: string[] = [];
+
+  lines.push("");
+  lines.push(report.title);
+  lines.push(`Score: ${report.score}/100`);
+  lines.push(`Findings: P0=${report.summary.P0} P1=${report.summary.P1} P2=${report.summary.P2}`);
+
+  lines.push("");
+  lines.push("Detected artifacts:");
+  for (const artifact of report.artifacts) {
+    lines.push(`- ${artifact}`);
+  }
+
+  if (report.checks.length > 0) {
+    lines.push("");
+    lines.push("Detected checks:");
+    for (const check of report.checks) {
+      lines.push(`- ${check}`);
+    }
+  }
+
+  if (report.requests.length > 0) {
+    lines.push("");
+    lines.push("Live requests:");
+    for (const request of report.requests) {
+      lines.push(`- ${request}`);
+    }
+  }
+
+  if (report.findings.length === 0) {
+    lines.push("");
+    lines.push("No findings. Autocomplete service checks pass the current rule set.");
+    return lines.join("\n");
+  }
+
+  for (const severity of ["P0", "P1", "P2"] as const) {
+    const findings = report.findings.filter((finding) => finding.severity === severity);
+    if (findings.length === 0) continue;
+
+    lines.push("");
+    lines.push(`${severity} Findings`);
+    for (const finding of findings) {
+      lines.push(...formatFinding(finding));
+    }
+  }
+
+  return lines.join("\n");
+}
+
+function formatFrontendReport(report: Awaited<ReturnType<typeof validateFrontend>>): string {
+  const lines: string[] = [];
+
+  lines.push("");
+  lines.push(report.title);
+  lines.push(`Score: ${report.score}/100`);
+  lines.push(`Findings: P0=${report.summary.P0} P1=${report.summary.P1} P2=${report.summary.P2}`);
+
+  lines.push("");
+  lines.push("Detected artifacts:");
+  for (const artifact of report.artifacts) {
+    lines.push(`- ${artifact}`);
+  }
+
+  if (report.capabilities.length > 0) {
+    lines.push("");
+    lines.push("Detected capabilities:");
+    for (const capability of report.capabilities) {
+      lines.push(`- ${capability}`);
+    }
+  }
+
+  if (report.findings.length === 0) {
+    lines.push("");
+    lines.push("No findings. Autocomplete frontend evidence passes the current rule set.");
     return lines.join("\n");
   }
 

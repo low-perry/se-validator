@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="dns-prefetch" href="//live.luigisbox.com" />
+  </head>
+  <body>
+    <input id="search-input" autocomplete="off" />
+    <div id="autocomplete-results"></div>
+
+    <script>
+      const TRACKER_ID = "757876-1071971";
+      const CLIENT_ID = window.localStorage.getItem("lbx_client_id") || crypto.randomUUID();
+      const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";
+      const TOP_ITEMS_API_URL = "https://live.luigisbox.com/v1/top_items";
+      const TRENDING_QUERIES_API_URL = "https://live.luigisbox.com/v2/trending_queries";
+      const ANALYTICS_API_URL = "https://api.luigisbox.com/";
+      const searchInput = document.getElementById("search-input");
+      const resultsContainer = document.getElementById("autocomplete-results");
+      const placeholderAnimator = { queries: [] };
+
+      function debounce(fn, delay) {
+        let timeout;
+        return (...args) => {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => fn(...args), delay);
+        };
+      }
+
+      async function sendAnalyticsEvent(payload) {
+        await fetch(ANALYTICS_API_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      async function getSuggestions(query) {
+        const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+          q: query,
+          type: "item:6,category:3,query:5",
+          hit_fields: "title,web_url,price,image_link_l",
+        })}`);
+        const { hits } = await response.json();
+
+        if (!hits || hits.length === 0) {
+          resultsContainer.textContent = "No results";
+          sendAutocompleteViewAnalytics(query, []);
+          return;
+        }
+
+        renderResults(hits);
+        sendAutocompleteViewAnalytics(query, hits);
+      }
+
+      async function getTopItemsSuggestions() {
+        const response = await fetch(`${TOP_ITEMS_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+          type: "item:5,category:3",
+          hit_fields: "title,web_url,price,image_link_l",
+        })}`);
+        const { hits } = await response.json();
+        renderResults(hits);
+        sendTopItemsViewAnalytics(hits);
+      }
+
+      async function getTrendingQueries() {
+        const response = await fetch(`${TRENDING_QUERIES_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+        })}`);
+        const items = await response.json();
+        placeholderAnimator.queries = items.map((item) => item.title);
+        searchInput.placeholder = placeholderAnimator.queries[0] || "Search";
+      }
+
+      function renderResults(hits) {
+        resultsContainer.innerHTML = "";
+        hits.forEach((item, index) => {
+          const itemButton = document.createElement("button");
+          itemButton.className = "result-item";
+          itemButton.dataset.itemId = item.url || item.attributes.title;
+          itemButton.dataset.position = index + 1;
+          itemButton.textContent = item.attributes.title;
+          resultsContainer.appendChild(itemButton);
+        });
+      }
+
+      function sendAutocompleteViewAnalytics(query, hits) {
+        sendAnalyticsEvent({
+          id: crypto.randomUUID(),
+          type: "event",
+          tracker_id: TRACKER_ID,
+          client_id: CLIENT_ID,
+          lists: {
+            Autocomplete: {
+              query: { string: query || "" },
+              items: hits.map((hit, index) => ({
+                title: hit.attributes.title,
+                url: hit.url || hit.attributes.title,
+                position: index + 1,
+              })),
+            },
+          },
+        });
+      }
+
+      function sendTopItemsViewAnalytics(hits) {
+        sendAnalyticsEvent({
+          id: crypto.randomUUID(),
+          type: "event",
+          tracker_id: TRACKER_ID,
+          client_id: CLIENT_ID,
+          lists: {
+            Recommendation: {
+              query: {
+                filters: {
+                  RecommenderClientId: "autocomplete_popup",
+                  Recommender: "autocomplete_popup",
+                },
+              },
+              items: hits.map((hit, index) => ({
+                title: hit.attributes.title,
+                url: hit.url || hit.attributes.title,
+                position: index + 1,
+              })),
+            },
+          },
+        });
+      }
+
+      function sendClickEvent(itemId) {
+        sendAnalyticsEvent({
+          id: crypto.randomUUID(),
+          type: "click",
+          tracker_id: TRACKER_ID,
+          client_id: CLIENT_ID,
+          action: {
+            type: "click",
+            resource_identifier: itemId,
+          },
+        });
+      }
+
+      searchInput.addEventListener("input", debounce((event) => getSuggestions(event.target.value), 250));
+      searchInput.addEventListener("focus", () => {
+        if (searchInput.value === "") getTopItemsSuggestions();
+      });
+      resultsContainer.addEventListener("click", (event) => {
+        const resultItem = event.target.closest(".result-item");
+        if (!resultItem) return;
+        sendClickEvent(resultItem.dataset.itemId);
+      });
+      document.addEventListener("DOMContentLoaded", getTrendingQueries);
+    </script>
+  </body>
+</html>

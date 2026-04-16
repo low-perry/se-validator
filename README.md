@@ -24,6 +24,10 @@ yarn validate analytics fixtures/analytics/events-api-good.json
 yarn validate analytics fixtures/analytics/events-api-bad.json
 yarn validate analytics fixtures/analytics/datalayer-good.html
 yarn validate analytics fixtures/analytics/datalayer-bad.html
+yarn validate service fixtures/service/autocomplete-good.json
+yarn validate service fixtures/service/autocomplete-bad.json
+yarn validate frontend fixtures/frontend/autocomplete-datalayer-good.html fixtures/frontend/autocomplete-events-api-good.html
+yarn validate frontend fixtures/frontend/autocomplete-bad.html
 yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-json-categories.json
 ```
 
@@ -33,5 +37,7 @@ yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catal
 yarn typecheck
 yarn validate catalog <paths...>
 yarn validate analytics <paths...>
+yarn validate service <paths...>
+yarn validate frontend <paths...>
 yarn validate catalog "https://example.com/path/to/feed.xml"
 ```
