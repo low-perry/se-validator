@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { Command } from "commander";
 import type { ValidationFinding } from "../core/types.js";
 import { validateCatalog } from "../catalog/validate.js";
+import { validateAnalytics } from "../analytics/validate.js";
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -45,6 +46,37 @@ export async function runCli(argv: string[]): Promise<void> {
       }
     });
 
+  validate
+    .command("analytics")
+    .description("Validate analytics Events API payload evidence")
+    .argument("<paths...>", "Analytics event payload path(s)")
+    .option("--json", "Print machine-readable JSON")
+    .option("--report <path>", "Write a human-readable report file")
+    .action(async (paths: string[], options: { json?: boolean; report?: string }) => {
+      const report = await validateAnalytics(paths);
+
+      if (options.json) {
+        console.log(JSON.stringify(report, null, 2));
+        if (options.report) {
+          await writeReport(options.report, JSON.stringify(report, null, 2));
+          console.error(`Report written to ${options.report}`);
+        }
+        return;
+      }
+
+      const output = formatAnalyticsReport(report);
+      console.log(output);
+
+      if (options.report) {
+        await writeReport(options.report, output);
+        console.log(`\nReport written to ${options.report}`);
+      }
+
+      if (report.summary.P0 > 0) {
+        process.exitCode = 2;
+      }
+    });
+
   await program.parseAsync(argv);
 }
 
@@ -52,6 +84,48 @@ async function writeReport(path: string, content: string): Promise<void> {
   const absolutePath = resolve(process.cwd(), path);
   await mkdir(dirname(absolutePath), { recursive: true });
   await writeFile(absolutePath, `${content.trimEnd()}\n`, "utf8");
+}
+
+function formatAnalyticsReport(report: Awaited<ReturnType<typeof validateAnalytics>>): string {
+  const lines: string[] = [];
+
+  lines.push("");
+  lines.push(report.title);
+  lines.push(`Score: ${report.score}/100`);
+  lines.push(`Findings: P0=${report.summary.P0} P1=${report.summary.P1} P2=${report.summary.P2}`);
+
+  lines.push("");
+  lines.push("Detected artifacts:");
+  for (const artifact of report.artifacts) {
+    lines.push(`- ${artifact}`);
+  }
+
+  if (report.events.length > 0) {
+    lines.push("");
+    lines.push("Detected events:");
+    for (const event of report.events) {
+      lines.push(`- ${event}`);
+    }
+  }
+
+  if (report.findings.length === 0) {
+    lines.push("");
+    lines.push("No findings. Analytics Events API evidence passes the current rule set.");
+    return lines.join("\n");
+  }
+
+  for (const severity of ["P0", "P1", "P2"] as const) {
+    const findings = report.findings.filter((finding) => finding.severity === severity);
+    if (findings.length === 0) continue;
+
+    lines.push("");
+    lines.push(`${severity} Findings`);
+    for (const finding of findings) {
+      lines.push(...formatFinding(finding));
+    }
+  }
+
+  return lines.join("\n");
 }
 
 function formatCatalogReport(report: Awaited<ReturnType<typeof validateCatalog>>): string {

@@ -20,6 +20,8 @@ yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-feed-
 yarn validate catalog fixtures/catalog/good-json-feed.json fixtures/catalog/good-json-categories.json
 yarn validate catalog fixtures/catalog/good-content-update.json
 yarn validate catalog fixtures/catalog/good-content-update-full.json
+yarn validate analytics fixtures/analytics/events-api-good.json
+yarn validate analytics fixtures/analytics/events-api-bad.json
 yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-json-categories.json
 ```
 
@@ -28,5 +30,6 @@ yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catal
 ```bash
 yarn typecheck
 yarn validate catalog <paths...>
+yarn validate analytics <paths...>
 yarn validate catalog "https://example.com/path/to/feed.xml"
 ```

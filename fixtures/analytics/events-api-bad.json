@@ -1,0 +1,166 @@
+[
+  {
+    "id": "duplicate-event-id",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-1",
+    "customer_id": {},
+    "platform": {
+      "name": "web"
+    },
+    "local_timestamp": 1786896000000,
+    "context": "sk",
+    "consent_granted": "yes",
+    "lists": {
+      "search results": {
+        "query": {
+          "string": "shirt"
+        },
+        "items": [
+          {
+            "title": "Broken Shirt",
+            "type": "item",
+            "url": "content-SKU-1",
+            "position": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "duplicate-event-id",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-1",
+    "lists": {
+      "Search Results": {
+        "query": {
+          "filters": {
+            "_Guid": 123,
+            "price": {
+              "min": 0,
+              "max": 50
+            }
+          }
+        },
+        "items": [
+          {
+            "title": "Broken Shirt",
+            "type": "customThing",
+            "url": "content-SKU-1",
+            "position": 2,
+            "price": -1
+          },
+          {
+            "title": "Duplicate Position Shirt",
+            "type": "item",
+            "url": "content-SKU-2",
+            "position": 2
+          },
+          {
+            "title": "Missing Type and Position",
+            "url": "content-SKU-3"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "20000000-0000-4000-8000-000000000003",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-1",
+    "lists": {
+      "Autocomplete": {
+        "query": {
+          "filters": []
+        },
+        "items": []
+      }
+    }
+  },
+  {
+    "id": "20000000-0000-4000-8000-000000000004",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-1",
+    "lists": {
+      "Product Listing": {
+        "query": {
+          "filters": {
+            "_Guid": "",
+            "color": {
+              "selected": "blue"
+            }
+          },
+          "scopes": {
+            "_category_label": "Apparel||Men||T-shirts"
+          }
+        },
+        "items": [
+          {
+            "title": "Blue Shirt",
+            "type": "item",
+            "url": "content-SKU-1",
+            "position": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "20000000-0000-4000-8000-000000000005",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-1",
+    "lists": {
+      "Recommendation": {
+        "query": {
+          "filters": {
+            "ItemIds": "content-SKU-1",
+            "Recommender": "",
+            "Type": {},
+            "_Variant": ""
+          }
+        },
+        "items": [
+          {
+            "title": "Red Shirt",
+            "type": "item",
+            "url": "content-SKU-2",
+            "position": 1
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "20000000-0000-4000-8000-000000000006",
+    "type": "click",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-1",
+    "action": {
+      "type": "click"
+    }
+  },
+  {
+    "id": "20000000-0000-4000-8000-000000000007",
+    "type": "transaction",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-1",
+    "items": [
+      {
+        "title": 42,
+        "url": "",
+        "count": 0,
+        "total_price": -10,
+        "was_discounted": "yes"
+      }
+    ]
+  },
+  {
+    "type": "pv",
+    "url": "content-SKU-1",
+    "title": 42
+  }
+]

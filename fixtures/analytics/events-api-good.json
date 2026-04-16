@@ -1,0 +1,393 @@
+[
+  {
+    "id": "10000000-0000-4000-8000-000000000001",
+    "type": "pv",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "url": "/collections/new-arrivals",
+    "title": "New Arrivals",
+    "platform": ["web", "2026.04.16"],
+    "local_timestamp": 1786896000,
+    "user_agent": "Mozilla/5.0 se-validator-hackathon",
+    "referer": "/",
+    "context": {
+      "market": "sk",
+      "warehouse": "bratislava"
+    },
+    "ab_test_variant": "Luigis",
+    "consent_granted": true
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000002",
+    "type": "pv",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "url": "content-SKU-1",
+    "title": "Blue Shirt",
+    "platform": "web",
+    "local_timestamp": 1786896005,
+    "referer": "/search?q=shirt",
+    "context": {
+      "market": "sk",
+      "warehouse": "bratislava"
+    },
+    "consent_granted": true
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000003",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896010,
+    "context": {
+      "market": "sk",
+      "warehouse": "bratislava"
+    },
+    "ab_test_variant": "Luigis",
+    "lists": {
+      "Search Results": {
+        "query": {
+          "string": "shirt",
+          "filters": {
+            "_Guid": "search-guid-shirt-001",
+            "_Variant": "Luigis",
+            "brand": "Luigis Apparel",
+            "category": ["Apparel | Men | T-shirts", "Collections | New Arrivals"],
+            "sort by": "price_amount:asc",
+            "availability": "in stock",
+            "price": "0-50"
+          }
+        },
+        "items": [
+          {
+            "title": "Blue Shirt",
+            "type": "item",
+            "url": "content-SKU-1",
+            "position": 1,
+            "price": 29.9
+          },
+          {
+            "title": "Red Shirt",
+            "type": "item",
+            "url": "content-SKU-2",
+            "position": 2,
+            "price": 29.9
+          },
+          {
+            "title": "T-shirts",
+            "type": "category",
+            "url": "content-cat-men-tshirts",
+            "position": 3
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000004",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896015,
+    "lists": {
+      "Search Results": {
+        "query": {
+          "string": "zzzz-no-results",
+          "filters": {
+            "_Guid": "search-guid-empty-001",
+            "_Variant": "Luigis"
+          }
+        },
+        "items": []
+      }
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000005",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896020,
+    "lists": {
+      "Autocomplete": {
+        "query": {
+          "string": "shi",
+          "filters": {
+            "_Guid": "autocomplete-guid-shi-001",
+            "_Variant": "Luigis",
+            "language": "sk"
+          }
+        },
+        "items": [
+          {
+            "title": "shirt",
+            "type": "query",
+            "url": "shirt",
+            "position": 1
+          },
+          {
+            "title": "T-shirts",
+            "type": "category",
+            "url": "content-cat-men-tshirts",
+            "position": 2
+          },
+          {
+            "title": "Blue Shirt",
+            "type": "item",
+            "url": "content-SKU-1",
+            "position": 3,
+            "price": 29.9
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000006",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896030,
+    "lists": {
+      "Product Listing": {
+        "query": {
+          "filters": {
+            "_Guid": "plp-guid-men-tshirts-001",
+            "_Variant": "Luigis",
+            "sort by": "price_amount:asc",
+            "color": ["blue", "red"],
+            "size": ["M", "L"],
+            "availability": true
+          },
+          "scopes": {
+            "_category_label": "Apparel||Men||T-shirts",
+            "_category_identity": "content-cat-men-tshirts"
+          }
+        },
+        "items": [
+          {
+            "title": "Blue Shirt",
+            "type": "item",
+            "url": "content-SKU-1",
+            "position": 1,
+            "price": 29.9
+          },
+          {
+            "title": "Red Shirt",
+            "type": "item",
+            "url": "content-SKU-2",
+            "position": 2,
+            "price": 29.9
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000007",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896040,
+    "lists": {
+      "Product Listing": {
+        "query": {
+          "filters": {
+            "_Guid": "plp-guid-brand-001",
+            "_Variant": "Luigis",
+            "sort by": "relevance:desc"
+          },
+          "scopes": {
+            "_brand_label": "Luigis Apparel",
+            "_brand_identity": "brand-luigis-apparel"
+          }
+        },
+        "items": [
+          {
+            "title": "Black Hoodie",
+            "type": "item",
+            "url": "content-SKU-3",
+            "position": 1,
+            "price": 59.9
+          },
+          {
+            "title": "Gray Hoodie",
+            "type": "item",
+            "url": "content-SKU-4",
+            "position": 2,
+            "price": 59.9
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000008",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896050,
+    "lists": {
+      "Recommendation": {
+        "query": {
+          "filters": {
+            "RecommenderClientId": "item_detail_alternatives",
+            "RecommendationId": "rec-content-sku-1-001",
+            "ItemIds": ["content-SKU-1"],
+            "Recommender": "similar_products_v3",
+            "Type": "complementary_combined_assoc",
+            "_Variant": "Luigis"
+          }
+        },
+        "items": [
+          {
+            "title": "Red Shirt",
+            "type": "item",
+            "url": "content-SKU-2",
+            "position": 1,
+            "price": 29.9
+          },
+          {
+            "title": "Black Hoodie",
+            "type": "item",
+            "url": "content-SKU-3",
+            "position": 2,
+            "price": 59.9
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000009",
+    "type": "event",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896060,
+    "lists": {
+      "Recommendation": {
+        "query": {
+          "filters": {
+            "RecommenderClientId": "autocomplete_popup",
+            "RecommendationId": "rec-autocomplete-popup-001",
+            "Recommender": "autocomplete_popup",
+            "Type": "top_items",
+            "_Variant": "Luigis"
+          }
+        },
+        "items": [
+          {
+            "title": "Canvas Tote Bag",
+            "type": "item",
+            "url": "content-SKU-9",
+            "position": 1,
+            "price": 19.9
+          },
+          {
+            "title": "Leather Backpack",
+            "type": "item",
+            "url": "content-SKU-10",
+            "position": 2,
+            "price": 99.9
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000010",
+    "type": "click",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896070,
+    "action": {
+      "type": "click",
+      "resource_identifier": "content-SKU-1"
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000011",
+    "type": "click",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896075,
+    "action": {
+      "type": "click",
+      "resource_identifier": "shirt"
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000012",
+    "type": "click",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896080,
+    "action": {
+      "type": "add-to-wishlist",
+      "resource_identifier": "content-SKU-2"
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000013",
+    "type": "click",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896085,
+    "action": {
+      "type": "add-to-cart",
+      "resource_identifier": "content-SKU-1"
+    }
+  },
+  {
+    "id": "10000000-0000-4000-8000-000000000014",
+    "type": "transaction",
+    "tracker_id": "757876-1071971",
+    "client_id": "hackathon-client-analytics-1",
+    "customer_id": "customer-42",
+    "platform": "web",
+    "local_timestamp": 1786896120,
+    "recommendation_id": "rec-content-sku-1-001",
+    "items": [
+      {
+        "title": "Blue Shirt",
+        "url": "content-SKU-1",
+        "count": 1,
+        "total_price": 29.9,
+        "was_discounted": false,
+        "was_volume_discounted": false
+      },
+      {
+        "title": "Red Shirt",
+        "url": "content-SKU-2",
+        "count": 2,
+        "total_price": 59.8,
+        "was_discounted": true,
+        "was_volume_discounted": true
+      }
+    ]
+  }
+]
