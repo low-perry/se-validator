@@ -22,6 +22,8 @@ yarn validate catalog fixtures/catalog/good-content-update.json
 yarn validate catalog fixtures/catalog/good-content-update-full.json
 yarn validate analytics fixtures/analytics/events-api-good.json
 yarn validate analytics fixtures/analytics/events-api-bad.json
+yarn validate analytics fixtures/analytics/datalayer-good.html
+yarn validate analytics fixtures/analytics/datalayer-bad.html
 yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-json-categories.json
 ```
 

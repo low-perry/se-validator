@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>SE Validator DataLayer Bad Fixture</title>
+  </head>
+  <body>
+    <script src="https://scripts.luigisbox.tech/LBX-1071971.js"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+
+      gtag("event", "view_item_list", {
+        item_list_name: "Search Results",
+        search_term: "shirt",
+        items: [],
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "search results",
+          items: [
+            {
+              item_name: "Broken Shirt",
+              index: 1,
+              type: "query",
+            },
+          ],
+          filters: {
+            "_Guid": 123,
+            "Color": {
+              selected: "Blue",
+            },
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Autocomplete",
+          items: [],
+          filters: [],
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Product Listing",
+          items: [
+            {
+              item_id: "content-SKU-1",
+              item_name: "Blue Shirt",
+              index: 1,
+            },
+          ],
+          scopes: {
+            "CategoryLabel": "Apparel | Men | T-shirts",
+          },
+          filters: {
+            "_Guid": "",
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Recommendation",
+          items: [
+            {
+              item_id: "content-SKU-2",
+              item_name: "Red Shirt",
+              index: 1,
+            },
+          ],
+          filters: {
+            "ItemIds": "content-SKU-1",
+            "RecommenderClientId": "autocomplete_popup",
+            "Recommender": "homepage_top",
+            "_Variant": "",
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "select_item",
+        ecommerce: {
+          items: [
+            {
+              item_id: "content-SKU-1",
+            },
+            {
+              item_id: "content-SKU-2",
+            },
+          ],
+        },
+      });
+
+      window.dataLayer.push({
+        event: "add_to_cart",
+        ecommerce: {
+          items: [],
+        },
+      });
+
+      window.dataLayer.push({
+        event: "purchase",
+        ecommerce: {
+          value: 100,
+          currency: "eur",
+          items: [
+            {
+              item_id: "",
+              item_name: 42,
+              index: -1,
+              price: 29.9,
+              quantity: 2,
+            },
+          ],
+        },
+      });
+
+      window.dataLayer.push({
+        event: "custom_event",
+        ecommerce: {},
+      });
+    </script>
+  </body>
+</html>

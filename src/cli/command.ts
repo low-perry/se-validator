@@ -110,7 +110,7 @@ function formatAnalyticsReport(report: Awaited<ReturnType<typeof validateAnalyti
 
   if (report.findings.length === 0) {
     lines.push("");
-    lines.push("No findings. Analytics Events API evidence passes the current rule set.");
+    lines.push("No findings. Analytics evidence passes the current rule set.");
     return lines.join("\n");
   }
 

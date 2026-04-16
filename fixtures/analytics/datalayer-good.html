@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>SE Validator DataLayer Good Fixture</title>
+    <script async src="https://scripts.luigisbox.tech/LBX-1071971.js"></script>
+  </head>
+  <body>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+
+      window.dataLayer.push({
+        event: "luigisbox.collector.customer_id",
+        customer_id: "customer-42",
+      });
+
+      window.dataLayer.push({
+        event: "view_item",
+        ecommerce: {
+          items: [
+            {
+              item_id: "content-SKU-1",
+            },
+          ],
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Search Results",
+          search_term: "shirt",
+          items: [
+            {
+              item_id: "content-SKU-1",
+              item_name: "Blue Shirt",
+              index: 1,
+              price: 29.9,
+              type: "item",
+            },
+            {
+              item_id: "content-SKU-2",
+              item_name: "Red Shirt",
+              index: 2,
+              price: 29.9,
+              type: "item",
+            },
+            {
+              item_id: "content-cat-men-tshirts",
+              item_name: "T-shirts",
+              index: 3,
+              type: "category",
+            },
+          ],
+          filters: {
+            "_Guid": "search-guid-shirt-collector-001",
+            "_Variant": "Luigis",
+            "brand": "Luigis Apparel",
+            "category": ["Apparel | Men | T-shirts", "Collections | New Arrivals"],
+            "sort by": "price_amount:asc",
+            "availability": "in stock",
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Search Results",
+          search_term: "zzzz-no-results",
+          items: [],
+          filters: {
+            "_Guid": "search-guid-empty-collector-001",
+            "_Variant": "Luigis",
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Autocomplete",
+          search_term: "shi",
+          items: [
+            {
+              item_id: "content-cat-men-tshirts",
+              item_name: "T-shirts",
+              index: 1,
+              type: "category",
+            },
+            {
+              item_id: "content-SKU-1",
+              item_name: "Blue Shirt",
+              index: 2,
+              price: 29.9,
+              type: "item",
+            },
+          ],
+          filters: {
+            "_Guid": "autocomplete-guid-shi-collector-001",
+            "_Variant": "Luigis",
+            "language": "sk",
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Product Listing",
+          items: [
+            {
+              item_id: "content-SKU-1",
+              item_name: "Blue Shirt",
+              index: 1,
+              price: 29.9,
+              type: "item",
+            },
+            {
+              item_id: "content-SKU-2",
+              item_name: "Red Shirt",
+              index: 2,
+              price: 29.9,
+              type: "item",
+            },
+          ],
+          scopes: {
+            "CategoryLabel": "Apparel | Men | T-shirts",
+            "CategoryIdentity": "content-cat-men-tshirts",
+          },
+          filters: {
+            "_Guid": "plp-guid-men-tshirts-collector-001",
+            "_Variant": "Luigis",
+            "Color": ["Blue", "Red"],
+            "Size": ["M", "L"],
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Recommendation",
+          items: [
+            {
+              item_id: "content-SKU-2",
+              item_name: "Red Shirt",
+              index: 1,
+              price: 29.9,
+              type: "item",
+            },
+            {
+              item_id: "content-SKU-3",
+              item_name: "Black Hoodie",
+              index: 2,
+              price: 59.9,
+              type: "item",
+            },
+          ],
+          filters: {
+            "RecommenderClientId": "item_detail_alternatives",
+            "RecommendationId": "rec-content-sku-1-collector-001",
+            "ItemIds": ["content-SKU-1"],
+            "Recommender": "similar_products_v3",
+            "Type": "complementary_combined_assoc",
+            "_Variant": "Luigis",
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "view_item_list",
+        ecommerce: {
+          item_list_name: "Recommendation",
+          items: [
+            {
+              item_id: "content-SKU-9",
+              item_name: "Canvas Tote Bag",
+              index: 1,
+              price: 19.9,
+              type: "item",
+            },
+          ],
+          filters: {
+            "RecommenderClientId": "autocomplete_popup",
+            "RecommendationId": "rec-autocomplete-popup-collector-001",
+            "Recommender": "autocomplete_popup",
+            "Type": "top_items",
+            "_Variant": "Luigis",
+          },
+        },
+      });
+
+      window.dataLayer.push({
+        event: "select_item",
+        ecommerce: {
+          items: [
+            {
+              item_id: "content-SKU-1",
+            },
+          ],
+        },
+      });
+
+      window.dataLayer.push({
+        event: "add_to_cart",
+        ecommerce: {
+          currency: "EUR",
+          value: 29.9,
+          items: [
+            {
+              item_id: "content-SKU-1",
+            },
+          ],
+        },
+      });
+
+      window.dataLayer.push({
+        event: "purchase",
+        ecommerce: {
+          transaction_id: "ORDER-collector-001",
+          value: 89.7,
+          currency: "EUR",
+          items: [
+            {
+              item_id: "content-SKU-1",
+              item_name: "Blue Shirt",
+              index: 0,
+              price: 29.9,
+              quantity: 1,
+            },
+            {
+              item_id: "content-SKU-2",
+              item_name: "Red Shirt",
+              index: 1,
+              price: 29.9,
+              quantity: 2,
+            },
+          ],
+        },
+      });
+    </script>
+  </body>
+</html>

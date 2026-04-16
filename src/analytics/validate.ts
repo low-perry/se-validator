@@ -8,7 +8,7 @@ export async function validateAnalytics(paths: string[]): Promise<ValidationRepo
   const findings = analyticsRules.flatMap((rule) => rule(artifacts));
 
   return {
-    title: "Analytics Events API Validation Report",
+    title: reportTitle(artifacts.map((artifact) => artifact.sourceKind)),
     artifacts: artifacts.map(
       (artifact) =>
         `${artifact.path}: ${artifact.sourceKind} (${artifact.events.length} event${artifact.events.length === 1 ? "" : "s"}, ${Math.round(
@@ -16,7 +16,7 @@ export async function validateAnalytics(paths: string[]): Promise<ValidationRepo
         )}%)`
     ),
     events: artifacts.flatMap((artifact) =>
-      artifact.events.map((event) => `${event.sourcePath}:events[${event.index}]: ${event.kind}${listSummary(event.payload)}`)
+      artifact.events.map((event) => `${event.sourcePath}:events[${event.index}]: ${event.method} / ${event.kind}${listSummary(event.payload)}`)
     ),
     score: scoreFindings(findings),
     findings,
@@ -24,7 +24,20 @@ export async function validateAnalytics(paths: string[]): Promise<ValidationRepo
   };
 }
 
+function reportTitle(sourceKinds: string[]): string {
+  const hasEventsApi = sourceKinds.includes("events-api-json");
+  const hasDataLayer = sourceKinds.includes("datalayer-html") || sourceKinds.includes("datalayer-js");
+
+  if (hasDataLayer && !hasEventsApi) return "Analytics DataLayer Collector Validation Report";
+  if (hasEventsApi && !hasDataLayer) return "Analytics Events API Validation Report";
+  return "Analytics Validation Report";
+}
+
 function listSummary(payload: unknown): string {
+  if (isRecord(payload) && isRecord(payload.ecommerce) && typeof payload.ecommerce.item_list_name === "string") {
+    return ` / ${payload.ecommerce.item_list_name}`;
+  }
+
   if (!isRecord(payload) || !isRecord(payload.lists)) return "";
 
   const listNames = Object.keys(payload.lists);
