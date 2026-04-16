@@ -1,0 +1,43 @@
+{
+  "objects": [
+    {
+      "identity": "SKU-100",
+      "type": "item",
+      "fields": {
+        "title": "API Product",
+        "web_url": "https://shop.example.com/products/api-product",
+        "availability": 1,
+        "availability_rank": 3
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "cat-tshirts",
+          "fields": {
+            "title": "T-shirts",
+            "web_url": "https://shop.example.com/categories/apparel/men/t-shirts",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              },
+              {
+                "type": "category",
+                "identity": "cat-men",
+                "fields": {
+                  "title": "Men",
+                  "web_url": "https://shop.example.com/categories/apparel/men"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
+

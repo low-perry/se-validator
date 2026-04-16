@@ -1,0 +1,52 @@
+{
+  "objects": [
+    {
+      "identity": "SKU-100",
+      "type": "item",
+      "fields": {
+        "title": "API Product",
+        "web_url": "https://shop.example.com/products/api-product",
+        "availability": 0,
+        "availability_rank": 3
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "cat-tshirts",
+          "fields": {
+            "title": "T-shirts",
+            "ancestors": {
+              "type": "category",
+              "identity": "cat-apparel",
+              "fields": {
+                "title": "Apparel"
+              }
+            }
+          }
+        },
+        {
+          "identity": "variant-without-type",
+          "fields": {
+            "title": "Variant without type"
+          }
+        }
+      ]
+    },
+    {
+      "identity": "SKU-101",
+      "type": "item",
+      "fields": {
+        "web_url": "https://shop.example.com/products/missing-title"
+      },
+      "nested": "this should be an array"
+    },
+    {
+      "identity": "SKU-100",
+      "type": "category",
+      "fields": {
+        "title": "Duplicate Identity Category",
+        "web_url": "https://shop.example.com/categories/duplicate"
+      }
+    }
+  ]
+}

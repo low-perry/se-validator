@@ -1,0 +1,41 @@
+{
+  "items": [
+    {
+      "identity": "JSON-SKU-1",
+      "title": "Blue JSON Shirt",
+      "web_url": "https://shop.example.com/products/json-blue-shirt",
+      "category": [
+        ["Apparel", "Men's", "T-shirts"]
+      ],
+      "availability": 1,
+      "availability_rank": 3,
+      "item_group_id": "JSON-SHIRT-1",
+      "price.eur": "29.90 EUR"
+    },
+    {
+      "identity": "JSON-SKU-2",
+      "title": "Unrelated JSON Product",
+      "web_url": "https://shop.example.com/products/json-unrelated",
+      "item_group_id": "JSON-OTHER"
+    },
+    {
+      "identity": "JSON-SKU-3",
+      "title": "Red JSON Shirt",
+      "web_url": "https://shop.example.com/products/json-red-shirt",
+      "category": [
+        ["Apparel", "Men", "T-shirts"]
+      ],
+      "availability": "yes",
+      "availability_rank": 20,
+      "item_group_id": "JSON-SHIRT-1"
+    },
+    {
+      "identity": "JSON-SKU-3",
+      "title": "Duplicate JSON Product",
+      "category": [
+        ["Apparel", "Men", "T-shirts"]
+      ]
+    }
+  ]
+}
+

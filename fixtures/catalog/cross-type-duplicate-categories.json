@@ -1,0 +1,10 @@
+{
+  "categories": [
+    {
+      "identity": "SHARED-ID-1",
+      "title": "Shared",
+      "web_url": "https://shop.example.com/categories/shared"
+    }
+  ]
+}
+

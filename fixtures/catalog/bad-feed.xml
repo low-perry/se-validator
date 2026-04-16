@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item>
+    <identity>SKU-1</identity>
+    <title>Blue Shirt</title>
+    <web_url>https://shop.example.com/products/blue-shirt</web_url>
+    <category primary="true">Apparel | Men's | T-shirts</category>
+    <brand>Example Brand</brand>
+    <availability>1</availability>
+    <availability_rank>3</availability_rank>
+    <item_group_id>SHIRT-1</item_group_id>
+    <price.eur>29.90 EUR</price.eur>
+  </item>
+  <item>
+    <identity>SKU-2</identity>
+    <title>Unrelated Product</title>
+    <web_url>https://shop.example.com/products/unrelated</web_url>
+    <item_group_id>OTHER</item_group_id>
+  </item>
+  <item>
+    <identity>SKU-3</identity>
+    <title>Red Shirt</title>
+    <web_url>https://shop.example.com/products/red-shirt</web_url>
+    <category>Apparel | Men | T-shirts</category>
+    <availability>yes</availability>
+    <availability_rank>20</availability_rank>
+    <item_group_id>SHIRT-1</item_group_id>
+  </item>
+  <item>
+    <identity>SKU-3</identity>
+    <title>Duplicate Missing URL</title>
+    <category>Apparel | Men | T-shirts</category>
+  </item>
+</items>

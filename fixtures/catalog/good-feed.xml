@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item>
+    <identity>SKU-1</identity>
+    <title>Blue Shirt</title>
+    <web_url>https://shop.example.com/products/blue-shirt</web_url>
+    <category primary="true">Apparel | Men | T-shirts</category>
+    <brand>Example Brand</brand>
+    <availability>1</availability>
+    <availability_rank>3</availability_rank>
+    <item_group_id>SHIRT-1</item_group_id>
+    <price_eur>29.90 EUR</price_eur>
+  </item>
+  <item>
+    <identity>SKU-2</identity>
+    <title>Red Shirt</title>
+    <web_url>https://shop.example.com/products/red-shirt</web_url>
+    <category>Apparel | Men | T-shirts</category>
+    <brand>Example Brand</brand>
+    <availability>0</availability>
+    <availability_rank>15</availability_rank>
+    <item_group_id>SHIRT-1</item_group_id>
+    <price_eur>29.90 EUR</price_eur>
+  </item>
+</items>
+

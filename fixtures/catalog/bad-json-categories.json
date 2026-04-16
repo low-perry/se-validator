@@ -1,0 +1,26 @@
+{
+  "categories": [
+    {
+      "identity": "json-cat-apparel",
+      "title": "Apparel",
+      "web_url": "https://shop.example.com/categories/apparel"
+    },
+    {
+      "identity": "json-cat-men",
+      "title": "Men",
+      "web_url": "https://shop.example.com/categories/apparel/men",
+      "hierarchy": "Apparel"
+    },
+    {
+      "identity": "json-cat-tshirts",
+      "title": "T-shirts",
+      "web_url": "https://shop.example.com/categories/apparel/men/t-shirts",
+      "hierarchy": "Apparel | Men",
+      "category": {
+        "identity": "nested-category-that-should-not-be-here",
+        "title": "Nested"
+      }
+    }
+  ]
+}
+

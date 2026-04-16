@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<categories>
+  <category>
+    <identity>cat-apparel</identity>
+    <title>Apparel</title>
+    <web_url>https://shop.example.com/categories/apparel</web_url>
+  </category>
+  <category>
+    <identity>cat-men</identity>
+    <title>Men</title>
+    <web_url>https://shop.example.com/categories/apparel/men</web_url>
+    <hierarchy>Apparel</hierarchy>
+  </category>
+  <category>
+    <identity>cat-tshirts</identity>
+    <title>T-shirts</title>
+    <web_url>https://shop.example.com/categories/apparel/men/t-shirts</web_url>
+    <hierarchy>Apparel | Men</hierarchy>
+    <category>
+      <identity>nested-category-that-should-not-be-here</identity>
+      <title>Nested</title>
+    </category>
+  </category>
+</categories>
+

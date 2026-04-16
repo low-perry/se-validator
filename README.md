@@ -1,1 +1,25 @@
-# se-validator
+# SE Validator
+
+TypeScript prototype for validating Luigi's Box client-led integration evidence.
+
+## Current First Win
+
+Catalog validation accepts XML feeds, JSON feeds, or Content Update payloads, detects the artifact type, normalizes the objects, and reports high-risk catalog issues.
+
+```bash
+yarn validate catalog fixtures/catalog/bad-feed.xml fixtures/catalog/bad-categories.xml
+yarn validate catalog fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-json-categories.json
+yarn validate catalog fixtures/catalog/cross-type-duplicate-feed.json fixtures/catalog/cross-type-duplicate-categories.json
+yarn validate catalog fixtures/catalog/bad-content-update.json
+yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-categories.xml
+yarn validate catalog fixtures/catalog/good-json-feed.json fixtures/catalog/good-json-categories.json
+yarn validate catalog fixtures/catalog/good-content-update.json
+yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-json-categories.json
+```
+
+## Scripts
+
+```bash
+yarn typecheck
+yarn validate catalog <paths...>
+```

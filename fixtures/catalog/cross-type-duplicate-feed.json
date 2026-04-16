@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "identity": "SHARED-ID-1",
+      "title": "Product With Shared Identity",
+      "web_url": "https://shop.example.com/products/shared-id-product",
+      "category": [
+        ["Shared"]
+      ]
+    }
+  ]
+}
+
