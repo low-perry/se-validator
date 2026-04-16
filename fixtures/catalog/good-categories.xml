@@ -12,10 +12,84 @@
     <hierarchy>Apparel</hierarchy>
   </category>
   <category>
-    <identity>cat-tshirts</identity>
+    <identity>cat-men-tshirts</identity>
     <title>T-shirts</title>
     <web_url>https://shop.example.com/categories/apparel/men/t-shirts</web_url>
     <hierarchy>Apparel | Men</hierarchy>
   </category>
+  <category>
+    <identity>cat-men-hoodies</identity>
+    <title>Hoodies</title>
+    <web_url>https://shop.example.com/categories/apparel/men/hoodies</web_url>
+    <hierarchy>Apparel | Men</hierarchy>
+  </category>
+  <category>
+    <identity>cat-women</identity>
+    <title>Women</title>
+    <web_url>https://shop.example.com/categories/apparel/women</web_url>
+    <hierarchy>Apparel</hierarchy>
+  </category>
+  <category>
+    <identity>cat-women-dresses</identity>
+    <title>Dresses</title>
+    <web_url>https://shop.example.com/categories/apparel/women/dresses</web_url>
+    <hierarchy>Apparel | Women</hierarchy>
+  </category>
+  <category>
+    <identity>cat-women-tshirts</identity>
+    <title>T-shirts</title>
+    <web_url>https://shop.example.com/categories/apparel/women/t-shirts</web_url>
+    <hierarchy>Apparel | Women</hierarchy>
+  </category>
+  <category>
+    <identity>cat-accessories</identity>
+    <title>Accessories</title>
+    <web_url>https://shop.example.com/categories/accessories</web_url>
+  </category>
+  <category>
+    <identity>cat-bags</identity>
+    <title>Bags</title>
+    <web_url>https://shop.example.com/categories/accessories/bags</web_url>
+    <hierarchy>Accessories</hierarchy>
+  </category>
+  <category>
+    <identity>cat-footwear</identity>
+    <title>Footwear</title>
+    <web_url>https://shop.example.com/categories/footwear</web_url>
+  </category>
+  <category>
+    <identity>cat-sneakers</identity>
+    <title>Sneakers</title>
+    <web_url>https://shop.example.com/categories/footwear/sneakers</web_url>
+    <hierarchy>Footwear</hierarchy>
+  </category>
+  <category>
+    <identity>cat-collections</identity>
+    <title>Collections</title>
+    <web_url>https://shop.example.com/categories/collections</web_url>
+  </category>
+  <category>
+    <identity>cat-collections-new-arrivals</identity>
+    <title>New Arrivals</title>
+    <web_url>https://shop.example.com/categories/collections/new-arrivals</web_url>
+    <hierarchy>Collections</hierarchy>
+  </category>
+  <category>
+    <identity>cat-collections-sale</identity>
+    <title>Sale</title>
+    <web_url>https://shop.example.com/categories/collections/sale</web_url>
+    <hierarchy>Collections</hierarchy>
+  </category>
+  <category>
+    <identity>cat-collections-essentials</identity>
+    <title>Essentials</title>
+    <web_url>https://shop.example.com/categories/collections/essentials</web_url>
+    <hierarchy>Collections</hierarchy>
+  </category>
+  <category>
+    <identity>cat-collections-summer</identity>
+    <title>Summer</title>
+    <web_url>https://shop.example.com/categories/collections/summer</web_url>
+    <hierarchy>Collections</hierarchy>
+  </category>
 </categories>
-

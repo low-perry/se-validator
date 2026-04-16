@@ -15,6 +15,7 @@ export const catalogRules: CatalogRule[] = [
   validateRecognizedArtifacts,
   validateRequiredFields,
   validateXmlMixedElementShapes,
+  validateXmlPrimaryCategoryMarkers,
   validateIdentityUniqueness,
   validateContentUpdateShape,
   validateCategoryFeedFlatness,
@@ -113,7 +114,7 @@ function validateXmlMixedElementShapes(catalog: NormalizedCatalog): ValidationFi
           title: "XML element is sometimes plain text and sometimes an attributed object",
           message: `${sourceKey} uses <${field}> as both plain text and text with attributes. Feed mappers can traverse one shape and then crash on the other with a primitive/nesting error.`,
           evidencePath: `${sourceKey}.${field}`,
-          remediation: `Make <${field}> structurally consistent across all records. For a simple sample feed, remove attributes like primary="true" from <${field}>. If attributes are required, use the same attribute structure for every occurrence or confirm the importer mapping supports mixed XML element shapes.`,
+          remediation: `Make <${field}> structurally consistent across all records. If primary category markers are required, every <${field}> occurrence should carry a primary attribute, using primary="true" for the main value and primary="false" for secondary values.`,
           docs: ["indexing/feeds.md"],
           confidence: 0.9
         })
@@ -122,6 +123,29 @@ function validateXmlMixedElementShapes(catalog: NormalizedCatalog): ValidationFi
   }
 
   return findings;
+}
+
+function validateXmlPrimaryCategoryMarkers(catalog: NormalizedCatalog): ValidationFinding[] {
+  return catalog.objects.flatMap((object) => {
+    if (object.sourceKind !== "feed-xml" || object.objectType !== "product" || !isRecord(object.raw)) return [];
+
+    const categories = toArray(object.raw.category);
+    if (categories.length <= 1) return [];
+
+    const primaryCount = categories.filter((category) => xmlAttributeValue(category, "primary") === "true").length;
+    if (primaryCount === 1) return [];
+
+    return createFinding({
+      id: "XML_PRODUCT_CATEGORY_PRIMARY_INVALID",
+      severity: "P1",
+      title: "Product with multiple category paths does not have exactly one primary category",
+      message: `${label(object)} has ${categories.length} category values and ${primaryCount} marked primary="true".`,
+      evidencePath: `${objectPath(object)}.category`,
+      remediation: "Mark the product's canonical category with primary=\"true\" and all secondary category paths with primary=\"false\".",
+      docs: ["indexing/feeds.md", "indexing/data-layout.md"],
+      confidence: 0.9
+    });
+  });
 }
 
 function validateIdentityUniqueness(catalog: NormalizedCatalog): ValidationFinding[] {
@@ -436,6 +460,11 @@ function xmlValueShapes(value: unknown): string[] {
     if (isRecord(entry)) return "object";
     return "primitive";
   });
+}
+
+function xmlAttributeValue(value: unknown, attributeName: string): string | undefined {
+  if (!isRecord(value)) return undefined;
+  return stringValue(value[`@_${attributeName}`])?.toLowerCase();
 }
 
 function contentShapeFinding(path: string, index: number, message: string): ValidationFinding {

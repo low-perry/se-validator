@@ -4,22 +4,150 @@
     <identity>SKU-1</identity>
     <title>Blue Shirt</title>
     <web_url>https://shop.example.com/products/blue-shirt</web_url>
-    <category>Apparel | Men | T-shirts</category>
+    <category primary="true">Apparel | Men | T-shirts</category>
+    <category primary="false">Collections | New Arrivals</category>
     <brand>Example Brand</brand>
     <availability>1</availability>
     <availability_rank>3</availability_rank>
     <item_group_id>SHIRT-1</item_group_id>
     <price_eur>29.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-1.jpg</image_link_l>
   </item>
   <item>
     <identity>SKU-2</identity>
     <title>Red Shirt</title>
     <web_url>https://shop.example.com/products/red-shirt</web_url>
-    <category>Apparel | Men | T-shirts</category>
+    <category primary="true">Apparel | Men | T-shirts</category>
+    <category primary="false">Collections | Sale</category>
     <brand>Example Brand</brand>
     <availability>0</availability>
     <availability_rank>15</availability_rank>
     <item_group_id>SHIRT-1</item_group_id>
     <price_eur>29.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-2.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-3</identity>
+    <title>Black Hoodie</title>
+    <web_url>https://shop.example.com/products/black-hoodie</web_url>
+    <category primary="true">Apparel | Men | Hoodies</category>
+    <category primary="false">Collections | Essentials</category>
+    <brand>Example Brand</brand>
+    <availability>1</availability>
+    <availability_rank>1</availability_rank>
+    <item_group_id>HOODIE-1</item_group_id>
+    <price_eur>59.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-3.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-4</identity>
+    <title>Gray Hoodie</title>
+    <web_url>https://shop.example.com/products/gray-hoodie</web_url>
+    <category primary="true">Apparel | Men | Hoodies</category>
+    <brand>Example Brand</brand>
+    <availability>1</availability>
+    <availability_rank>5</availability_rank>
+    <item_group_id>HOODIE-1</item_group_id>
+    <price_eur>59.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-4.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-5</identity>
+    <title>Summer Dress</title>
+    <web_url>https://shop.example.com/products/summer-dress</web_url>
+    <category primary="true">Apparel | Women | Dresses</category>
+    <category primary="false">Collections | Summer</category>
+    <brand>Northwind</brand>
+    <availability>1</availability>
+    <availability_rank>2</availability_rank>
+    <item_group_id>DRESS-1</item_group_id>
+    <price_eur>79.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-5.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-6</identity>
+    <title>Black Dress</title>
+    <web_url>https://shop.example.com/products/black-dress</web_url>
+    <category primary="true">Apparel | Women | Dresses</category>
+    <brand>Northwind</brand>
+    <availability>0</availability>
+    <availability_rank>15</availability_rank>
+    <item_group_id>DRESS-1</item_group_id>
+    <price_eur>84.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-6.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-7</identity>
+    <title>White Womens Tee</title>
+    <web_url>https://shop.example.com/products/white-womens-tee</web_url>
+    <category primary="true">Apparel | Women | T-shirts</category>
+    <category primary="false">Collections | Essentials</category>
+    <brand>Northwind</brand>
+    <availability>1</availability>
+    <availability_rank>1</availability_rank>
+    <item_group_id>WTEE-1</item_group_id>
+    <price_eur>24.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-7.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-8</identity>
+    <title>Green Womens Tee</title>
+    <web_url>https://shop.example.com/products/green-womens-tee</web_url>
+    <category primary="true">Apparel | Women | T-shirts</category>
+    <brand>Northwind</brand>
+    <availability>1</availability>
+    <availability_rank>4</availability_rank>
+    <item_group_id>WTEE-1</item_group_id>
+    <price_eur>24.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-8.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-9</identity>
+    <title>Canvas Tote Bag</title>
+    <web_url>https://shop.example.com/products/canvas-tote-bag</web_url>
+    <category primary="true">Accessories | Bags</category>
+    <category primary="false">Collections | Essentials</category>
+    <brand>CarryCo</brand>
+    <availability>1</availability>
+    <availability_rank>2</availability_rank>
+    <price_eur>19.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-9.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-10</identity>
+    <title>Leather Backpack</title>
+    <web_url>https://shop.example.com/products/leather-backpack</web_url>
+    <category primary="true">Accessories | Bags</category>
+    <brand>CarryCo</brand>
+    <availability>1</availability>
+    <availability_rank>6</availability_rank>
+    <price_eur>99.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-10.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-11</identity>
+    <title>Black Running Sneaker</title>
+    <web_url>https://shop.example.com/products/black-running-sneaker</web_url>
+    <category primary="true">Footwear | Sneakers</category>
+    <category primary="false">Collections | New Arrivals</category>
+    <brand>Swift</brand>
+    <availability>1</availability>
+    <availability_rank>1</availability_rank>
+    <item_group_id>SNEAKER-1</item_group_id>
+    <price_eur>119.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-11.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>SKU-12</identity>
+    <title>White Running Sneaker</title>
+    <web_url>https://shop.example.com/products/white-running-sneaker</web_url>
+    <category primary="true">Footwear | Sneakers</category>
+    <category primary="false">Collections | Sale</category>
+    <brand>Swift</brand>
+    <availability>1</availability>
+    <availability_rank>2</availability_rank>
+    <item_group_id>SNEAKER-1</item_group_id>
+    <price_eur>119.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/sku-12.jpg</image_link_l>
   </item>
 </items>

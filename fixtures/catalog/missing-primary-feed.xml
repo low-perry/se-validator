@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item>
+    <identity>MISSING-PRIMARY-1</identity>
+    <title>Multi Hierarchy Product Without Primary</title>
+    <web_url>https://shop.example.com/products/missing-primary-1</web_url>
+    <category>Apparel | Men | T-shirts</category>
+    <category>Collections | Sale</category>
+    <availability>1</availability>
+    <availability_rank>2</availability_rank>
+  </item>
+</items>

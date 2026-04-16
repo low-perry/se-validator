@@ -12,6 +12,7 @@ yarn validate catalog fixtures/catalog/bad-json-feed.json fixtures/catalog/bad-j
 yarn validate catalog fixtures/catalog/cross-type-duplicate-feed.json fixtures/catalog/cross-type-duplicate-categories.json
 yarn validate catalog fixtures/catalog/invalid-html-attribute-feed.xml
 yarn validate catalog fixtures/catalog/mixed-category-shape-feed.xml fixtures/catalog/good-categories.xml
+yarn validate catalog fixtures/catalog/missing-primary-feed.xml fixtures/catalog/good-categories.xml
 yarn validate catalog fixtures/catalog/bad-content-update.json
 yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-categories.xml
 yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-feed-cat.xml
