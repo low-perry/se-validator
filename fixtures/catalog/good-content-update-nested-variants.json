@@ -1,0 +1,60 @@
+{
+  "objects": [
+    {
+      "identity": "nested-parent-tshirt",
+      "type": "item",
+      "fields": {
+        "title": "Premium T-shirt",
+        "web_url": "https://shop.example.com/products/premium-tshirt",
+        "brand": "Example Brand",
+        "availability": 1
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "nested-cat-tshirts",
+          "fields": {
+            "title": "T-shirts",
+            "web_url": "https://shop.example.com/categories/apparel/t-shirts",
+            "ancestors": [
+              {
+                "type": "category",
+                "identity": "nested-cat-apparel",
+                "fields": {
+                  "title": "Apparel",
+                  "web_url": "https://shop.example.com/categories/apparel"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "variant",
+          "identity": "nested-parent-tshirt-red-m",
+          "fields": {
+            "title": "Premium T-shirt Red M",
+            "web_url": "https://shop.example.com/products/premium-tshirt?variant=red-m",
+            "color": "Red",
+            "size": "M",
+            "availability": 1,
+            "price": 29.9,
+            "image_link_l": "https://shop.example.com/images/nested-red-m.jpg"
+          }
+        },
+        {
+          "type": "variant",
+          "identity": "nested-parent-tshirt-blue-l",
+          "fields": {
+            "title": "Premium T-shirt Blue L",
+            "web_url": "https://shop.example.com/products/premium-tshirt?variant=blue-l",
+            "color": "Blue",
+            "size": "L",
+            "availability": 1,
+            "price": 29.9,
+            "image_link_l": "https://shop.example.com/images/nested-blue-l.jpg"
+          }
+        }
+      ]
+    }
+  ]
+}

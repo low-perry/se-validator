@@ -201,6 +201,8 @@ function validateContentUpdateShape(catalog: NormalizedCatalog): ValidationFindi
       );
     }
 
+    findings.push(...validateContentUpdateNestedVariantIdentities(artifact.path, artifact.parsed.objects));
+
     artifact.parsed.objects.forEach((record, index) => {
       if (!isRecord(record)) {
         findings.push(contentShapeFinding(artifact.path, index, "Object is not a JSON object."));
@@ -222,6 +224,7 @@ function validateContentUpdateShape(catalog: NormalizedCatalog): ValidationFindi
       if (Array.isArray(record.nested)) {
         findings.push(...validateContentUpdateNestedCategoryUniqueness(artifact.path, index, record.nested));
         findings.push(...validateContentUpdatePrimaryCategoryOrder(artifact.path, index, record));
+        findings.push(...validateContentUpdateNestedVariantCount(artifact.path, index, record.nested));
 
         if (record.nested.length > 10) {
           findings.push(
@@ -258,6 +261,10 @@ function validateContentUpdateShape(catalog: NormalizedCatalog): ValidationFindi
             findings.push(...validateContentUpdateNestedCategory(artifact.path, index, nested, nestedIndex));
           }
 
+          if (stringValue(nested.type)?.toLowerCase() === "variant") {
+            findings.push(...validateContentUpdateNestedVariant(artifact.path, index, record, nested, nestedIndex));
+          }
+
           if (isRecord(nested.fields) && "ancestors" in nested.fields && !Array.isArray(nested.fields.ancestors)) {
             findings.push(
               createFinding({
@@ -286,6 +293,104 @@ function validateContentUpdateShape(catalog: NormalizedCatalog): ValidationFindi
 
     return findings;
   });
+}
+
+interface NestedVariantLocation {
+  objectIndex: number;
+  nestedIndex: number;
+}
+
+function validateContentUpdateNestedVariantIdentities(path: string, objects: unknown[]): ValidationFinding[] {
+  const findings: ValidationFinding[] = [];
+  const topLevelIdentities = new Map<string, number>();
+  const nestedVariantIdentities = new Map<string, NestedVariantLocation>();
+
+  objects.forEach((record, objectIndex) => {
+    if (!isRecord(record)) return;
+    const identity = stringValue(record.identity);
+    if (identity) topLevelIdentities.set(identity, objectIndex);
+  });
+
+  objects.forEach((record, objectIndex) => {
+    if (!isRecord(record) || !Array.isArray(record.nested)) return;
+    const parentIdentity = stringValue(record.identity);
+
+    record.nested.forEach((nested, nestedIndex) => {
+      if (!isRecord(nested) || stringValue(nested.type)?.toLowerCase() !== "variant") return;
+
+      const identity = stringValue(nested.identity);
+      if (!identity) {
+        findings.push(
+          createFinding({
+            id: "CONTENT_UPDATE_NESTED_VARIANT_ID_MISSING",
+            severity: "P0",
+            area: "identity",
+            title: "Nested variant is missing identity",
+            message: `objects[${objectIndex}].nested[${nestedIndex}] is a variant but has no stable identity.`,
+            evidencePath: `${path}:objects[${objectIndex}].nested[${nestedIndex}].identity`,
+            remediation: "Give every nested variant a unique immutable identity.",
+            docs: ["indexing/data-layout.md", "search/guides/variants.md"],
+            confidence: 0.96
+          })
+        );
+        return;
+      }
+
+      if (identity === parentIdentity) {
+        findings.push(
+          createFinding({
+            id: "CONTENT_UPDATE_NESTED_VARIANT_ID_EQUALS_PARENT",
+            severity: "P0",
+            area: "identity",
+            title: "Nested variant identity equals parent product identity",
+            message: `objects[${objectIndex}].nested[${nestedIndex}] reuses parent identity "${identity}".`,
+            evidencePath: `${path}:objects[${objectIndex}].nested[${nestedIndex}].identity`,
+            remediation: "Use the parent product identity for the top-level item and a distinct identity for every nested variant.",
+            docs: ["indexing/data-layout.md", "platform-foundations/identity.md"],
+            confidence: 0.96
+          })
+        );
+      } else {
+        const topLevelIndex = topLevelIdentities.get(identity);
+        if (topLevelIndex !== undefined) {
+          findings.push(
+            createFinding({
+              id: "CONTENT_UPDATE_NESTED_VARIANT_ID_DUPLICATES_TOP_LEVEL",
+              severity: "P0",
+              area: "identity",
+              title: "Nested variant identity duplicates a top-level object identity",
+              message: `Nested variant identity "${identity}" also appears as objects[${topLevelIndex}].identity.`,
+              evidencePath: `${path}:objects[${objectIndex}].nested[${nestedIndex}].identity`,
+              remediation: "Nested variant identities must be unique at index level and must not duplicate product, category, brand, or article identities.",
+              docs: ["indexing/data-layout.md", "platform-foundations/identity.md"],
+              confidence: 0.94
+            })
+          );
+        }
+      }
+
+      const firstVariant = nestedVariantIdentities.get(identity);
+      if (firstVariant) {
+        findings.push(
+          createFinding({
+            id: "CONTENT_UPDATE_NESTED_VARIANT_ID_DUPLICATE",
+            severity: "P0",
+            area: "identity",
+            title: "Nested variant identity is reused",
+            message: `Nested variant identity "${identity}" appears at objects[${firstVariant.objectIndex}].nested[${firstVariant.nestedIndex}] and objects[${objectIndex}].nested[${nestedIndex}].`,
+            evidencePath: `${path}:objects[${objectIndex}].nested[${nestedIndex}].identity`,
+            remediation: "Give every nested variant a unique identity, even when variants belong to different parent products.",
+            docs: ["indexing/data-layout.md", "search/guides/variants.md"],
+            confidence: 0.96
+          })
+        );
+      } else {
+        nestedVariantIdentities.set(identity, { objectIndex, nestedIndex });
+      }
+    });
+  });
+
+  return findings;
 }
 
 function validateContentUpdateNestedCategoryUniqueness(
@@ -415,6 +520,100 @@ function validateContentUpdatePrimaryCategoryOrder(
         })
       );
     }
+  }
+
+  return findings;
+}
+
+function validateContentUpdateNestedVariantCount(
+  path: string,
+  objectIndex: number,
+  nestedRecords: unknown[]
+): ValidationFinding[] {
+  const variantCount = nestedRecords.filter(
+    (nested) => isRecord(nested) && stringValue(nested.type)?.toLowerCase() === "variant"
+  ).length;
+  if (variantCount <= 10) return [];
+
+  return [
+    createFinding({
+      id: "CONTENT_UPDATE_HIGH_NESTED_VARIANT_COUNT",
+      severity: "P2",
+      title: "Product has many nested variants",
+      message: `objects[${objectIndex}] has ${variantCount} nested variants. Variant-aware search is recommended for average variant counts below 10.`,
+      evidencePath: `${path}:objects[${objectIndex}].nested`,
+      remediation: "Keep nested variant counts small, or reconsider whether variant-aware search is the right model for this product family.",
+      docs: ["search/guides/variants.md", "quickstart/search/variant-search.md"],
+      confidence: 0.86
+    })
+  ];
+}
+
+function validateContentUpdateNestedVariant(
+  path: string,
+  objectIndex: number,
+  parent: Record<string, unknown>,
+  nested: Record<string, unknown>,
+  nestedIndex: number
+): ValidationFinding[] {
+  const findings: ValidationFinding[] = [];
+  const fields = isRecord(nested.fields) ? nested.fields : undefined;
+  const parentType = stringValue(parent.type)?.toLowerCase();
+  const evidencePath = `${path}:objects[${objectIndex}].nested[${nestedIndex}]`;
+
+  if (parentType !== "item" && parentType !== "product") {
+    findings.push(
+      createFinding({
+        id: "CONTENT_UPDATE_NESTED_VARIANT_PARENT_TYPE",
+        severity: "P1",
+        title: "Nested variant is attached to a non-product object",
+        message: `objects[${objectIndex}].nested[${nestedIndex}] is a variant, but the parent type is "${parentType ?? "missing"}".`,
+        evidencePath,
+        remediation: "Attach nested variants only to item/product objects.",
+        docs: ["indexing/data-layout.md", "search/guides/variants.md"],
+        confidence: 0.88
+      })
+    );
+  }
+
+  if (!fields) return findings;
+
+  if (!stringValue(fields.title)) {
+    findings.push(contentNestedVariantFinding(path, objectIndex, nestedIndex, "Nested variant fields.title is missing."));
+  }
+
+  if (!stringValue(fields.web_url)) {
+    findings.push(contentNestedVariantFinding(path, objectIndex, nestedIndex, "Nested variant fields.web_url is missing."));
+  }
+
+  if ("nested" in nested) {
+    findings.push(
+      createFinding({
+        id: "CONTENT_UPDATE_NESTED_VARIANT_DEEP_NESTING",
+        severity: "P1",
+        title: "Nested variant contains another nested array",
+        message: `objects[${objectIndex}].nested[${nestedIndex}] contains nested children. Content Update should use only one level of nesting.`,
+        evidencePath: `${evidencePath}.nested`,
+        remediation: "Keep variants one level below the parent product. Do not nest objects inside nested variants.",
+        docs: ["indexing/api/v1/content-update.mdx", "indexing/data-layout.md"],
+        confidence: 0.9
+      })
+    );
+  }
+
+  if (!hasVariantDistinguishingField(fields)) {
+    findings.push(
+      createFinding({
+        id: "CONTENT_UPDATE_NESTED_VARIANT_DISTINGUISHING_FIELD_MISSING",
+        severity: "P2",
+        title: "Nested variant has no distinguishing attributes",
+        message: `objects[${objectIndex}].nested[${nestedIndex}] does not include a clear variant attribute such as color, size, material, pattern, or style.`,
+        evidencePath: `${evidencePath}.fields`,
+        remediation: "Add attributes that let users and ranking distinguish variants, such as color, size, material, pattern, style, or color_code.",
+        docs: ["indexing/data-layout.md", "indexing/feeds.md"],
+        confidence: 0.78
+      })
+    );
   }
 
   return findings;
@@ -647,33 +846,67 @@ function validateVariantGroupOrdering(catalog: NormalizedCatalog): ValidationFin
 
   for (const object of catalog.objects) {
     if (object.objectType !== "product" || !object.itemGroupId) continue;
+    if (object.sourceKind !== "feed-xml" && object.sourceKind !== "feed-json") continue;
     bySource.set(object.sourcePath, [...(bySource.get(object.sourcePath) ?? []), object]);
   }
 
   for (const [sourcePath, objects] of bySource) {
-    const positionsByGroup = new Map<string, number[]>();
+    const objectsByGroup = new Map<string, NormalizedCatalogObject[]>();
     for (const object of objects) {
       if (!object.itemGroupId) continue;
-      positionsByGroup.set(object.itemGroupId, [...(positionsByGroup.get(object.itemGroupId) ?? []), object.index]);
+      objectsByGroup.set(object.itemGroupId, [...(objectsByGroup.get(object.itemGroupId) ?? []), object]);
     }
 
-    for (const [groupId, positions] of positionsByGroup) {
+    for (const [groupId, groupObjects] of objectsByGroup) {
+      const positions = groupObjects.map((object) => object.index);
       const sorted = [...positions].sort((a, b) => a - b);
       const isConsecutive = sorted.every((position, index) => index === 0 || position === sorted[index - 1]! + 1);
-      if (isConsecutive) continue;
+      if (!isConsecutive) {
+        findings.push(
+          createFinding({
+            id: "VARIANT_GROUP_NOT_CONSECUTIVE",
+            severity: "P1",
+            title: "Variant group is not consecutive in feed",
+            message: `item_group_id "${groupId}" appears at item positions ${sorted.join(", ")} in ${sourcePath}.`,
+            evidencePath: `${sourcePath}:item_group_id=${groupId}`,
+            remediation: "List all variants with the same item_group_id consecutively in the feed.",
+            docs: ["indexing/feeds.md", "search/guides/variants.md"],
+            confidence: 0.95
+          })
+        );
+      }
 
-      findings.push(
-        createFinding({
-          id: "VARIANT_GROUP_NOT_CONSECUTIVE",
-          severity: "P1",
-          title: "Variant group is not consecutive in feed",
-          message: `item_group_id "${groupId}" appears at item positions ${sorted.join(", ")} in ${sourcePath}.`,
-          evidencePath: `${sourcePath}:item_group_id=${groupId}`,
-          remediation: "List all variants with the same item_group_id consecutively in the feed.",
-          docs: ["indexing/feeds.md"],
-          confidence: 0.95
-        })
-      );
+      if (groupObjects.length === 1) {
+        findings.push(
+          createFinding({
+            id: "VARIANT_GROUP_SINGLETON",
+            severity: "P2",
+            title: "Variant group contains only one item",
+            message: `item_group_id "${groupId}" appears on only one item in ${sourcePath}.`,
+            evidencePath: `${sourcePath}:item_group_id=${groupId}`,
+            remediation: "Use item_group_id only when at least two variants belong to the same product group, or remove it from standalone products.",
+            docs: ["indexing/feeds.md", "search/guides/variants.md"],
+            confidence: 0.82
+          })
+        );
+      }
+
+      if (groupObjects.length > 1 && !hasDifferingVariantAttribute(groupObjects)) {
+        findings.push(
+          createFinding({
+            id: "VARIANT_GROUP_DISTINGUISHING_FIELD_MISSING",
+            severity: "P2",
+            title: "Variant group has no clear distinguishing attribute",
+            message: `item_group_id "${groupId}" does not have differing color, size, material, pattern, style, or similar variant attributes.`,
+            evidencePath: `${sourcePath}:item_group_id=${groupId}`,
+            remediation: "Add variant-specific attributes so users can distinguish variants, for example color, size, material, pattern, style, or color_code.",
+            docs: ["indexing/feeds.md"],
+            confidence: 0.8
+          })
+        );
+      }
+
+      findings.push(...validateVariantGroupBaseConsistency(sourcePath, groupId, groupObjects));
     }
   }
 
@@ -780,6 +1013,24 @@ function contentNestedCategoryFinding(
   });
 }
 
+function contentNestedVariantFinding(
+  path: string,
+  objectIndex: number,
+  nestedIndex: number,
+  message: string
+): ValidationFinding {
+  return createFinding({
+    id: "CONTENT_UPDATE_NESTED_VARIANT_SHAPE",
+    severity: "P1",
+    title: "Content Update nested variant is incomplete",
+    message,
+    evidencePath: `${path}:objects[${objectIndex}].nested[${nestedIndex}]`,
+    remediation: "Nested variants should include type variant, unique identity, fields.title, fields.web_url, and distinguishing fields such as color or size.",
+    docs: ["indexing/data-layout.md", "search/guides/variants.md"],
+    confidence: 0.9
+  });
+}
+
 function contentAncestorFinding(evidencePath: string, message: string): ValidationFinding {
   return createFinding({
     id: "CONTENT_UPDATE_CATEGORY_ANCESTOR_SHAPE",
@@ -839,4 +1090,84 @@ function label(object: NormalizedCatalogObject): string {
 
 function objectPath(object: NormalizedCatalogObject): string {
   return `${object.sourcePath}:${object.role}[${object.index}]`;
+}
+
+const variantDistinguishingFields = [
+  "color",
+  "colour",
+  "color_code",
+  "size",
+  "material",
+  "pattern",
+  "style",
+  "variant",
+  "variant_name",
+  "variant_title"
+];
+
+function hasVariantDistinguishingField(fields: Record<string, unknown>): boolean {
+  return variantDistinguishingFields.some((field) => comparableFieldValue(fields[field]) !== undefined);
+}
+
+function hasDifferingVariantAttribute(objects: NormalizedCatalogObject[]): boolean {
+  return variantDistinguishingFields.some((field) => {
+    const values = new Set(objects.map((object) => comparableFieldValue(object.fields[field])).filter(Boolean));
+    return values.size > 1;
+  });
+}
+
+function validateVariantGroupBaseConsistency(
+  sourcePath: string,
+  groupId: string,
+  objects: NormalizedCatalogObject[]
+): ValidationFinding[] {
+  const findings: ValidationFinding[] = [];
+
+  const brandValues = new Set(objects.map((object) => comparableFieldValue(object.fields.brand) ?? "__missing__"));
+  if (brandValues.size > 1) {
+    findings.push(
+      createFinding({
+        id: "VARIANT_GROUP_BRAND_INCONSISTENT",
+        severity: "P1",
+        title: "Variant group has inconsistent brand values",
+        message: `item_group_id "${groupId}" has variants with different brand values in ${sourcePath}.`,
+        evidencePath: `${sourcePath}:item_group_id=${groupId}.brand`,
+        remediation: "Keep stable base attributes such as brand consistent across variants in the same item_group_id.",
+        docs: ["indexing/feeds.md"],
+        confidence: 0.86
+      })
+    );
+  }
+
+  const primaryCategoryPaths = new Set(
+    objects.map((object) => object.categoryPaths[0] ?? "__missing__").filter((path) => path !== "__missing__")
+  );
+  if (primaryCategoryPaths.size > 1) {
+    findings.push(
+      createFinding({
+        id: "VARIANT_GROUP_CATEGORY_INCONSISTENT",
+        severity: "P1",
+        title: "Variant group has inconsistent primary categories",
+        message: `item_group_id "${groupId}" has variants with different primary category paths in ${sourcePath}.`,
+        evidencePath: `${sourcePath}:item_group_id=${groupId}.category`,
+        remediation: "Keep stable base attributes such as primary category consistent across variants in the same item_group_id.",
+        docs: ["indexing/feeds.md"],
+        confidence: 0.86
+      })
+    );
+  }
+
+  return findings;
+}
+
+function comparableFieldValue(value: unknown): string | undefined {
+  const scalar = stringValue(value);
+  if (scalar) return scalar.toLowerCase();
+
+  if (Array.isArray(value)) {
+    const parts = value.map(stringValue).filter((part): part is string => Boolean(part));
+    return parts.length > 0 ? parts.join("|").toLowerCase() : undefined;
+  }
+
+  return undefined;
 }

@@ -1,0 +1,84 @@
+{
+  "objects": [
+    {
+      "identity": "duplicate-top-level-variant",
+      "type": "category",
+      "fields": {
+        "title": "Duplicated Identity Category",
+        "web_url": "https://shop.example.com/categories/duplicated-identity"
+      },
+      "nested": [
+        {
+          "type": "variant",
+          "identity": "category-child-variant",
+          "fields": {
+            "title": "Variant attached to a category",
+            "web_url": "https://shop.example.com/categories/duplicated-identity?variant=bad",
+            "color": "Black"
+          }
+        }
+      ]
+    },
+    {
+      "identity": "bad-nested-parent",
+      "type": "item",
+      "fields": {
+        "title": "Bad Nested Variant Parent",
+        "web_url": "https://shop.example.com/products/bad-nested-parent"
+      },
+      "nested": [
+        {
+          "type": "category",
+          "identity": "duplicate-top-level-variant",
+          "fields": {
+            "title": "Duplicated Identity Category",
+            "web_url": "https://shop.example.com/categories/duplicated-identity"
+          }
+        },
+        {
+          "type": "variant",
+          "identity": "bad-nested-parent",
+          "fields": {
+            "title": "Variant Reusing Parent Identity"
+          }
+        },
+        {
+          "type": "variant",
+          "identity": "duplicate-nested-variant",
+          "fields": {
+            "title": "Duplicate Variant A",
+            "web_url": "https://shop.example.com/products/bad-nested-parent?variant=a",
+            "color": "Red"
+          },
+          "nested": []
+        },
+        {
+          "type": "variant",
+          "identity": "duplicate-nested-variant",
+          "fields": {
+            "title": "Duplicate Variant B",
+            "web_url": "https://shop.example.com/products/bad-nested-parent?variant=b",
+            "size": "M"
+          }
+        },
+        {
+          "type": "variant",
+          "identity": "duplicate-top-level-variant",
+          "fields": {
+            "title": "Variant Reusing Top-Level Identity",
+            "web_url": "https://shop.example.com/products/bad-nested-parent?variant=top-level",
+            "style": "Classic"
+          }
+        },
+        {
+          "type": "variant",
+          "identity": "variant-without-distinguishing-fields",
+          "fields": {
+            "title": "Variant Without Distinguishing Fields",
+            "web_url": "https://shop.example.com/products/bad-nested-parent?variant=plain"
+          }
+        }
+      ]
+    }
+  ]
+}
