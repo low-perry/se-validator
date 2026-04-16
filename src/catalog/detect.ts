@@ -35,6 +35,19 @@ export function detectCatalogArtifact(path: string, raw: string): CatalogArtifac
   const trimmed = raw.trim();
 
   if (trimmed.startsWith("<")) {
+    if (looksLikeHtmlDocument(trimmed)) {
+      return {
+        path,
+        raw,
+        parsed: {},
+        rootKey: undefined,
+        parseError: "Input appears to be an HTML document, not an XML or JSON catalog feed.",
+        sourceKind: "unknown",
+        role: "unknown",
+        confidence: 0.98
+      };
+    }
+
     const validation = XMLValidator.validate(raw);
     if (validation !== true) {
       return {
@@ -138,4 +151,14 @@ function firstObjectKey(value: unknown): string | undefined {
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function looksLikeHtmlDocument(value: string): boolean {
+  const sample = value.slice(0, 1000).toLowerCase();
+  return (
+    sample.startsWith("<!doctype html") ||
+    sample.startsWith("<html") ||
+    sample.includes("<head") ||
+    sample.includes("<body")
+  );
 }

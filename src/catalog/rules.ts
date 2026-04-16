@@ -31,10 +31,10 @@ function validateRecognizedArtifacts(catalog: NormalizedCatalog): ValidationFind
       return createFinding({
         id: "CATALOG_ARTIFACT_PARSE_ERROR",
         severity: "P0",
-        title: parseErrorTitle(artifact.parseError, artifact.path),
+        title: parseErrorTitle(artifact.parseError),
         message: artifact.parseError,
         evidencePath: artifact.path,
-        remediation: parseErrorRemediation(artifact.parseError, artifact.path),
+        remediation: parseErrorRemediation(artifact.parseError),
         docs: ["indexing/feeds.md", "indexing/api/v1/content-update.mdx"],
         confidence: 0.98
       });
@@ -806,9 +806,9 @@ function contentShapeFinding(path: string, index: number, message: string): Vali
   });
 }
 
-function parseErrorTitle(parseError: string, path: string): string {
-  if (looksLikeGithubBlobUrl(path)) {
-    return "GitHub page URL was parsed instead of the raw feed file";
+function parseErrorTitle(parseError: string): string {
+  if (parseError.includes("HTML document")) {
+    return "URL or file returned an HTML page instead of a feed";
   }
 
   if (parseError.includes("boolean attribute")) {
@@ -818,9 +818,9 @@ function parseErrorTitle(parseError: string, path: string): string {
   return "Catalog artifact could not be parsed";
 }
 
-function parseErrorRemediation(parseError: string, path: string): string {
-  if (looksLikeGithubBlobUrl(path)) {
-    return "Use the raw GitHub file URL, not the GitHub blob/page URL. Change https://github.com/<org>/<repo>/blob/<branch>/<path> to https://raw.githubusercontent.com/<org>/<repo>/<branch>/<path>, or open the file on GitHub and copy the Raw link.";
+function parseErrorRemediation(parseError: string): string {
+  if (parseError.includes("HTML document")) {
+    return "Use a direct feed or download URL that returns XML or JSON, not an HTML page, repository viewer, login screen, dashboard page, or redirect target.";
   }
 
   const booleanAttributeMatch = parseError.match(/boolean attribute '([^']+)' is not allowed/);
@@ -830,10 +830,6 @@ function parseErrorRemediation(parseError: string, path: string): string {
   }
 
   return "Fix the XML/JSON syntax before validating catalog semantics. If a field contains HTML, escape it or wrap it in CDATA.";
-}
-
-function looksLikeGithubBlobUrl(path: string): boolean {
-  return path.startsWith("https://github.com/") && path.includes("/blob/");
 }
 
 function label(object: NormalizedCatalogObject): string {

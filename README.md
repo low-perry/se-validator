@@ -28,5 +28,5 @@ yarn validate catalog --report results/bad-json-catalog-report.md fixtures/catal
 ```bash
 yarn typecheck
 yarn validate catalog <paths...>
-yarn validate catalog "https://raw.githubusercontent.com/<org>/<repo>/<branch>/<path-to-feed.xml>"
+yarn validate catalog "https://example.com/path/to/feed.xml"
 ```
