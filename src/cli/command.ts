@@ -15,6 +15,11 @@ import { validateAnalytics } from "../analytics/validate.js";
 import { validateService } from "../service/validate.js";
 import { validateFrontend } from "../frontend/validate.js";
 import { loadFrontendValidationProfile } from "../frontend/profile.js";
+import {
+  formatAutocompleteFrontendProfileSuggestion,
+  suggestAutocompleteFrontendProfile,
+  type FeaturePolicy
+} from "../frontend/autocomplete-profile-suggest.js";
 import { formatSearchFrontendProfileSuggestion, suggestSearchFrontendProfile } from "../frontend/search-profile-suggest.js";
 import type { FrontendExpectedAnalyticsMode } from "../frontend/types.js";
 import { formatAgentCatalogReview, reviewCatalog } from "../agent/review-catalog.js";
@@ -272,6 +277,58 @@ export async function runCli(argv: string[]): Promise<void> {
     });
 
   const suggest = program.command("suggest").description("Generate helper profiles from live integration evidence");
+
+  suggest
+    .command("autocomplete-profile")
+    .description("Suggest a frontend Autocomplete profile by sampling live Autocomplete, Top Items, and Trending Queries APIs")
+    .requiredOption("--tracker-id <trackerId>", "Luigi's Box tracker_id to query")
+    .option("--query <query>", "Autocomplete query used to sample suggestions", "shirt")
+    .option("--autocomplete-type <type>", "Autocomplete type counts, such as item:6,category:3,query:5", "item:6,category:3,query:5")
+    .option("--top-items-type <type>", "Top Items type counts, such as item:5,category:3", "item:5,category:3")
+    .option("--hit-fields <fields>", "Comma-separated fields requested from Autocomplete and Top Items", "title,url")
+    .option("--analytics-mode <mode>", "Expected analytics mode: any, datalayer, or events-api", "any")
+    .option("--top-items <policy>", "Top Items profile policy: auto, required, optional, or disabled", "auto")
+    .option("--trending-queries <policy>", "Trending Queries profile policy: auto, required, optional, or disabled", "auto")
+    .option("--out <path>", "Write suggested frontend profile JSON to this path")
+    .option("--json", "Print only the suggested frontend profile JSON")
+    .action(
+      async (options: {
+        trackerId: string;
+        query: string;
+        autocompleteType: string;
+        topItemsType: string;
+        hitFields: string;
+        analyticsMode: string;
+        topItems: string;
+        trendingQueries: string;
+        out?: string;
+        json?: boolean;
+      }) => {
+        const analyticsMode = parseFrontendAnalyticsMode(options.analyticsMode);
+        const suggestion = await suggestAutocompleteFrontendProfile({
+          trackerId: options.trackerId,
+          query: options.query,
+          autocompleteType: options.autocompleteType,
+          topItemsType: options.topItemsType,
+          hitFields: options.hitFields,
+          analyticsMode,
+          topItems: parseFeaturePolicy(options.topItems),
+          trendingQueries: parseFeaturePolicy(options.trendingQueries)
+        });
+        const profileJson = JSON.stringify(suggestion.profile, null, 2);
+
+        if (options.out) {
+          await writeReport(options.out, profileJson);
+          console.error(`Profile written to ${options.out}`);
+        }
+
+        if (options.json) {
+          console.log(profileJson);
+        } else {
+          console.log(formatAutocompleteFrontendProfileSuggestion(suggestion));
+        }
+      }
+    );
 
   suggest
     .command("search-profile")
@@ -577,4 +634,9 @@ function collectOption(value: string, previous: string[]): string[] {
 function parseFrontendAnalyticsMode(value: string): FrontendExpectedAnalyticsMode {
   if (value === "any" || value === "datalayer" || value === "events-api") return value;
   throw new Error(`Unsupported analytics mode: ${value}. Use any, datalayer, or events-api.`);
+}
+
+function parseFeaturePolicy(value: string): FeaturePolicy {
+  if (value === "auto" || value === "required" || value === "optional" || value === "disabled") return value;
+  throw new Error(`Unsupported feature policy: ${value}. Use auto, required, optional, or disabled.`);
 }

@@ -4,6 +4,32 @@ This slice validates frontend HTML/JavaScript evidence for a direct Autocomplete
 
 It does not execute browser code. It statically checks whether the implementation contains the API calls, rendering flow, and analytics wiring that the docs require.
 
+## Profile Generator
+
+When the expected autocomplete feature set is unclear, sample the live Autocomplete, Top Items, and Trending Queries APIs and generate a frontend profile:
+
+```bash
+yarn suggest autocomplete-profile \
+  --tracker-id 757876-1071971 \
+  --query shirt \
+  --analytics-mode datalayer \
+  --out results/autocomplete-profile-suggested.json
+```
+
+By default, the generator keeps query autocomplete required. In `auto` mode it marks Top Items and Trending Queries as `optional` only when the live endpoint returns data, because endpoint availability does not prove that the UI is required to render that feature.
+
+If the intended UX is explicit, override the generated policy:
+
+```bash
+yarn suggest autocomplete-profile \
+  --tracker-id 757876-1071971 \
+  --query shirt \
+  --top-items required \
+  --trending-queries disabled \
+  --analytics-mode events-api \
+  --out results/autocomplete-profile-explicit.json
+```
+
 ## Covered API behavior
 
 - Query suggestions call `https://live.luigisbox.com/autocomplete/v2`.

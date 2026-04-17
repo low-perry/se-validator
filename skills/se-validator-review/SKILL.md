@@ -22,7 +22,7 @@ The bootstrap exports `SE_VALIDATOR_ROOT` and `SE_VALIDATOR_DOCS_ROOT`; do not h
 
 - XML or JSON catalog feed: run `yarn validate catalog <files...>` for quick validation, or `yarn agent review-catalog <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --report results/llm-catalog-review.md` for doc-aware review.
 - Content Update JSON payload: review as catalog evidence with `yarn agent review-catalog`.
-- Frontend autocomplete HTML/JS: run `yarn agent review-ui <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --service autocomplete --profile fixtures/frontend/autocomplete-profile-full.json --explain --report results/llm-review.md`.
+- Frontend autocomplete HTML/JS: if feature intent is unclear, first run `yarn suggest autocomplete-profile --tracker-id <tracker-id> --query <sample-query> --analytics-mode datalayer --out results/autocomplete-profile-suggested.json`, then run `yarn agent review-ui <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --service autocomplete --profile results/autocomplete-profile-suggested.json --explain --report results/llm-review.md`. If the team already gave an explicit profile, use that profile instead.
 - Frontend Search API HTML/JS: run `yarn agent review-ui <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --service search --explain --report results/llm-search-ui-review.md`. If the expected indexed type is known, pass a Search frontend profile such as `fixtures/frontend/search-profile-digital-products.json`.
 - Search API service profile JSON: run `yarn validate service <files...>`; use `fixtures/service/search-visibility-good.json` as the passing reference profile.
 - Analytics event payload JSON: run `yarn validate analytics <files...>`.
@@ -74,6 +74,29 @@ yarn suggest search-profile \
   --analytics-mode datalayer \
   --out results/search-profile-<indexed-type>.json
 ```
+
+## Autocomplete UI Reviews
+
+For autocomplete UI evidence, verify against these sources before explaining or correcting snippets:
+
+- `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/autocomplete/api/v2/autocomplete.mdx`
+- `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/autocomplete/query-suggestions.md`
+- `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/autocomplete/top-items-api.md`
+- `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/autocomplete/trending-queries.md`
+- `$SE_VALIDATOR_DOCS_ROOT/public/examples/autocomplete/query-suggestions.html`
+- `$SE_VALIDATOR_DOCS_ROOT/public/examples/autocomplete/query-suggestions-datalayer.html`
+
+If the intended Top Items or Trending Queries behavior is unknown, generate a frontend profile before reviewing:
+
+```bash
+yarn suggest autocomplete-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --analytics-mode datalayer \
+  --out results/autocomplete-profile-suggested.json
+```
+
+The generated profile always treats query autocomplete as required. In `auto` mode, live Top Items or Trending Queries data becomes `optional`, not `required`, because endpoint availability does not prove the UI is supposed to render that feature. If the product requirements say the feature is mandatory or excluded, regenerate with `--top-items required|disabled` and/or `--trending-queries required|disabled`.
 
 ## Fixes
 

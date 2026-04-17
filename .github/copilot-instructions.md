@@ -28,13 +28,20 @@ cd "$SE_VALIDATOR_ROOT"
 Frontend autocomplete:
 
 ```bash
+yarn suggest autocomplete-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --out results/autocomplete-profile-suggested.json
+
 yarn agent review-ui <file> \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --service autocomplete \
-  --profile fixtures/frontend/autocomplete-profile-full.json \
+  --profile results/autocomplete-profile-suggested.json \
   --explain \
   --report results/llm-review.md
 ```
+
+If the intended autocomplete features are already specified, use that explicit profile. In generated profiles, `topItems=optional` and `trendingQueries=optional` only prove live endpoint availability, not mandatory UI intent.
 
 Frontend Search API:
 

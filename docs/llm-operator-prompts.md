@@ -175,6 +175,22 @@ yarn suggest search-profile \
   --analytics-mode datalayer \
   --out results/search-profile-<indexed-type>.json
 
+Autocomplete frontend profile suggestion:
+yarn suggest autocomplete-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --analytics-mode datalayer \
+  --out results/autocomplete-profile-suggested.json
+
+Autocomplete frontend profile suggestion with explicit feature intent:
+yarn suggest autocomplete-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --top-items required \
+  --trending-queries disabled \
+  --analytics-mode events-api \
+  --out results/autocomplete-profile-explicit.json
+
 Search API type-mismatch validation:
 yarn validate service fixtures/service/search-visibility-bad.json \
   --report results/search-visibility-bad-report.md
@@ -241,10 +257,15 @@ Review this frontend autocomplete integration.
 Run:
 eval "$(scripts/agent-env.sh)"
 cd "$SE_VALIDATOR_ROOT"
+yarn suggest autocomplete-profile \
+  --tracker-id <tracker-id> \
+  --query shirt \
+  --analytics-mode datalayer \
+  --out results/autocomplete-profile-suggested.json
 yarn agent review-ui \
   fixtures/frontend/autocomplete-bad.html \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
-  --profile fixtures/frontend/autocomplete-profile-full.json \
+  --profile results/autocomplete-profile-suggested.json \
   --explain \
   --report results/llm-ui-review.md
 
@@ -284,6 +305,8 @@ Before giving corrected snippets, verify against:
 ```
 
 If the expected Search hit type is unknown, run `yarn suggest search-profile` first, then use the generated profile for the Search UI review.
+
+If the expected autocomplete feature set is unknown, run `yarn suggest autocomplete-profile` first. Treat generated `topItems=optional` and `trendingQueries=optional` as live availability evidence, not a proof that the client intended to render those features.
 
 ## Search UI Review
 

@@ -1,0 +1,11 @@
+{
+  "service": "autocomplete",
+  "trackerId": "757876-1071971",
+  "analyticsMode": "datalayer",
+  "features": {
+    "autocomplete": "required",
+    "search": "disabled",
+    "topItems": "optional",
+    "trendingQueries": "optional"
+  }
+}

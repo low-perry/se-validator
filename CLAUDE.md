@@ -26,13 +26,20 @@ Default frontend review:
 ```bash
 eval "$(scripts/agent-env.sh)"
 cd "$SE_VALIDATOR_ROOT"
+yarn suggest autocomplete-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --out results/autocomplete-profile-suggested.json
+
 yarn agent review-ui <file> \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --service autocomplete \
-  --profile fixtures/frontend/autocomplete-profile-full.json \
+  --profile results/autocomplete-profile-suggested.json \
   --explain \
   --report results/llm-review.md
 ```
+
+If the intended autocomplete feature set is explicit, use that profile instead. Treat generated `topItems=optional` and `trendingQueries=optional` as live endpoint availability, not proof that those UI features are required.
 
 Default Search UI review:
 
