@@ -188,6 +188,62 @@ Then read results/llm-catalog-review.md and tell me:
 - What should be tested next after indexing?
 ```
 
+## Pasted Evidence Workflow
+
+Use this when the user pastes raw XML, JSON, HTML, JavaScript, or analytics payloads directly into chat instead of providing a file path.
+
+```text
+The user pasted raw integration evidence in chat.
+
+Do not review it from memory. Save it to a temporary file first, then run SE Validator.
+
+Steps:
+1. Run:
+   eval "$(scripts/agent-env.sh)"
+   cd "$SE_VALIDATOR_ROOT"
+
+2. Create a temporary input directory:
+   mkdir -p tmp/agent-input
+
+3. Save the pasted content exactly as provided:
+   - XML feed -> tmp/agent-input/feed.xml
+   - JSON feed or Content Update payload -> tmp/agent-input/payload.json
+   - Frontend HTML -> tmp/agent-input/frontend.html
+   - Frontend JavaScript -> tmp/agent-input/frontend.js
+   - Analytics event payload -> tmp/agent-input/analytics.json
+
+4. Choose the validator command based on the saved file. Replace `<catalog-file>` with `tmp/agent-input/feed.xml` for XML feeds or `tmp/agent-input/payload.json` for JSON feeds / Content Update payloads:
+   - Catalog XML/JSON quick validation:
+     yarn validate catalog <catalog-file> \
+       --report results/pasted-feed-review.md
+
+   - Catalog doc-aware review:
+     yarn agent review-catalog <catalog-file> \
+       --docs "$SE_VALIDATOR_DOCS_ROOT" \
+       --report results/pasted-feed-agent-review.md
+
+   - Frontend HTML/JS:
+     yarn agent review-ui tmp/agent-input/frontend.html \
+       --docs "$SE_VALIDATOR_DOCS_ROOT" \
+       --profile fixtures/frontend/autocomplete-profile-full.json \
+       --explain \
+       --report results/pasted-ui-review.md
+
+5. Read the generated report and summarize:
+   - READY, RISKY, or BLOCKED,
+   - score and P0/P1/P2 counts,
+   - P0 findings first,
+   - likely file lines and snippets,
+   - docs cited,
+   - first 3 fixes.
+
+Rules:
+- Do not judge pasted content before running the validator.
+- Do not invent corrected snippets.
+- If asked for corrected snippets, use Source-Backed Fix Mode.
+- Temporary pasted inputs under tmp/ and pasted reports under results/pasted-*.md are ignored by git.
+```
+
 ## Unknown Client Evidence
 
 ```text
