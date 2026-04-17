@@ -1,7 +1,7 @@
 # Agent UI Review Report
 
 Service: autocomplete
-Generated: 2026-04-17T00:41:05.208Z
+Generated: 2026-04-17T06:43:23.145Z
 Docs root: /Users/lowperry/projects/docs
 Profile: service=autocomplete; analyticsMode=any; autocomplete=required; topItems=disabled; trendingQueries=disabled
 Score: 20/100
@@ -29,6 +29,12 @@ Snippet: `search: query,`
 Docs: autocomplete/api/v2/autocomplete, quickstart/autocomplete/query-suggestions
 Confidence: 0.92
 
+Debug Notes:
+- What we looked for: tracker_id, q, and type query parameters on the autocomplete request.
+- What we found: `search: query,` at fixtures/frontend/autocomplete-bad.html:20.
+- Why it matters: Missing required params either skip the integration entirely or return wrong results under the wrong tracker.
+- Evidence type: static
+
 ### P0 FRONTEND_DATALAYER_COLLECTOR_SCRIPT_MISSING
 State: failed
 Area: frontend
@@ -39,6 +45,12 @@ Likely code: fixtures/frontend/autocomplete-bad.html:3
 Snippet: `<head>`
 Docs: analytics/collector, platform-foundations/lbx-script
 Confidence: 0.95
+
+Debug Notes:
+- What we looked for: <script src="https://scripts.luigisbox.tech/LBX-*.js"> in the document head.
+- What we found: `<head>` at fixtures/frontend/autocomplete-bad.html:3.
+- Why it matters: Without the collector script dataLayer.push events are never read and every tracked event is dropped.
+- Evidence type: static
 
 ### P1 FRONTEND_ANALYTICS_IDENTITY_NOT_HIT_URL
 State: failed
@@ -51,6 +63,12 @@ Snippet: `item_id: hit.attributes.title,`
 Docs: quickstart/autocomplete/query-suggestions, analytics/api/events
 Confidence: 0.86
 
+Debug Notes:
+- What we looked for: analytics items whose item_id/url is set to hit.url returned by the API.
+- What we found: `item_id: hit.attributes.title,` at fixtures/frontend/autocomplete-bad.html:61.
+- Why it matters: Analytics keyed off the wrong field poison Luigi's Box ML models with identities that never appear in the catalog.
+- Evidence type: static
+
 ### P1 FRONTEND_AUTOCOMPLETE_CLICK_ANALYTICS_MISSING
 State: failed
 Area: frontend
@@ -59,6 +77,12 @@ Problem: fixtures/frontend/autocomplete-bad.html does not show suggestion click/
 Recommended fix: Track selected suggestions as DataLayer select_item or Events API click with the rendered item identity.
 Docs: quickstart/autocomplete/query-suggestions, analytics/api/events
 Confidence: 0.88
+
+Debug Notes:
+- What we looked for: a click/select_item handler that fires an analytics event with the rendered item identity.
+- What we found: no matching code path in the reviewed artifact (the pattern was absent).
+- Why it matters: Click events are the primary ML signal; without them ranking never improves from real usage.
+- Evidence type: static
 
 ### P1 FRONTEND_AUTOCOMPLETE_NO_RESULTS_NOT_TRACKED
 State: failed
@@ -71,6 +95,12 @@ Snippet: `if (!data.hits || data.hits.length === 0) {`
 Docs: quickstart/autocomplete/query-suggestions
 Confidence: 0.9
 
+Debug Notes:
+- What we looked for: an Autocomplete view event with items: [] when hits is empty.
+- What we found: `if (!data.hits || data.hits.length === 0) {` at fixtures/frontend/autocomplete-bad.html:25.
+- Why it matters: Untracked zero-result queries are invisible to Luigi's Box, so search gaps never surface in reporting.
+- Evidence type: static
+
 ### P1 FRONTEND_AUTOCOMPLETE_QUERY_ANALYTICS_MISSING
 State: failed
 Area: frontend
@@ -79,6 +109,12 @@ Problem: fixtures/frontend/autocomplete-bad.html does not show search_term or qu
 Recommended fix: Include the user's autocomplete query as search_term in DataLayer or query.string in Events API.
 Docs: quickstart/autocomplete/query-suggestions, analytics/api/events
 Confidence: 0.86
+
+Debug Notes:
+- What we looked for: search_term (DataLayer) or query.string (Events API) populated from the user's query.
+- What we found: no matching code path in the reviewed artifact (the pattern was absent).
+- Why it matters: Without the query string Luigi's Box cannot correlate events to what the user typed, breaking search-term reports.
+- Evidence type: static
 
 ### P1 FRONTEND_RENDERED_IDENTITY_NOT_HIT_URL
 State: failed
@@ -91,6 +127,12 @@ Snippet: `itemButton.dataset.itemId = item.attributes.title;`
 Docs: autocomplete/api/v2/autocomplete, quickstart/autocomplete/query-suggestions
 Confidence: 0.84
 
+Debug Notes:
+- What we looked for: hit.url (or the documented url identity) stored on the rendered suggestion element.
+- What we found: `itemButton.dataset.itemId = item.attributes.title;` at fixtures/frontend/autocomplete-bad.html:49.
+- Why it matters: If rendered identity drifts from the catalog url, analytics and recommendations cannot be joined back to the product.
+- Evidence type: static
+
 ### P2 FRONTEND_AUTOCOMPLETE_DEBOUNCE_MISSING
 State: failed
 Area: frontend
@@ -101,6 +143,12 @@ Likely code: fixtures/frontend/autocomplete-bad.html:68
 Snippet: `searchInput.addEventListener("input", (event) => getSuggestions(event.target.value));`
 Docs: quickstart/autocomplete/query-suggestions
 Confidence: 0.75
+
+Debug Notes:
+- What we looked for: debounce or setTimeout logic wrapping the autocomplete fetch call.
+- What we found: `searchInput.addEventListener("input", (event) => getSuggestions(event.target.value));` at fixtures/frontend/autocomplete-bad.html:68.
+- Why it matters: Without debounce the frontend fires one request per keystroke, hammering the API and the user's network.
+- Evidence type: static
 
 ### P2 FRONTEND_AUTOCOMPLETE_ITEM_POSITION_MISSING
 State: failed
@@ -113,6 +161,12 @@ Snippet: `items: hits.map((hit) => ({`
 Docs: quickstart/autocomplete/query-suggestions, analytics/api/events
 Confidence: 0.78
 
+Debug Notes:
+- What we looked for: a position/index field (index + 1) on analytics items.
+- What we found: `items: hits.map((hit) => ({` at fixtures/frontend/autocomplete-bad.html:60.
+- Why it matters: Position data is required to measure click-through-rate per rank and to tune ordering.
+- Evidence type: static
+
 ### P2 FRONTEND_DNS_PREFETCH_MISSING
 State: failed
 Area: frontend
@@ -124,16 +178,28 @@ Snippet: `<head>`
 Docs: autocomplete/guides/integration-best-practices
 Confidence: 0.78
 
+Debug Notes:
+- What we looked for: <link rel="dns-prefetch" href="//live.luigisbox.com"> in the document head.
+- What we found: `<head>` at fixtures/frontend/autocomplete-bad.html:3.
+- Why it matters: DNS prefetch trims tens of ms off the first autocomplete request, a visible UX win on slow connections.
+- Evidence type: static
+
 ### P2 FRONTEND_HIT_FIELDS_MISSING
 State: failed
 Area: frontend
 Evidence: fixtures/frontend/autocomplete-bad.html
 Problem: fixtures/frontend/autocomplete-bad.html does not include hit_fields in the autocomplete/top items requests.
 Recommended fix: Use hit_fields to request only the fields rendered in the dropdown, such as title,web_url,price,image_link_l.
-Likely code: fixtures/frontend/autocomplete-bad.html:12
-Snippet: `const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";`
+Likely code: fixtures/frontend/autocomplete-bad.html:35
+Snippet: `const response = await fetch(`${TOP_ITEMS_API_URL}?${new URLSearchParams({`
 Docs: autocomplete/guides/integration-best-practices
 Confidence: 0.82
+
+Debug Notes:
+- What we looked for: a hit_fields query parameter on the autocomplete/top_items request.
+- What we found: `const response = await fetch(`${TOP_ITEMS_API_URL}?${new URLSearchParams({` at fixtures/frontend/autocomplete-bad.html:35.
+- Why it matters: Without hit_fields every response returns all indexed fields, wasting bandwidth and slowing the dropdown.
+- Evidence type: static
 
 ### P2 FRONTEND_TOP_ITEMS_UNEXPECTED_BY_PROFILE
 State: failed
@@ -141,23 +207,16 @@ Area: frontend
 Evidence: fixtures/frontend/autocomplete-bad.html
 Problem: fixtures/frontend/autocomplete-bad.html references Top Items, while the validation profile sets topItems=disabled.
 Recommended fix: Either remove the Top Items integration from the UI evidence, or update the profile to topItems=optional/required.
-Likely code: fixtures/frontend/autocomplete-bad.html:13
-Snippet: `const TOP_ITEMS_API_URL = "https://live.luigisbox.com/v1/top_items";`
+Likely code: fixtures/frontend/autocomplete-bad.html:35
+Snippet: `const response = await fetch(`${TOP_ITEMS_API_URL}?${new URLSearchParams({`
 Docs: autocomplete/api/v1/top-items, quickstart/autocomplete/top-items-api
 Confidence: 0.78
 
-## Browser Evidence
-
-- fixtures/frontend/autocomplete-bad.html: passed
-  Browser evidence was observed.
-  - Observed 1 Autocomplete API request(s).
-  - Observed 1 Top Items request(s).
-  - Observed rendered output (5 candidate element(s)).
-  - Autocomplete requests: 1
-  - Top Items requests: 1
-  - Trending Queries requests: 0
-  - Analytics requests: 0
-  - dataLayer events: 0
+Debug Notes:
+- What we looked for: no Top Items usage, because the profile sets topItems=disabled.
+- What we found: `const response = await fetch(`${TOP_ITEMS_API_URL}?${new URLSearchParams({` at fixtures/frontend/autocomplete-bad.html:35.
+- Why it matters: Either the profile is stale or the integration is shipping a feature the SE believed was turned off.
+- Evidence type: static
 
 ## Docs Consulted
 
@@ -285,7 +344,7 @@ P2 FRONTEND_TOP_ITEMS_UNEXPECTED_BY_PROFILE: Top Items are present but profile s
 ## Explanation: Static vs Browser Evidence
 - Static evidence comes from parsing the HTML/JS source files. It shows what the code says it will do, but cannot confirm runtime behavior.
 - Browser evidence is captured by loading the page in a headless browser and observing real network requests, rendered DOM, and dataLayer pushes.
-- fixtures/frontend/autocomplete-bad.html (passed): 2 request(s) captured; 0 dataLayer event(s). Static findings above were cross-referenced against this runtime capture.
+- This review used static evidence only. Pass --browser to add live observations (network calls, rendered hits, dataLayer events).
 
 ## Explanation: How Docs Were Selected
 - Each hit is scored by keyword match against the integration shape, then surfaced with a reason explaining why it was included:
