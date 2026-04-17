@@ -11,6 +11,30 @@ The intended pattern is:
 
 The validator output is the source of truth. The LLM should not invent requirements that are not present in validator findings or cited docs.
 
+## Source-Backed Fix Mode
+
+Use this mode when the user asks for corrected snippets or implementation guidance after a validator run.
+
+```text
+You are now in source-backed fix mode.
+
+You already ran SE Validator and found issues. Before suggesting corrected code, read the generated report and inspect the docs/examples cited for each finding.
+
+Hard rules:
+- Do not invent API fields, event names, payload shapes, or script tags.
+- Do not write corrected code from memory.
+- Prefer examples from /Users/lowperry/projects/docs/public/examples/.
+- For every corrected snippet, cite the exact local docs/example file path and line number used for the pattern.
+- If the cited docs/examples do not contain enough information, say: "I can explain the fix, but I cannot provide a source-backed snippet."
+
+For each P0/P1:
+1. Quote the finding ID.
+2. Open the cited docs/examples.
+3. Explain what the current code does wrong.
+4. Provide a corrected snippet only if source-backed.
+5. Explain which parts are client-specific placeholders.
+```
+
 ## General Operator Prompt
 
 ```text
@@ -167,3 +191,14 @@ Return:
 - docs cited,
 - any uncertainty or missing evidence.
 ```
+
+## Agent Adapters
+
+Repo-local agent adapters live in:
+
+- `AGENTS.md` for Codex-style agents.
+- `CLAUDE.md` for Claude Code.
+- `.github/copilot-instructions.md` for GitHub Copilot.
+- `.cursor/rules/se-validator-agent.mdc` for Cursor.
+
+Each adapter points back to this file. Keep detailed workflow changes here first, then update adapters only when their short bootstrapping text needs to change.

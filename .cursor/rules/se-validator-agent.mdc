@@ -1,0 +1,38 @@
+---
+description: Use SE Validator as the source of truth for Luigi's Box integration reviews.
+globs:
+alwaysApply: true
+---
+
+# SE Validator Agent Rule
+
+Use `docs/llm-operator-prompts.md` as the operating procedure.
+
+When reviewing Luigi's Box integration evidence:
+
+- Run SE Validator before making quality claims.
+- Run commands from `/Users/lowperry/projects/se-validator`.
+- Pass `--docs /Users/lowperry/projects/docs` for doc-aware reviews.
+- Treat P0 as blocking, P1 as important, and P2 as advisory.
+- Do not invent corrected code snippets. Open cited docs/examples first and cite the exact local path and line used.
+
+Frontend autocomplete review:
+
+```bash
+yarn agent review-ui <file> \
+  --docs /Users/lowperry/projects/docs \
+  --profile fixtures/frontend/autocomplete-profile-full.json \
+  --explain \
+  --report results/llm-review.md
+```
+
+Catalog review:
+
+```bash
+yarn agent review-catalog <files...> \
+  --docs /Users/lowperry/projects/docs \
+  --profile <catalog-profile.json> \
+  --report results/llm-catalog-review.md
+```
+
+After running the tool, read the generated report and summarize READY, RISKY, or BLOCKED with evidence lines, P0/P1/P2 findings, fixes, and cited docs.
