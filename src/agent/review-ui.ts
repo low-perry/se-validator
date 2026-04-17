@@ -243,7 +243,11 @@ export async function reviewUi(paths: string[], options: AgentReviewOptions): Pr
   };
 }
 
-export function formatAgentUiReview(review: AgentUiReview): string {
+export interface FormatAgentUiReviewOptions {
+  explain?: boolean;
+}
+
+export function formatAgentUiReview(review: AgentUiReview, options: FormatAgentUiReviewOptions = {}): string {
   const lines: string[] = [];
 
   lines.push(`# ${review.title}`);
@@ -363,7 +367,119 @@ export function formatAgentUiReview(review: AgentUiReview): string {
   lines.push(review.promptForFollowUp);
   lines.push("```");
 
+  if (options.explain === true) {
+    lines.push(...formatAgentUiReviewExplain(review));
+  }
+
   return lines.join("\n");
+}
+
+export function formatAgentUiReviewExplain(review: AgentUiReview): string[] {
+  const lines: string[] = [];
+
+  lines.push("");
+  lines.push("## Explanation: Severities");
+  lines.push(
+    "- P0: blocking. The implementation likely cannot be considered integrated until this is fixed. Re-run review after remediation."
+  );
+  lines.push(
+    "- P1: important. The integration runs but produces incorrect or low-quality data (wrong identity, missing analytics, mismatched profile)."
+  );
+  lines.push(
+    "- P2: advisory. The integration works, but the fix improves latency, robustness, or analytics richness."
+  );
+
+  lines.push("");
+  lines.push("## Explanation: Detected Integration Path");
+  const integrationPath = describeIntegrationPath(review);
+  if (integrationPath.length === 0) {
+    lines.push("- No integration shape was detected from the provided evidence.");
+  } else {
+    for (const line of integrationPath) {
+      lines.push(`- ${line}`);
+    }
+  }
+
+  lines.push("");
+  lines.push("## Explanation: Static vs Browser Evidence");
+  lines.push(
+    "- Static evidence comes from parsing the HTML/JS source files. It shows what the code says it will do, but cannot confirm runtime behavior."
+  );
+  lines.push(
+    "- Browser evidence is captured by loading the page in a headless browser and observing real network requests, rendered DOM, and dataLayer pushes."
+  );
+  if (review.browser.length === 0) {
+    lines.push(
+      "- This review used static evidence only. Pass --browser to add live observations (network calls, rendered hits, dataLayer events)."
+    );
+  } else {
+    for (const result of review.browser) {
+      const total =
+        result.requests.autocomplete.length +
+        result.requests.topItems.length +
+        result.requests.trendingQueries.length +
+        result.requests.analytics.length;
+      lines.push(
+        `- ${result.path} (${result.status}): ${total} request(s) captured; ${result.dataLayerEvents.length} dataLayer event(s). Static findings above were cross-referenced against this runtime capture.`
+      );
+    }
+  }
+
+  lines.push("");
+  lines.push("## Explanation: How Docs Were Selected");
+  if (review.docsHits.length === 0) {
+    lines.push("- No docs were surfaced. Check the --docs path points at a local Luigi's Box docs repository.");
+  } else {
+    lines.push(
+      "- Each hit is scored by keyword match against the integration shape, then surfaced with a reason explaining why it was included:"
+    );
+    for (const hit of review.docsHits) {
+      const slug = hit.slug ? ` (${hit.slug})` : "";
+      lines.push(`  - ${hit.title}${slug}: ${hit.reason}`);
+    }
+  }
+
+  return lines;
+}
+
+function describeIntegrationPath(review: AgentUiReview): string[] {
+  const parts: string[] = [];
+  const capabilitiesText = review.validation.capabilities.join(" ").toLowerCase();
+  const artifactsText = review.validation.artifacts.join(" ").toLowerCase();
+
+  const analyticsMode = detectAnalyticsMode(capabilitiesText, artifactsText);
+  if (analyticsMode) parts.push(analyticsMode);
+
+  if (/\bautocomplete\b/.test(capabilitiesText)) {
+    parts.push("Autocomplete API for query suggestions");
+  }
+
+  if (/top_items|top items/.test(capabilitiesText)) {
+    parts.push("Top Items on focus (recommendation placeholder before the user types)");
+  }
+
+  if (/trending_queries|trending queries/.test(capabilitiesText)) {
+    parts.push("Trending Queries placeholder (dashboard-managed query suggestions)");
+  }
+
+  if (/no-results/.test(capabilitiesText)) {
+    parts.push("No-results tracking branch");
+  }
+
+  if (/click\/select/.test(capabilitiesText)) {
+    parts.push("Click/select analytics on suggestion selection");
+  }
+
+  return parts;
+}
+
+function detectAnalyticsMode(capabilitiesText: string, artifactsText: string): string | undefined {
+  const hasDataLayer = /datalayer/.test(artifactsText) || /datalayer/.test(capabilitiesText);
+  const hasEventsApi = /events api|events-api|\bevents\b/.test(capabilitiesText);
+  if (hasDataLayer && hasEventsApi) return "Hybrid analytics (DataLayer + Events API)";
+  if (hasDataLayer) return "DataLayer collector analytics";
+  if (hasEventsApi) return "Events API analytics";
+  return undefined;
 }
 
 function buildNextActions(findings: ValidationFinding[]): string[] {
