@@ -28,14 +28,6 @@ const SLIDE_4_REPORTS = {
   }
 };
 
-// Slide 5: pull a real docs citation from the clean UI report.
-const SLIDE_5_REPORT = {
-  file: "agent-ui-review-good-report.md",
-  // Prefer a citation whose title contains "collector" so the audience sees
-  // a concrete, name-recognizable doc link.
-  preferredSlug: "analytics/collector"
-};
-
 // Slide 7: browser-verified report.
 const SLIDE_7_REPORT = {
   file: "agent-ui-review-browser-report.md"
@@ -53,8 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   hydrateSlide3().catch((err) => console.error("Slide 3 hydration failed:", err));
   hydrateSlide4().catch((err) => console.error("Slide 4 hydration failed:", err));
-  hydrateSlide5().catch((err) => console.error("Slide 5 hydration failed:", err));
   hydrateSlide7().catch((err) => console.error("Slide 7 hydration failed:", err));
+  wireLightbox();
 });
 
 // ---------- Navigation ----------
@@ -281,56 +273,60 @@ function renderFinding(f) {
   return article;
 }
 
-// ---------- Slide 5: real docs citation ----------
+// ---------- Lightbox (slide 5 storyboard) ----------
 
-async function hydrateSlide5() {
-  const report = await loadReport(SLIDE_5_REPORT.file);
-  if (!report) {
-    document.getElementById("slide-5-citation-title").textContent =
-      `Could not load ${SLIDE_5_REPORT.file}`;
-    return;
-  }
+function wireLightbox() {
+  const overlay = document.getElementById("lightbox");
+  const img = document.getElementById("lightbox-img");
+  const caption = document.getElementById("lightbox-caption");
+  const closeBtn = document.getElementById("lightbox-close");
+  if (!overlay || !img || !caption || !closeBtn) return;
 
-  const citations = report.docsConsulted || [];
-  if (citations.length === 0) {
-    document.getElementById("slide-5-citation-title").textContent =
-      "No citations found in report.";
-    return;
-  }
+  const open = (src, alt, cap) => {
+    img.src = src;
+    img.alt = alt || "";
+    caption.textContent = cap || "";
+    overlay.hidden = false;
+    overlay.setAttribute("aria-hidden", "false");
+    closeBtn.focus();
+  };
 
-  const preferred =
-    citations.find((c) => c.slug && c.slug.includes(SLIDE_5_REPORT.preferredSlug)) ||
-    citations[0];
+  const close = () => {
+    overlay.hidden = true;
+    overlay.setAttribute("aria-hidden", "true");
+    img.src = "";
+    img.alt = "";
+    caption.textContent = "";
+  };
 
-  const titleEl = document.getElementById("slide-5-citation-title");
-  const pathEl = document.getElementById("slide-5-citation-path");
-  const reasonEl = document.getElementById("slide-5-citation-reason");
-  const excerptEl = document.getElementById("slide-5-citation-excerpt");
+  document.querySelectorAll(".story-panel").forEach((panel) => {
+    panel.tabIndex = 0;
+    panel.addEventListener("click", () => {
+      const panelImg = panel.querySelector("img");
+      const strong = panel.querySelector("figcaption strong");
+      if (!panelImg) return;
+      open(panelImg.src, panelImg.alt, strong ? strong.textContent : "");
+    });
+    panel.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault();
+        panel.click();
+      }
+    });
+  });
 
-  // Title as a hyperlink to docs.luigisbox.com when we have a slug.
-  if (preferred.slug) {
-    const absolute = `https://docs.luigisbox.com/${preferred.slug}`;
-    titleEl.innerHTML =
-      `<a href="${absolute}" target="_blank" rel="noopener">` +
-      `${escapeHtml(preferred.title)}</a> ` +
-      `<span class="muted" style="font-weight:400">· ${escapeHtml(preferred.slug)}</span>`;
-  } else {
-    titleEl.textContent = preferred.title;
-  }
+  overlay.addEventListener("click", (ev) => {
+    // Click on the overlay background (not the image or caption) closes it.
+    if (ev.target === overlay) close();
+  });
+  closeBtn.addEventListener("click", close);
 
-  // Strip the local docs-root prefix so the path stays readable on screen.
-  const shortPath = preferred.path.replace(/^.*\/docs\//, "docs/");
-  pathEl.textContent = shortPath;
-
-  reasonEl.innerHTML = preferred.reason
-    ? `<strong>Why:</strong> ${escapeHtml(preferred.reason)}`
-    : "";
-
-  if (preferred.excerpt) {
-    excerptEl.textContent = `“${preferred.excerpt}”`;
-  } else {
-    excerptEl.remove();
-  }
+  document.addEventListener("keydown", (ev) => {
+    if (!overlay.hidden && ev.key === "Escape") {
+      ev.preventDefault();
+      close();
+    }
+  });
 }
 
 // ---------- Slide 7: browser verification ----------

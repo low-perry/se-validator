@@ -73,14 +73,27 @@ Bad autocomplete HTML vs a clean one. Point at:
 Call out the **capability chips** — endpoints and analytics detected in the
 input. The profile states which of those are required; the review compares.
 
-## Slide 5 — What makes it agentic (25s)
+## Slide 5 — Feed validation workflow (40s)
 
-Walk through the four loop steps. Then point at the real citation card:
+Six-panel storyboard from a real Claude session. Click any panel to enlarge.
 
-> "This is pulled live from the clean-run report. The validator didn't invent
-> the `analytics/collector` reference — it searched the real docs repo, found
-> the matching section, and recorded the excerpt. A reviewer can click
-> through to `docs.luigisbox.com` or open the local `path:line`."
+Walk left-to-right, top-to-bottom:
+
+> "Paste the XML. Validator scores it **BLOCKED, 0/100** — three P0s,
+> eight P1s. Every finding names the SKU, the rule, and the exact line.
+> One fix pass later, the score jumps to **98/100**. Then the user pivots:
+> 'actually these are digital products.' The agent swaps the root wrapper,
+> appends `-dig` to every identity, and re-validates clean."
+
+Then point at the bottom row:
+
+> "And now the proof: the feed lands in the **Luigi's Box ingestion
+> dashboard** as succeeded. In Catalog Browser the items come back under
+> `type:digital-products` — exactly the filter the Search UI uses. One
+> session, zero back-and-forth."
+
+Key line: *the agent caught the issue, guided the fix, and the items are
+live in production.*
 
 ## Slide 6 — Profile generators (25s)
 
