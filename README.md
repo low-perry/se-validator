@@ -8,7 +8,7 @@ The goal is simple: catch integration gaps early and give clients a clear feedba
 
 ## What It Validates
 
-- **Catalog indexing**: XML feeds, JSON feeds, category feeds, and Content Update payloads.
+- **Catalog indexing**: XML feeds, JSON feeds, and Content Update payloads.
 - **Catalog modeling**: required fields, immutable and unique identities, category shape, primary categories, category/item pairing, availability values, nested variants, and consecutive variant groups.
 - **Analytics**: Events API JSON payloads and DataLayer Collector examples.
 - **Services**: live Autocomplete and Search API checks through service profile JSON.
