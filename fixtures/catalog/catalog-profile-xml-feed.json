@@ -1,0 +1,18 @@
+{
+  "expectedSource": "feed-xml",
+  "expectedObjectTypes": ["item", "category"],
+  "categoryModel": "independent_categories_with_matching_hierarchy",
+  "variantModel": "item_group_id",
+  "identity": {
+    "uniqueAcrossTypes": true,
+    "immutableIdentityField": "identity"
+  },
+  "requiredFieldsByType": {
+    "item": ["identity", "title", "web_url", "category", "availability", "availability_rank"],
+    "category": ["identity", "title", "web_url"],
+    "brand": ["identity", "title", "web_url"],
+    "article": ["identity", "title", "web_url"]
+  },
+  "multipleCategoryHierarchies": "expected",
+  "primaryCategory": "required_when_multiple"
+}

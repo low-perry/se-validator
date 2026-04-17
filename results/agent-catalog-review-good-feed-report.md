@@ -1,7 +1,8 @@
 # Agent Catalog Review Report
 
-Generated: 2026-04-17T00:50:48.977Z
+Generated: 2026-04-17T01:09:10.346Z
 Docs root: /Users/lowperry/projects/docs
+Profile: source=feed-xml; objects=item,category; categoryModel=independent_categories_with_matching_hierarchy; variantModel=item_group_id; multipleCategoryHierarchies=expected; primaryCategory=required_when_multiple; identityField=identity; uniqueAcrossTypes=true
 Score: 100/100
 Findings: P0=0 P1=0 P2=0
 
@@ -152,6 +153,7 @@ Use this prompt if you want another AI to continue the review with the same fram
 You are reviewing Luigi's Box indexing evidence: XML feeds, JSON feeds, or Content Update payloads.
 Docs root: /Users/lowperry/projects/docs
 Files to inspect: /Users/lowperry/projects/se-validator/fixtures/catalog/good-feed.xml, /Users/lowperry/projects/se-validator/fixtures/catalog/good-feed-cat.xml
+Catalog review profile: source=feed-xml; objects=item,category; categoryModel=independent_categories_with_matching_hierarchy; variantModel=item_group_id; multipleCategoryHierarchies=expected; primaryCategory=required_when_multiple; identityField=identity; uniqueAcrossTypes=true
 
 Use local docs first. Check whether the sample:
 - has a recognizable feed or Content Update root structure;

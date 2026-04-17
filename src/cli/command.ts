@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { Command } from "commander";
 import type { ValidationFinding } from "../core/types.js";
 import { validateCatalog } from "../catalog/validate.js";
+import { loadCatalogValidationProfile } from "../catalog/profile.js";
 import { validateAnalytics } from "../analytics/validate.js";
 import { validateService } from "../service/validate.js";
 import { validateFrontend } from "../frontend/validate.js";
@@ -219,13 +220,16 @@ export async function runCli(argv: string[]): Promise<void> {
     .description("Review catalog feeds or Content Update payloads with structure summaries and docs")
     .argument("<paths...>", "Catalog artifact path(s)")
     .option("--docs <path>", "Local docs repository path")
+    .option("--profile <path>", "Catalog validation profile JSON")
     .option("--max-docs <count>", "Maximum docs to include", parsePositiveInteger, 12)
     .option("--json", "Print machine-readable JSON")
     .option("--report <path>", "Write a Markdown report file")
-    .action(async (paths: string[], options: { docs?: string; maxDocs: number; json?: boolean; report?: string }) => {
+    .action(async (paths: string[], options: { docs?: string; profile?: string; maxDocs: number; json?: boolean; report?: string }) => {
+      const profile = options.profile ? await loadCatalogValidationProfile(options.profile) : undefined;
       const review = await reviewCatalog(paths, {
         docsRoot: options.docs ?? defaultDocsRoot(),
-        maxDocs: options.maxDocs
+        maxDocs: options.maxDocs,
+        ...(profile ? { profile } : {})
       });
 
       if (options.json) {

@@ -1,48 +1,42 @@
 # Agent Catalog Review Report
 
-Generated: 2026-04-17T01:09:10.454Z
+Generated: 2026-04-17T01:09:10.567Z
 Docs root: /Users/lowperry/projects/docs
-Profile: source=content-update-json; objects=item,category; categoryModel=nested_categories; variantModel=item_group_id; multipleCategoryHierarchies=expected; primaryCategory=not_required; identityField=identity; uniqueAcrossTypes=true
+Profile: source=content-update-json; objects=item; categoryModel=nested_categories; variantModel=nested_variants; multipleCategoryHierarchies=allowed; primaryCategory=not_required; identityField=identity; uniqueAcrossTypes=true
 Score: 100/100
 Findings: P0=0 P1=0 P2=0
 
 ## Inputs Reviewed
-- /Users/lowperry/projects/se-validator/fixtures/catalog/good-content-update-full.json
+- /Users/lowperry/projects/se-validator/fixtures/catalog/good-content-update-nested-variants.json
 
 ## Detected Artifacts
-- fixtures/catalog/good-content-update-full.json: content-update-json / content-update (96%)
+- fixtures/catalog/good-content-update-nested-variants.json: content-update-json / content-update (96%)
 
 ## Inferred Catalog Structures
 
-### fixtures/catalog/good-content-update-full.json
+### fixtures/catalog/good-content-update-nested-variants.json
 Format: content-update-json
 Role: content-update
 Root: objects
-Records: 28
-Object counts: category=16, product=12
-Required coverage: identity 28/28 (100%), title 28/28 (100%), web_url 28/28 (100%)
-Common fields: title 28/28, web_url 28/28, availability 12/28, availability_rank 12/28, brand 12/28, hierarchy 12/28, image_link_l 12/28, price 12/28, color 10/28, item_group_id 10/28, size 10/28
+Records: 1
+Object counts: product=1
+Required coverage: identity 1/1 (100%), title 1/1 (100%), web_url 1/1 (100%)
+Common fields: availability 1/1, brand 1/1, title 1/1, web_url 1/1
 Category model:
-- 16 independently indexed categories; 12 include hierarchy.
-- 12/12 products expose category paths.
-- 8/12 products belong to multiple category hierarchies.
-- 20 total product category path references.
+- 1/1 products expose category paths.
+- 0/1 products belong to multiple category hierarchies.
+- 1 total product category path references.
 Content Update model:
-- 28 top-level Content Update objects.
-- 12 objects have nested records; max nested count is 2.
-- 20 nested categories with 28 ancestor records.
-- 0 nested variants.
+- 1 top-level Content Update objects.
+- 1 objects have nested records; max nested count is 3.
+- 1 nested categories with 1 ancestor records.
+- 2 nested variants.
 Variant model:
-- 5 item_group_id groups; largest group has 2 records.
-- Variant distinguishing fields observed: color, size.
+- 2 nested variants in Content Update objects.
 Pairing model:
 - Product/category relationship is also expressed through category paths.
 Examples:
-- category content-cat-apparel: Apparel
-- category content-cat-men: Men
-- category content-cat-men-tshirts: T-shirts
-- category content-cat-men-hoodies: Hoodies
-- category content-cat-women: Women
+- product nested-parent-tshirt: Premium T-shirt (1 category path(s))
 
 ## Review Findings
 No findings. The catalog evidence passes the current deterministic rule set.
@@ -131,8 +125,8 @@ Use this prompt if you want another AI to continue the review with the same fram
 ```text
 You are reviewing Luigi's Box indexing evidence: XML feeds, JSON feeds, or Content Update payloads.
 Docs root: /Users/lowperry/projects/docs
-Files to inspect: /Users/lowperry/projects/se-validator/fixtures/catalog/good-content-update-full.json
-Catalog review profile: source=content-update-json; objects=item,category; categoryModel=nested_categories; variantModel=item_group_id; multipleCategoryHierarchies=expected; primaryCategory=not_required; identityField=identity; uniqueAcrossTypes=true
+Files to inspect: /Users/lowperry/projects/se-validator/fixtures/catalog/good-content-update-nested-variants.json
+Catalog review profile: source=content-update-json; objects=item; categoryModel=nested_categories; variantModel=nested_variants; multipleCategoryHierarchies=allowed; primaryCategory=not_required; identityField=identity; uniqueAcrossTypes=true
 
 Use local docs first. Check whether the sample:
 - has a recognizable feed or Content Update root structure;
@@ -145,7 +139,7 @@ Use local docs first. Check whether the sample:
 - uses availability and availability_rank consistently.
 
 Inferred structures:
-fixtures/catalog/good-content-update-full.json: content-update-json/content-update, records=28
+fixtures/catalog/good-content-update-nested-variants.json: content-update-json/content-update, records=1
 
 Current deterministic findings:
 No deterministic findings yet.

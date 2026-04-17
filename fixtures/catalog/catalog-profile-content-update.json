@@ -1,0 +1,18 @@
+{
+  "expectedSource": "content-update-json",
+  "expectedObjectTypes": ["item", "category"],
+  "categoryModel": "nested_categories",
+  "variantModel": "item_group_id",
+  "identity": {
+    "uniqueAcrossTypes": true,
+    "immutableIdentityField": "identity"
+  },
+  "requiredFieldsByType": {
+    "item": ["identity", "title", "web_url", "availability", "availability_rank"],
+    "category": ["identity", "title", "web_url"],
+    "brand": ["identity", "title", "web_url"],
+    "article": ["identity", "title", "web_url"]
+  },
+  "multipleCategoryHierarchies": "expected",
+  "primaryCategory": "not_required"
+}

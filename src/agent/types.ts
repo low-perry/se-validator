@@ -1,4 +1,5 @@
 import type { ValidationFinding, ValidationReport } from "../core/types.js";
+import type { CatalogValidationProfile } from "../catalog/profile.js";
 import type { FrontendValidationProfile } from "../frontend/types.js";
 
 export type AgentReviewService = "autocomplete" | "catalog";
@@ -48,6 +49,7 @@ export interface AgentCatalogReview {
   docsRoot: string;
   inputs: string[];
   validation: ValidationReport & { artifacts: string[] };
+  profile: string;
   structures: CatalogStructureSummary[];
   evidence: FindingEvidence[];
   docsHits: DocsHit[];
@@ -108,4 +110,10 @@ export interface CatalogStructureSummary {
   variantModel: string[];
   pairingModel: string[];
   examples: string[];
+}
+
+export interface AgentCatalogReviewOptions {
+  docsRoot: string;
+  maxDocs: number;
+  profile?: CatalogValidationProfile;
 }

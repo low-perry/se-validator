@@ -1,9 +1,10 @@
 # Agent Catalog Review Report
 
-Generated: 2026-04-17T00:50:49.069Z
+Generated: 2026-04-17T01:09:16.176Z
 Docs root: /Users/lowperry/projects/docs
-Score: 28/100
-Findings: P0=3 P1=3 P2=2
+Profile: source=content-update-json; objects=item; categoryModel=nested_categories; variantModel=nested_variants; multipleCategoryHierarchies=allowed; primaryCategory=not_required; identityField=identity; uniqueAcrossTypes=true
+Score: 25/100
+Findings: P0=3 P1=3 P2=3
 
 ## Inputs Reviewed
 - /Users/lowperry/projects/se-validator/fixtures/catalog/bad-content-update-nested-variants.json
@@ -107,6 +108,17 @@ Snippet: `"nested": [`
 Docs: indexing/data-layout.md, search/guides/variants.md
 Confidence: 0.9
 
+### P2 CATALOG_PROFILE_OBJECT_TYPE_UNEXPECTED
+State: failed
+Area: catalog
+Evidence: catalog.objects
+Problem: The evidence contains category objects, but expectedObjectTypes is product.
+Recommended fix: Update expectedObjectTypes if this object type is intentional, or remove the unintended objects from the evidence.
+Likely code: fixtures/catalog/bad-content-update-nested-variants.json:2
+Snippet: `"objects": [`
+Docs: indexing/data-layout.md
+Confidence: 0.75
+
 ### P2 CONTENT_UPDATE_NESTED_VARIANT_DISTINGUISHING_FIELD_MISSING
 State: failed
 Area: catalog
@@ -137,11 +149,11 @@ Confidence: 0.78
   Matched: feed, feeds, content update, identity, title, web_url, category, hierarchy
   Excerpt: |:-----------|:-----|:---------|:------------|:--------| | `item_group_id` | String | | Links individual product variants together for variants search mode. All variants of the same product must share the same `item_group_id` and **must be listed consecutiv...
 
-- Data Layout and Modeling Guide (indexing/data-layout): /Users/lowperry/projects/docs/src/content/docs/indexing/data-layout.md:130
+- Data Layout and Modeling Guide (indexing/data-layout): /Users/lowperry/projects/docs/src/content/docs/indexing/data-layout.md:151
   Reason: Related docs search match
   Section: Special fields
   Matched: feed, feeds, content update, objects, identity, title, web_url, category
-  Excerpt: | `availability_rank` | Number | | A more advanced and granular version of `availability`. Accepts values from 1 (most available) to 15 (unavailable). Use this for nuanced availability states like "low stock" (e.g., `3`), "backorder" (e.g., `8`), or "out of...
+  Excerpt: | :---------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | | `_category` | **Reserved for internal u...
 
 - Content Update (POST) (indexing/api/v1/content-update): /Users/lowperry/projects/docs/src/content/docs/indexing/api/v1/content-update.mdx:27
   Reason: API reference for request or payload contract
@@ -149,11 +161,11 @@ Confidence: 0.78
   Matched: content update, objects, identity, title, web_url, category, nested, variant
   Excerpt: This is a **full replacement operation**. When you update an existing object, any fields you omit from the request will be removed from the index. If you only need to update specific fields, it is more efficient to use the [Partial Content Update API](/inde...
 
-- Quickstart: Indexing with Luigi's Box (quickstart/indexing/indexing-api): /Users/lowperry/projects/docs/src/content/docs/quickstart/indexing/indexing-api.md:11
+- Quickstart: Indexing with Luigi's Box (quickstart/indexing/indexing-api): /Users/lowperry/projects/docs/src/content/docs/quickstart/indexing/indexing-api.md:57
   Reason: Quickstart guidance for implementation flow
-  Section: Introduction
+  Section: Core concepts of Luigi's Box indexing (a brief primer)
   Matched: feed, content update, objects, identity, title, web_url, category, availability
-  Excerpt: This guide provides a step-by-step walkthrough for developers to send their first product data to Luigi's Box for indexing using the [Content Update API](/indexing/api/v1/content-update/). The Content Update API is the recommended method for ensuring your s...
+  Excerpt: - **partial update ([PATCH /v1/content](/indexing/api/v1/partial-update/)):** This method allows you to update only specific fields of an existing object without sending the entire object. - **index freshness:** Keeping your index up-to-date with your catal...
 
 - Partial Content Update (PATCH) (indexing/api/v1/partial-update): /Users/lowperry/projects/docs/src/content/docs/indexing/api/v1/partial-update.mdx:24
   Reason: API reference for request or payload contract
@@ -191,17 +203,16 @@ Confidence: 0.78
   Matched: feed, feeds, content update, objects, identity, title, category, content
   Excerpt: - **Content Updates API:** You must delete the old objects (by URL) and send the new objects (by ID). - **Feeds:** We will manage the reindex for you by reprocessing the full feed.
 
-- Variant search (search/guides/variants): /Users/lowperry/projects/docs/src/content/docs/search/guides/variants.md:50
-  Reason: Related docs search match
-  Section: Data requirements
-  Matched: feed, feeds, title, nested, variant, item_group_id, content, indexing
-  Excerpt: - **API:** Index [Nested variants](/indexing/data-layout/#nested-variants). - **Feeds:** Use an [`item_group_id` grouping identifier](/indexing/feeds/#variant-fields) and follow the [variant search requirements](/indexing/feeds/#product-variants-in-feeds).
-
 - Indexing Data (indexing): /Users/lowperry/projects/docs/src/content/docs/indexing/index.md:61
   Reason: Related docs search match
   Section: Core concepts
   Matched: feed, feeds, content update, identity, title, category, availability, content
   Excerpt: - [**Data Layout:**](/indexing/data-layout/) Luigi's Box follows a "convention over configuration" approach. While you have flexibility in naming attributes, several special fields have predefined behaviors that impact search results and ranking. For exampl...
+
+- Indexing quickstarts (quickstart/indexing): /Users/lowperry/projects/docs/src/content/docs/quickstart/indexing.md:9
+  Reason: Quickstart guidance for implementation flow
+  Matched: feed, feeds, content update, title, content, update, indexing, data
+  Excerpt: Indexing is how Luigi's Box learns what products or content exist in your catalog. The first step is always to shape your data correctly, then choose whether you will synchronize through feeds or the content APIs.
 
 ## Next Actions
 - P0: Give every nested variant a unique identity, even when variants belong to different parent products.
@@ -210,7 +221,7 @@ Confidence: 0.78
 - P1: Keep variants one level below the parent product. Do not nest objects inside nested variants.
 - P1: Attach nested variants only to item/product objects.
 - P1: Nested variants should include type variant, unique identity, fields.title, fields.web_url, and distinguishing fields such as color or size.
-- P2: Add attributes that let users and ranking distinguish variants, such as color, size, material, pattern, style, or color_code.
+- P2: Update expectedObjectTypes if this object type is intentional, or remove the unintended objects from the evidence.
 - For Content Update payloads, confirm whether nested categories/variants are intended to be embedded under items or indexed independently.
 - Fix P0 issues before sending this evidence to an indexing endpoint or dashboard feed processor.
 
@@ -221,6 +232,7 @@ Use this prompt if you want another AI to continue the review with the same fram
 You are reviewing Luigi's Box indexing evidence: XML feeds, JSON feeds, or Content Update payloads.
 Docs root: /Users/lowperry/projects/docs
 Files to inspect: /Users/lowperry/projects/se-validator/fixtures/catalog/bad-content-update-nested-variants.json
+Catalog review profile: source=content-update-json; objects=item; categoryModel=nested_categories; variantModel=nested_variants; multipleCategoryHierarchies=allowed; primaryCategory=not_required; identityField=identity; uniqueAcrossTypes=true
 
 Use local docs first. Check whether the sample:
 - has a recognizable feed or Content Update root structure;
@@ -244,4 +256,5 @@ P1 CONTENT_UPDATE_NESTED_VARIANT_SHAPE: Content Update nested variant is incompl
 P2 CONTENT_UPDATE_NESTED_VARIANT_DISTINGUISHING_FIELD_MISSING: Nested variant has no distinguishing attributes
 P1 CONTENT_UPDATE_NESTED_VARIANT_DEEP_NESTING: Nested variant contains another nested array
 P2 CONTENT_UPDATE_NESTED_VARIANT_DISTINGUISHING_FIELD_MISSING: Nested variant has no distinguishing attributes
+P2 CATALOG_PROFILE_OBJECT_TYPE_UNEXPECTED: Catalog evidence contains object type not declared in profile
 ```
