@@ -1,23 +1,29 @@
 # Agent UI Review Report
 
 Service: autocomplete
-Generated: 2026-04-17T00:41:01.243Z
+Generated: 2026-04-17T01:21:04.950Z
 Docs root: /Users/lowperry/projects/docs
-Profile: service=autocomplete; analyticsMode=events-api; autocomplete=required; topItems=required; trendingQueries=required trackerId=757876-1071971
+Profile: service=autocomplete; analyticsMode=any; autocomplete=required; topItems=optional; trendingQueries=optional
 Score: 100/100
 Findings: P0=0 P1=0 P2=0
 
 ## Inputs Reviewed
-- /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-events-api-good.html
+- /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-datalayer-styled.html
 
 ## Detected Integration Shape
-- fixtures/frontend/autocomplete-events-api-good.html: html / events-api (90%)
+- /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-datalayer-styled.html: html / datalayer (90%)
 
 ## Detected Capabilities
-- fixtures/frontend/autocomplete-events-api-good.html: endpoints=autocomplete, top_items, trending_queries; analytics=Autocomplete view, Recommendation view, click/select, no-results
+- /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-datalayer-styled.html: endpoints=autocomplete, top_items, trending_queries; analytics=Autocomplete view, Recommendation view, click/select, no-results
 
 ## Review Findings
 No findings. The sample passes the current deterministic UI rule set.
+
+### Why this passed
+The validator verified each of the following against the inputs:
+- /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-datalayer-styled.html: Luigi's Box endpoints evidenced: autocomplete, top_items, trending_queries.
+- /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-datalayer-styled.html: analytics events evidenced: Autocomplete view, Recommendation view, click/select, no-results.
+- No P0/P1/P2 rules from the deterministic frontend rule set fired on the inputs.
 
 ## Docs Consulted
 
@@ -33,12 +39,12 @@ No findings. The sample passes the current deterministic UI rule set.
   Matched: autocomplete, autocomplete api, tracker_id, `q`, `type`, hit_fields, hits, hit.url
   Excerpt: - Developers who have understood the ["Getting query suggestions via the Autocomplete API"](/quickstart/autocomplete/query-suggestions/) and now want to add top items shown on focus. - Mobile developers (iOS, Android) who are integrating search suggestions.
 
-- ../docs/public/examples/autocomplete/trending-queries.html: /Users/lowperry/projects/docs/public/examples/autocomplete/trending-queries.html:657
+- ../../../../docs/public/examples/autocomplete/trending-queries.html: /Users/lowperry/projects/docs/public/examples/autocomplete/trending-queries.html:657
   Reason: Runnable public example for this service
   Matched: autocomplete, tracker_id, hit_fields, hits, hit.url, analytics, Autocomplete, click
   Excerpt: filters: { RecommenderClientId: 'autocomplete_popup', Recommender: 'autocomplete_popup',
 
-- ../docs/public/examples/autocomplete/top-items.html: /Users/lowperry/projects/docs/public/examples/autocomplete/top-items.html:552
+- ../../../../docs/public/examples/autocomplete/top-items.html: /Users/lowperry/projects/docs/public/examples/autocomplete/top-items.html:552
   Reason: Runnable public example for this service
   Matched: autocomplete, tracker_id, hit_fields, hits, hit.url, analytics, Autocomplete, click
   Excerpt: filters: { RecommenderClientId: 'autocomplete_popup', Recommender: 'autocomplete_popup',
@@ -55,7 +61,7 @@ No findings. The sample passes the current deterministic UI rule set.
   Matched: autocomplete, autocomplete api, tracker_id, `q`, `type`, hit_fields, hits, analytics
   Excerpt: When the user clicks into the searchbox, display the autocomplete popup immediately, showing recommendations. Call the [Top items](/autocomplete/api/v1/top-items/) API endpoint to load recommendations for categories, brands, products and other types you hav...
 
-- ../docs/public/examples/autocomplete/trending-queries-datalayer.html: /Users/lowperry/projects/docs/public/examples/autocomplete/trending-queries-datalayer.html:614
+- ../../../../docs/public/examples/autocomplete/trending-queries-datalayer.html: /Users/lowperry/projects/docs/public/examples/autocomplete/trending-queries-datalayer.html:614
   Reason: Runnable public example for this service
   Matched: autocomplete, tracker_id, hit_fields, hits, hit.url, analytics, Autocomplete, view_item_list
   Excerpt: filters: { Recommender: "autocomplete_popup", RecommenderClientId: "autocomplete_popup",
@@ -72,12 +78,12 @@ No findings. The sample passes the current deterministic UI rule set.
   Matched: autocomplete, tracker_id, `type`, analytics, Autocomplete, click, Recommendation, autocomplete_popup
   Excerpt: If your empty-state autocomplete shows **Top Items** on focus, do **not** track it as `Autocomplete`. Track it as a [Recommendation event](#recommendation-events) and set both `Recommender` and `RecommenderClientId` to `autocomplete_popup`.
 
-- ../docs/public/examples/autocomplete/top-items-datalayer.html: /Users/lowperry/projects/docs/public/examples/autocomplete/top-items-datalayer.html:386
+- ../../../../docs/public/examples/autocomplete/top-items-datalayer.html: /Users/lowperry/projects/docs/public/examples/autocomplete/top-items-datalayer.html:386
   Reason: Runnable public example for this service
   Matched: autocomplete, tracker_id, hit_fields, hits, hit.url, analytics, Autocomplete, view_item_list
   Excerpt: // Top Items on focus are tracked as Recommendation with autocomplete_popup trackTopItemsView(hits);
 
-- ../docs/public/examples/autocomplete/query-suggestions.html: /Users/lowperry/projects/docs/public/examples/autocomplete/query-suggestions.html:293
+- ../../../../docs/public/examples/autocomplete/query-suggestions.html: /Users/lowperry/projects/docs/public/examples/autocomplete/query-suggestions.html:293
   Reason: Runnable public example for this service
   Matched: autocomplete, tracker_id, hit_fields, hits, hit.url, analytics, Autocomplete, click
   Excerpt: // CONFIGURATION const TRACKER_ID = '179075-204259'; const AUTOCOMPLETE_API_URL = 'https://live.luigisbox.com/autocomplete/v2';
@@ -98,9 +104,9 @@ Use this prompt if you want another AI to continue the review with the same fram
 ```text
 You are reviewing a Luigi's Box autocomplete frontend integration.
 Service: autocomplete
-Profile: service=autocomplete; analyticsMode=events-api; autocomplete=required; topItems=required; trendingQueries=required trackerId=757876-1071971
+Profile: service=autocomplete; analyticsMode=any; autocomplete=required; topItems=optional; trendingQueries=optional
 Docs root: /Users/lowperry/projects/docs
-Files to inspect: /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-events-api-good.html
+Files to inspect: /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-datalayer-styled.html
 
 Use the local docs and public examples first. Check whether the sample:
 - calls the Autocomplete API with tracker_id, q, type, and relevant hit_fields;

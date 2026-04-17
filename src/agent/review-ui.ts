@@ -5,12 +5,206 @@ import { validateFrontend } from "../frontend/validate.js";
 import { runBrowserReview } from "./browser.js";
 import { findRelevantDocs } from "./docs.js";
 import { locateFindingEvidence } from "./evidence.js";
-import type { AgentReviewOptions, AgentUiReview, DocsHit } from "./types.js";
+import type { AgentReviewOptions, AgentUiReview, DocsHit, FindingEvidence } from "./types.js";
 
 const SEVERITY_RANK: Record<ValidationFinding["severity"], number> = {
   P0: 0,
   P1: 1,
   P2: 2
+};
+
+type EvidenceKind = "static" | "docs" | "browser";
+
+interface FindingDebugNote {
+  lookedFor: string;
+  whyItMatters: string;
+  evidenceKind: EvidenceKind;
+}
+
+// Hand-written mapping of finding id -> plain-English debug note. Keeps lookedFor / whyItMatters
+// short and deterministic. When a finding id is missing from this table, the formatter falls back
+// to a derivation from the finding metadata.
+const FINDING_DEBUG_NOTES: Record<string, FindingDebugNote> = {
+  FRONTEND_ARTIFACT_READ_ERROR: {
+    lookedFor: "an HTML or JavaScript artifact that could be parsed into a frontend integration.",
+    whyItMatters: "Without parseable evidence the validator cannot review the integration at all.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_ENDPOINT_MISSING: {
+    lookedFor: "a request to https://live.luigisbox.com/autocomplete/v2 from the frontend.",
+    whyItMatters: "Without the Autocomplete API call the search box cannot return Luigi's Box suggestions.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_REQUIRED_PARAM_MISSING: {
+    lookedFor: "tracker_id, q, and type query parameters on the autocomplete request.",
+    whyItMatters: "Missing required params either skip the integration entirely or return wrong results under the wrong tracker.",
+    evidenceKind: "static"
+  },
+  FRONTEND_HIT_FIELDS_MISSING: {
+    lookedFor: "a hit_fields query parameter on the autocomplete/top_items request.",
+    whyItMatters: "Without hit_fields every response returns all indexed fields, wasting bandwidth and slowing the dropdown.",
+    evidenceKind: "static"
+  },
+  FRONTEND_DNS_PREFETCH_MISSING: {
+    lookedFor: "<link rel=\"dns-prefetch\" href=\"//live.luigisbox.com\"> in the document head.",
+    whyItMatters: "DNS prefetch trims tens of ms off the first autocomplete request, a visible UX win on slow connections.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_DEBOUNCE_MISSING: {
+    lookedFor: "debounce or setTimeout logic wrapping the autocomplete fetch call.",
+    whyItMatters: "Without debounce the frontend fires one request per keystroke, hammering the API and the user's network.",
+    evidenceKind: "static"
+  },
+  FRONTEND_INPUT_LISTENER_MISSING: {
+    lookedFor: "an addEventListener(\"input\", ...) on the search input wired to the suggestion fetcher.",
+    whyItMatters: "Without an input listener typing never triggers an autocomplete request, so the dropdown stays empty.",
+    evidenceKind: "static"
+  },
+  FRONTEND_HITS_NOT_READ: {
+    lookedFor: "code that reads response.hits (or equivalent) from the Autocomplete API response.",
+    whyItMatters: "If the response hits array is never consumed, rendering and analytics cannot share the canonical data.",
+    evidenceKind: "static"
+  },
+  FRONTEND_HITS_NOT_RENDERED: {
+    lookedFor: "hits.forEach or hits.map feeding the dropdown renderer.",
+    whyItMatters: "Without rendering the hits the API call is wasted and users see nothing useful.",
+    evidenceKind: "static"
+  },
+  FRONTEND_RENDERED_IDENTITY_NOT_HIT_URL: {
+    lookedFor: "hit.url (or the documented url identity) stored on the rendered suggestion element.",
+    whyItMatters: "If rendered identity drifts from the catalog url, analytics and recommendations cannot be joined back to the product.",
+    evidenceKind: "static"
+  },
+  FRONTEND_ANALYTICS_IDENTITY_NOT_HIT_URL: {
+    lookedFor: "analytics items whose item_id/url is set to hit.url returned by the API.",
+    whyItMatters: "Analytics keyed off the wrong field poison Luigi's Box ML models with identities that never appear in the catalog.",
+    evidenceKind: "static"
+  },
+  FRONTEND_ANALYTICS_PATH_MISSING: {
+    lookedFor: "either dataLayer.push analytics or Events API POSTs in the frontend evidence.",
+    whyItMatters: "Without an analytics path Luigi's Box cannot learn from clicks or rank results for this client.",
+    evidenceKind: "static"
+  },
+  FRONTEND_EXPECTED_DATALAYER_ANALYTICS_MISSING: {
+    lookedFor: "dataLayer.push events, as required by the configured profile.",
+    whyItMatters: "Profile mismatch means either the profile is stale or dataLayer analytics are silently missing.",
+    evidenceKind: "static"
+  },
+  FRONTEND_EXPECTED_EVENTS_API_ANALYTICS_MISSING: {
+    lookedFor: "POST requests to api.luigisbox.com/v1/events, as required by the configured profile.",
+    whyItMatters: "Profile mismatch means either the profile is stale or Events API calls are silently missing.",
+    evidenceKind: "static"
+  },
+  FRONTEND_DATALAYER_COLLECTOR_SCRIPT_MISSING: {
+    lookedFor: "<script src=\"https://scripts.luigisbox.tech/LBX-*.js\"> in the document head.",
+    whyItMatters: "Without the collector script dataLayer.push events are never read and every tracked event is dropped.",
+    evidenceKind: "static"
+  },
+  FRONTEND_DATALAYER_COLLECTOR_SCRIPT_NOT_IN_HEAD: {
+    lookedFor: "the collector script tag inside <head>, not later in <body>.",
+    whyItMatters: "A collector loaded after <body> may miss early dataLayer.push events fired during page bootstrap.",
+    evidenceKind: "static"
+  },
+  FRONTEND_DATALAYER_COLLECTOR_SCRIPT_NOT_ASYNC: {
+    lookedFor: "async attribute on the collector <script> tag.",
+    whyItMatters: "A synchronous collector script blocks rendering and hurts Core Web Vitals on every page load.",
+    evidenceKind: "static"
+  },
+  FRONTEND_EVENTS_API_POST_MISSING: {
+    lookedFor: "fetch or axios POST to https://api.luigisbox.com/v1/events.",
+    whyItMatters: "The Events API path is declared but no payloads are sent, so analytics are empty.",
+    evidenceKind: "static"
+  },
+  FRONTEND_EVENTS_API_CLIENT_ID_MISSING: {
+    lookedFor: "a stable client_id attached to Events API payloads.",
+    whyItMatters: "Without client_id, sessions cannot be linked across events and user-level metrics break.",
+    evidenceKind: "static"
+  },
+  FRONTEND_EVENTS_API_EVENT_ID_MISSING: {
+    lookedFor: "a unique id (e.g. crypto.randomUUID()) generated per Events API event.",
+    whyItMatters: "Missing event ids prevent Luigi's Box from deduplicating retries and cause double-counting.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_VIEW_ANALYTICS_MISSING: {
+    lookedFor: "an Autocomplete view event fired after suggestions render (view_item_list or Events API type=Autocomplete).",
+    whyItMatters: "Without a view event the dashboard never sees that the dropdown was shown, breaking impression metrics and learning.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_QUERY_ANALYTICS_MISSING: {
+    lookedFor: "search_term (DataLayer) or query.string (Events API) populated from the user's query.",
+    whyItMatters: "Without the query string Luigi's Box cannot correlate events to what the user typed, breaking search-term reports.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_ITEMS_NOT_FROM_HITS: {
+    lookedFor: "analytics items built from hits.map(...) (the same array used for rendering).",
+    whyItMatters: "If analytics items are not sourced from hits, rendered UI and tracked events can disagree and poison the ML feedback loop.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_ITEM_POSITION_MISSING: {
+    lookedFor: "a position/index field (index + 1) on analytics items.",
+    whyItMatters: "Position data is required to measure click-through-rate per rank and to tune ordering.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_NO_RESULTS_NOT_TRACKED: {
+    lookedFor: "an Autocomplete view event with items: [] when hits is empty.",
+    whyItMatters: "Untracked zero-result queries are invisible to Luigi's Box, so search gaps never surface in reporting.",
+    evidenceKind: "static"
+  },
+  FRONTEND_AUTOCOMPLETE_CLICK_ANALYTICS_MISSING: {
+    lookedFor: "a click/select_item handler that fires an analytics event with the rendered item identity.",
+    whyItMatters: "Click events are the primary ML signal; without them ranking never improves from real usage.",
+    evidenceKind: "static"
+  },
+  FRONTEND_CLICK_DOES_NOT_USE_RENDERED_IDENTITY: {
+    lookedFor: "the click handler reading the rendered element's data identity (dataset.itemId / data-item-id).",
+    whyItMatters: "Clicks reporting a different identity than what was rendered make per-item CTR data meaningless.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TOP_ITEMS_ENDPOINT_NOT_EVIDENCED: {
+    lookedFor: "a request to https://live.luigisbox.com/v1/top_items.",
+    whyItMatters: "Top Items on focus are expected for this profile; missing the call means the empty-state dropdown is unusable.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TOP_ITEMS_UNEXPECTED_BY_PROFILE: {
+    lookedFor: "no Top Items usage, because the profile sets topItems=disabled.",
+    whyItMatters: "Either the profile is stale or the integration is shipping a feature the SE believed was turned off.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TOP_ITEMS_FOCUS_LISTENER_MISSING: {
+    lookedFor: "addEventListener(\"focus\", ...) on the search input wired to fetchTopItems.",
+    whyItMatters: "Without a focus listener top items never load on empty-search focus, defeating the empty-state dropdown.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TOP_ITEMS_RECOMMENDATION_ANALYTICS_MISSING: {
+    lookedFor: "Recommendation (not Autocomplete) view events when top items render.",
+    whyItMatters: "Mislabeling top items as Autocomplete distorts every empty-state search metric and breaks ML attribution.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TOP_ITEMS_AUTOCOMPLETE_POPUP_PLACEMENT_MISSING: {
+    lookedFor: "RecommenderClientId/Recommender set to autocomplete_popup on top-item Recommendation events.",
+    whyItMatters: "Without the placement tag top items blend with on-page recommendation widgets and cannot be reported separately.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TRENDING_QUERIES_ENDPOINT_NOT_EVIDENCED: {
+    lookedFor: "a request to https://live.luigisbox.com/v2/trending_queries.",
+    whyItMatters: "Trending Queries are dashboard-managed content; without the call the SE's configured terms never reach users.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TRENDING_QUERIES_UNEXPECTED_BY_PROFILE: {
+    lookedFor: "no Trending Queries usage, because the profile sets trendingQueries=disabled.",
+    whyItMatters: "Either the profile is stale or the integration is shipping a feature the SE believed was turned off.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TRENDING_QUERY_TITLES_NOT_MAPPED: {
+    lookedFor: "item.title read from the Trending Queries response and fed into rendering.",
+    whyItMatters: "Without mapping titles, dashboard-managed trending terms never appear to the user.",
+    evidenceKind: "static"
+  },
+  FRONTEND_TRENDING_QUERY_USE_NOT_CLEAR: {
+    lookedFor: "either placeholder usage (value written to the input) or a Search Results view event after trending click.",
+    whyItMatters: "Unclear trending usage means the dashboard-curated terms are fetched but never produce a trackable search.",
+    evidenceKind: "static"
+  }
 };
 
 export async function reviewUi(paths: string[], options: AgentReviewOptions): Promise<AgentUiReview> {
@@ -87,6 +281,15 @@ export function formatAgentUiReview(review: AgentUiReview): string {
   lines.push("## Review Findings");
   if (review.validation.findings.length === 0) {
     lines.push("No findings. The sample passes the current deterministic UI rule set.");
+    const passedChecks = buildWhyThisPassedChecks(review.validation.capabilities);
+    if (passedChecks.length > 0) {
+      lines.push("");
+      lines.push("### Why this passed");
+      lines.push("The validator verified each of the following against the inputs:");
+      for (const check of passedChecks) {
+        lines.push(`- ${check}`);
+      }
+    }
   } else {
     for (const finding of sortedFindings(review.validation.findings)) {
       lines.push("");
@@ -105,6 +308,11 @@ export function formatAgentUiReview(review: AgentUiReview): string {
       }
       lines.push(`Docs: ${finding.docs.join(", ")}`);
       lines.push(`Confidence: ${finding.confidence}`);
+      lines.push("");
+      lines.push("Debug Notes:");
+      for (const note of buildFindingDebugNotes(finding, evidence)) {
+        lines.push(`- ${note}`);
+      }
     }
   }
 
@@ -219,4 +427,85 @@ function sortedFindings(findings: ValidationFinding[]): ValidationFinding[] {
 function formatDocHit(hit: DocsHit): string {
   const slug = hit.slug ? ` (${hit.slug})` : "";
   return `${hit.title}${slug}: ${hit.path}:${hit.line}`;
+}
+
+function buildFindingDebugNotes(finding: ValidationFinding, evidence: FindingEvidence | undefined): string[] {
+  const note = FINDING_DEBUG_NOTES[finding.id];
+  const lookedFor = note?.lookedFor ?? deriveLookedFor(finding);
+  const whyItMatters = note?.whyItMatters ?? deriveWhyItMatters(finding);
+  const evidenceKind = resolveEvidenceKind(finding, evidence, note?.evidenceKind);
+
+  return [
+    `What we looked for: ${lookedFor}`,
+    `What we found: ${describeWhatFound(evidence)}`,
+    `Why it matters: ${whyItMatters}`,
+    `Evidence type: ${evidenceKind}`
+  ];
+}
+
+function describeWhatFound(evidence: FindingEvidence | undefined): string {
+  if (!evidence) {
+    return "no matching code path in the reviewed artifact (the pattern was absent).";
+  }
+  return `\`${evidence.snippet}\` at ${evidence.path}:${evidence.line}.`;
+}
+
+function deriveLookedFor(finding: ValidationFinding): string {
+  // Safe fallback for finding ids that are not in the hand-written table.
+  return `${finding.title.toLowerCase()} (rule ${finding.id}).`;
+}
+
+function deriveWhyItMatters(finding: ValidationFinding): string {
+  return `${finding.remediation}`;
+}
+
+function resolveEvidenceKind(
+  finding: ValidationFinding,
+  evidence: FindingEvidence | undefined,
+  hint: EvidenceKind | undefined
+): EvidenceKind {
+  if (evidence) return "static";
+  if (hint) return hint;
+  // For a frontend finding with no located snippet we still classify as static: the rule is run
+  // against parsed artifacts, the snippet is just absent. Docs/browser kinds are reserved for
+  // future rule sources.
+  if (finding.area === "frontend") return "static";
+  return "static";
+}
+
+function buildWhyThisPassedChecks(capabilities: string[]): string[] {
+  // Turn the per-artifact capability summary strings (from validateFrontend) into verification
+  // bullets. Each entry is of the form "<path>: endpoints=<list>; analytics=<list>". We expand
+  // that into readable checks so a clean report explains which signals were positively observed.
+  const checks: string[] = [];
+
+  for (const summary of capabilities) {
+    const [pathPart, ...rest] = summary.split(":");
+    if (!pathPart || rest.length === 0) continue;
+    const body = rest.join(":").trim();
+    const parts = body.split(";").map((part) => part.trim()).filter(Boolean);
+
+    const endpointsPart = parts.find((part) => part.startsWith("endpoints="));
+    const analyticsPart = parts.find((part) => part.startsWith("analytics="));
+
+    const endpoints = endpointsPart ? endpointsPart.slice("endpoints=".length).trim() : "";
+    const analytics = analyticsPart ? analyticsPart.slice("analytics=".length).trim() : "";
+
+    const endpointsList = endpoints && endpoints !== "none"
+      ? endpoints.split(",").map((item) => item.trim()).filter(Boolean)
+      : [];
+    const analyticsList = analytics && analytics !== "none"
+      ? analytics.split(",").map((item) => item.trim()).filter(Boolean)
+      : [];
+
+    if (endpointsList.length > 0) {
+      checks.push(`${pathPart.trim()}: Luigi's Box endpoints evidenced: ${endpointsList.join(", ")}.`);
+    }
+    if (analyticsList.length > 0) {
+      checks.push(`${pathPart.trim()}: analytics events evidenced: ${analyticsList.join(", ")}.`);
+    }
+  }
+
+  checks.push("No P0/P1/P2 rules from the deterministic frontend rule set fired on the inputs.");
+  return checks;
 }
