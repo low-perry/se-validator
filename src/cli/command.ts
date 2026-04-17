@@ -6,6 +6,8 @@ import { validateCatalog } from "../catalog/validate.js";
 import { validateAnalytics } from "../analytics/validate.js";
 import { validateService } from "../service/validate.js";
 import { validateFrontend } from "../frontend/validate.js";
+import { formatAgentUiReview, reviewUi } from "../agent/review-ui.js";
+import type { AgentReviewService } from "../agent/types.js";
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -140,6 +142,52 @@ export async function runCli(argv: string[]): Promise<void> {
         process.exitCode = 2;
       }
     });
+
+  const agent = program.command("agent").description("Run doc-aware agent reviews");
+
+  agent
+    .command("review-ui")
+    .description("Review frontend UI evidence against validator rules plus local docs")
+    .argument("<paths...>", "Frontend HTML/JS evidence path(s)")
+    .option("--docs <path>", "Local docs repository path")
+    .option("--service <service>", "Service being reviewed, currently autocomplete", "autocomplete")
+    .option("--max-docs <count>", "Maximum docs/examples to include", parsePositiveInteger, 12)
+    .option("--json", "Print machine-readable JSON")
+    .option("--report <path>", "Write a Markdown report file")
+    .action(
+      async (
+        paths: string[],
+        options: { docs?: string; service: string; maxDocs: number; json?: boolean; report?: string }
+      ) => {
+        const service = normalizeAgentReviewService(options.service);
+        const review = await reviewUi(paths, {
+          docsRoot: options.docs ?? defaultDocsRoot(),
+          service,
+          maxDocs: options.maxDocs
+        });
+
+        if (options.json) {
+          console.log(JSON.stringify(review, null, 2));
+          if (options.report) {
+            await writeReport(options.report, JSON.stringify(review, null, 2));
+            console.error(`Report written to ${options.report}`);
+          }
+          return;
+        }
+
+        const output = formatAgentUiReview(review);
+        console.log(output);
+
+        if (options.report) {
+          await writeReport(options.report, output);
+          console.log(`\nReport written to ${options.report}`);
+        }
+
+        if (review.validation.summary.P0 > 0) {
+          process.exitCode = 2;
+        }
+      }
+    );
 
   await program.parseAsync(argv);
 }
@@ -329,4 +377,21 @@ function formatFinding(finding: ValidationFinding): string[] {
     `  Docs: ${finding.docs.join(", ")}`,
     `  Confidence: ${finding.confidence}`
   ];
+}
+
+function defaultDocsRoot(): string {
+  return process.env.SE_VALIDATOR_DOCS_ROOT ?? resolve(process.cwd(), "../docs");
+}
+
+function normalizeAgentReviewService(service: string): AgentReviewService {
+  if (service === "autocomplete") return service;
+  throw new Error(`Unsupported agent review service: ${service}`);
+}
+
+function parsePositiveInteger(value: string): number {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`Expected a positive integer, got ${value}`);
+  }
+  return parsed;
 }

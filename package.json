@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
+    "agent": "tsx src/index.ts agent",
     "validate": "tsx src/index.ts validate",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
