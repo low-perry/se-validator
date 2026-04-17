@@ -2,10 +2,10 @@ import { createFinding } from "../core/findings.js";
 import type { ValidationFinding } from "../core/types.js";
 import { isRecord } from "../catalog/detect.js";
 import type {
-  AutocompleteEndpoint,
   ServiceArtifact,
   ServiceCheck,
   ServiceCheckExecution,
+  ServiceEndpoint,
   ServiceExpectation
 } from "./types.js";
 
@@ -19,11 +19,12 @@ export const serviceRules: ServiceRule[] = [
   validateExecutionResults
 ];
 
-const endpointPaths: Record<AutocompleteEndpoint, string> = {
+const endpointPaths: Record<ServiceEndpoint, string> = {
   autocomplete: "/autocomplete/v2",
   top_items: "/v1/top_items",
   personalized_top_items: "/v1/personalized_top_items",
-  trending_queries: "/v2/trending_queries"
+  trending_queries: "/v2/trending_queries",
+  search: "/search"
 };
 
 function validateParseErrors(artifacts: ServiceArtifact[]): ValidationFinding[] {
@@ -36,8 +37,8 @@ function validateParseErrors(artifacts: ServiceArtifact[]): ValidationFinding[] 
       title: "Service profile could not be parsed",
       message: artifact.parseError,
       evidencePath: artifact.path,
-      remediation: "Provide a JSON object with service: \"autocomplete-api\" and a checks[] array.",
-      docs: ["autocomplete/api", "quickstart/autocomplete/query-suggestions"],
+      remediation: "Provide a JSON object with service set to autocomplete-api, search-api, or search-visibility and a checks[] array.",
+      docs: ["autocomplete/api", "search/api/v1/search", "quickstart/search/building-custom-ui"],
       confidence: 0.98
     });
   });
@@ -56,8 +57,8 @@ function validateProfileShape(artifacts: ServiceArtifact[]): ValidationFinding[]
           title: "Service profile does not define checks",
           message: `${artifact.path} has an empty checks[] array.`,
           evidencePath: `${artifact.path}:checks`,
-          remediation: "Define at least one check for autocomplete, top_items, or trending_queries.",
-          docs: ["autocomplete/api"],
+          remediation: "Define at least one check for autocomplete, top_items, trending_queries, or search.",
+          docs: ["autocomplete/api", "search/api/v1/search"],
           confidence: 0.96
         })
       );
@@ -103,8 +104,8 @@ function validateProfileShape(artifacts: ServiceArtifact[]): ValidationFinding[]
             title: "Service check uses an unknown endpoint",
             message: `checks[${index}] uses endpoint "${String(check.endpoint)}".`,
             evidencePath: `${artifact.path}:checks[${index}].endpoint`,
-            remediation: "Use autocomplete, top_items, personalized_top_items, or trending_queries.",
-            docs: ["autocomplete/api"],
+            remediation: "Use autocomplete, top_items, personalized_top_items, trending_queries, or search.",
+            docs: ["autocomplete/api", "search/api/v1/search"],
             confidence: 0.97
           })
         );
@@ -146,8 +147,8 @@ function validateRequestContracts(artifacts: ServiceArtifact[]): ValidationFindi
             title: "Service request is missing tracker_id",
             message: `${checkLabel(check, index)} does not send the public tracker_id.`,
             evidencePath: `${artifact.path}:checks[${index}].request.params.tracker_id`,
-            remediation: "Pass the Luigi's Box tracker_id on every Autocomplete API, Top Items API, and Trending Queries API request.",
-            docs: ["autocomplete/api/v2/autocomplete", "autocomplete/api/v1/top-items", "autocomplete/api/v2/trending-queries"],
+            remediation: "Pass the Luigi's Box tracker_id on every Autocomplete, Top Items, Trending Queries, and Search API request.",
+            docs: ["autocomplete/api/v2/autocomplete", "autocomplete/api/v1/top-items", "autocomplete/api/v2/trending-queries", "search/api/v1/search"],
             confidence: 0.98
           })
         );
@@ -161,6 +162,27 @@ function validateRequestContracts(artifacts: ServiceArtifact[]): ValidationFindi
           findings.push(requiredParamFinding(artifact.path, check, index, "type", "Request result types and counts, for example item:6,category:3,query:5."));
         }
         findings.push(...validateTypeParam(artifact.path, check, index));
+        findings.push(...validateHitFieldsRecommendation(artifact.path, check, index));
+      }
+
+      if (check.endpoint === "search") {
+        if (!hasParam(params, "q") && !hasParam(params, "f[]") && !hasParam(params, "f_must[]")) {
+          findings.push(
+            serviceFinding({
+              id: "SERVICE_SEARCH_QUERY_OR_FILTER_MISSING",
+              severity: "P1",
+              title: "Search request has neither query nor filters",
+              message: `${checkLabel(check, index)} does not send q, f[], or f_must[].`,
+              evidencePath: `${artifact.path}:checks[${index}].request.params`,
+              remediation: "Send q for user-entered searches, or provide f[]/f_must[] for filter-only search pages.",
+              docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+              confidence: 0.88
+            })
+          );
+        }
+
+        findings.push(...validateSearchTypeFilters(artifact.path, check, index));
+        findings.push(...validateSearchSize(artifact.path, check, index));
         findings.push(...validateHitFieldsRecommendation(artifact.path, check, index));
       }
 
@@ -289,6 +311,40 @@ function validateAnalyticsContracts(artifacts: ServiceArtifact[]): ValidationFin
         }
       }
 
+      if (check.endpoint === "search") {
+        if (check.analytics.viewListName !== "Search Results") {
+          findings.push(wrongListFinding(artifact.path, check, index, "Search Results"));
+        }
+        if (check.analytics.clickAction !== "click") {
+          findings.push(
+            serviceFinding({
+              id: "SERVICE_SEARCH_CLICK_TRACKING_MISSING",
+              severity: "P1",
+              title: "Search result click tracking is missing",
+              message: `${checkLabel(check, index)} does not state that result clicks are tracked as click actions.`,
+              evidencePath: `${artifact.path}:checks[${index}].analytics.clickAction`,
+              remediation: "Track product/result selection as an Events API click action or dataLayer select_item with the clicked catalog identity.",
+              docs: ["quickstart/search/building-custom-ui"],
+              confidence: 0.86
+            })
+          );
+        }
+        if (check.analytics.noResultsEventRequired !== true) {
+          findings.push(
+            serviceFinding({
+              id: "SERVICE_SEARCH_NO_RESULTS_EVENT_MISSING",
+              severity: "P2",
+              title: "Search no-results tracking is not declared",
+              message: `${checkLabel(check, index)} does not declare that zero-result searches are still tracked.`,
+              evidencePath: `${artifact.path}:checks[${index}].analytics.noResultsEventRequired`,
+              remediation: "Send the Search Results view event even when the hits array is empty so zero-result queries can be learned from.",
+              docs: ["quickstart/search/building-custom-ui"],
+              confidence: 0.84
+            })
+          );
+        }
+      }
+
       return findings;
     })
   );
@@ -393,12 +449,16 @@ function validateResponseShape(
       id: "SERVICE_RESPONSE_NOT_OBJECT",
       severity: "P0",
       title: "Service response is not a JSON object",
-      message: `${checkLabel(check, index)} returned ${describeValue(data)}; docs specify an object with hits[].`,
+      message: `${checkLabel(check, index)} returned ${describeValue(data)}; docs specify a JSON object response.`,
       evidencePath: `${artifactPath}:checks[${index}].response`,
       remediation: "Parse the API response as JSON and confirm the endpoint path is correct.",
       docs: docsForEndpoint(check.endpoint),
       confidence: 0.96
     })];
+  }
+
+  if (check.endpoint === "search") {
+    return validateSearchResponseShape(artifactPath, check, index, data, expected);
   }
 
   const hits = Array.isArray(data.hits) ? data.hits : undefined;
@@ -426,6 +486,54 @@ function validateResponseShape(
   return findings;
 }
 
+function validateSearchResponseShape(
+  artifactPath: string,
+  check: ServiceCheck,
+  index: number,
+  data: Record<string, unknown>,
+  expected: ServiceExpectation
+): ValidationFinding[] {
+  const results = data.results;
+  if (!isRecord(results)) {
+    return [serviceFinding({
+      id: "SERVICE_SEARCH_RESULTS_OBJECT_MISSING",
+      severity: "P0",
+      title: "Search response is missing results object",
+      message: `${checkLabel(check, index)} did not return results, but the Search API response shape uses results.hits and results.total_hits.`,
+      evidencePath: `${artifactPath}:checks[${index}].response.results`,
+      remediation: "Read the Search API response from response.data.results, not response.data.hits.",
+      docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+      confidence: 0.96
+    })];
+  }
+
+  const hits = Array.isArray(results.hits) ? results.hits : undefined;
+  if (!hits) {
+    return [serviceFinding({
+      id: "SERVICE_SEARCH_HITS_ARRAY_MISSING",
+      severity: "P0",
+      title: "Search response is missing results.hits[]",
+      message: `${checkLabel(check, index)} did not return a results.hits array.`,
+      evidencePath: `${artifactPath}:checks[${index}].response.results.hits`,
+      remediation: "Confirm the request uses /search and that the UI reads data.results.hits.",
+      docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+      confidence: 0.96
+    })];
+  }
+
+  const findings: ValidationFinding[] = [];
+  findings.push(...validateRootFields(artifactPath, check, index, data, expected));
+  findings.push(...validateResultsFields(artifactPath, check, index, results, expected));
+  findings.push(...validateResultCount(artifactPath, check, index, hits, expected));
+  findings.push(...validateGuid(artifactPath, check, index, data, expected));
+  findings.push(...validateSearchResultFilters(artifactPath, check, index, results));
+  findings.push(...validateHitTypes(artifactPath, check, index, hits, expected));
+  findings.push(...validateContainsIdentities(artifactPath, check, index, hits, expected));
+  findings.push(...validateHitFields(artifactPath, check, index, hits, expected));
+
+  return findings;
+}
+
 function validateEndpointUrl(artifactPath: string, check: ServiceCheck, index: number): ValidationFinding[] {
   try {
     const url = new URL(check.request.url);
@@ -435,12 +543,14 @@ function validateEndpointUrl(artifactPath: string, check: ServiceCheck, index: n
       findings.push(
         serviceFinding({
           id: "SERVICE_ENDPOINT_HOST_NOT_LIVE_API",
-          severity: "P1",
+          severity: check.endpoint === "search" ? "P2" : "P1",
           title: "Service check does not call the public live API host",
-          message: `${checkLabel(check, index)} calls ${url.origin}; docs recommend direct frontend calls to https://live.luigisbox.com.`,
+          message: `${checkLabel(check, index)} calls ${url.origin}; live checks are easiest to compare against https://live.luigisbox.com.`,
           evidencePath: `${artifactPath}:checks[${index}].request.url`,
-          remediation: "Call the public Luigi's Box live API directly from the frontend unless you have a specific, accepted reason to proxy.",
-          docs: ["autocomplete/guides/integration-best-practices"],
+          remediation: check.endpoint === "search"
+            ? "For validator visibility checks, call the live Search API directly, or document that this check intentionally validates your backend proxy."
+            : "Call the public Luigi's Box live API directly from the frontend unless you have a specific, accepted reason to proxy.",
+          docs: docsForEndpoint(check.endpoint),
           confidence: 0.86
         })
       );
@@ -499,6 +609,58 @@ function validateTypeParam(artifactPath: string, check: ServiceCheck, index: num
   })];
 }
 
+function validateSearchTypeFilters(artifactPath: string, check: ServiceCheck, index: number): ValidationFinding[] {
+  const expectedTypes = check.expect?.resultTypes ?? [];
+  if (expectedTypes.length === 0) return [];
+
+  const typeFilters = requestTypeFilters(check);
+  if (typeFilters.size === 0) {
+    return [serviceFinding({
+      id: "SERVICE_SEARCH_TYPE_FILTER_MISSING",
+      severity: "P2",
+      title: "Search request does not scope result type",
+      message: `${checkLabel(check, index)} expects ${expectedTypes.join(", ")} results but does not send a type filter.`,
+      evidencePath: `${artifactPath}:checks[${index}].request.params.f[]`,
+      remediation: `Add f[]=type:${expectedTypes[0]} or explicitly document why this search should mix result types.`,
+      docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+      confidence: 0.78
+    })];
+  }
+
+  const missing = expectedTypes.filter((type) => !typeFilters.has(type));
+  if (missing.length === 0) return [];
+
+  return [serviceFinding({
+    id: "SERVICE_SEARCH_TYPE_FILTER_MISMATCH",
+    severity: "P1",
+    title: "Search request filters the wrong result type",
+    message: `${checkLabel(check, index)} expects ${expectedTypes.join(", ")} results, but request type filters are ${[...typeFilters].join(", ")}.`,
+    evidencePath: `${artifactPath}:checks[${index}].request.params.f[]`,
+    remediation: `Use the type value that the catalog actually indexed, for example f[]=type:${expectedTypes[0]}.`,
+    docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+    confidence: 0.9
+  })];
+}
+
+function validateSearchSize(artifactPath: string, check: ServiceCheck, index: number): ValidationFinding[] {
+  const value = firstParamValue(check.request.params, "size");
+  if (value === undefined) return [];
+
+  const size = Number(value);
+  if (Number.isInteger(size) && size >= 1 && size <= 200) return [];
+
+  return [serviceFinding({
+    id: "SERVICE_SEARCH_SIZE_INVALID",
+    severity: "P1",
+    title: "Search request uses invalid size",
+    message: `${checkLabel(check, index)} sends size=${String(value)}, but the Search API allows integer size values from 1 to 200.`,
+    evidencePath: `${artifactPath}:checks[${index}].request.params.size`,
+    remediation: "Set size to the number of hits the UI renders per page, capped at 200.",
+    docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+    confidence: 0.9
+  })];
+}
+
 function validateHitFieldsRecommendation(artifactPath: string, check: ServiceCheck, index: number): ValidationFinding[] {
   if (hasParam(check.request.params ?? {}, "hit_fields")) return [];
 
@@ -508,8 +670,10 @@ function validateHitFieldsRecommendation(artifactPath: string, check: ServiceChe
     title: "Service request does not limit hit_fields",
     message: `${checkLabel(check, index)} does not specify hit_fields.`,
     evidencePath: `${artifactPath}:checks[${index}].request.params.hit_fields`,
-    remediation: "Request only the attributes rendered in the dropdown, for example title,price,image_link_l,web_url.",
-    docs: ["autocomplete/guides/integration-best-practices"],
+    remediation: check.endpoint === "search"
+      ? "Request only the attributes rendered in the search results UI, for example title,url,price_amount,image_link,brand,nested."
+      : "Request only the attributes rendered in the dropdown, for example title,price,image_link_l,web_url.",
+    docs: docsForEndpoint(check.endpoint),
     confidence: 0.82
   })];
 }
@@ -532,6 +696,29 @@ function validateRootFields(
       evidencePath: `${artifactPath}:checks[${index}].response.${field}`,
       remediation: "Confirm the endpoint version and request parameters match the documented response shape.",
       docs: docsForEndpoint(check.endpoint),
+      confidence: 0.86
+    });
+  });
+}
+
+function validateResultsFields(
+  artifactPath: string,
+  check: ServiceCheck,
+  index: number,
+  results: Record<string, unknown>,
+  expected: ServiceExpectation
+): ValidationFinding[] {
+  return (expected.requiredResultsFields ?? []).flatMap((field) => {
+    if (results[field] !== undefined && results[field] !== null) return [];
+
+    return serviceFinding({
+      id: "SERVICE_SEARCH_RESULTS_FIELD_MISSING",
+      severity: "P1",
+      title: "Search response is missing an expected results field",
+      message: `${checkLabel(check, index)} response is missing results.${field}.`,
+      evidencePath: `${artifactPath}:checks[${index}].response.results.${field}`,
+      remediation: "Confirm the endpoint version and request parameters match the documented Search API response shape.",
+      docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
       confidence: 0.86
     });
   });
@@ -579,6 +766,44 @@ function validateResultCount(
   return findings;
 }
 
+function validateSearchResultFilters(
+  artifactPath: string,
+  check: ServiceCheck,
+  index: number,
+  results: Record<string, unknown>
+): ValidationFinding[] {
+  const requestTypes = requestTypeFilters(check);
+  if (requestTypes.size === 0) return [];
+
+  if (!Array.isArray(results.filters)) {
+    return [serviceFinding({
+      id: "SERVICE_SEARCH_RESPONSE_FILTERS_MISSING",
+      severity: "P2",
+      title: "Search response does not echo applied filters",
+      message: `${checkLabel(check, index)} sends type filters but response.results.filters is not present.`,
+      evidencePath: `${artifactPath}:checks[${index}].response.results.filters`,
+      remediation: "Check the full Search API response when debugging whether type filters were applied.",
+      docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+      confidence: 0.72
+    })];
+  }
+
+  const responseTypes = typeFiltersFromValues(results.filters);
+  const missing = [...requestTypes].filter((type) => !responseTypes.has(type));
+  if (missing.length === 0) return [];
+
+  return [serviceFinding({
+    id: "SERVICE_SEARCH_RESPONSE_FILTER_MISMATCH",
+    severity: "P2",
+    title: "Search response filters do not match request type filters",
+    message: `${checkLabel(check, index)} sent type filters ${[...requestTypes].join(", ")}, but response filters show ${[...responseTypes].join(", ") || "none"}.`,
+    evidencePath: `${artifactPath}:checks[${index}].response.results.filters`,
+    remediation: "Verify the request URL sent by the UI and the response body used for rendering are from the same Search API call.",
+    docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+    confidence: 0.74
+  })];
+}
+
 function validateGuid(
   artifactPath: string,
   check: ServiceCheck,
@@ -589,13 +814,13 @@ function validateGuid(
   if (expected.requireGuid !== true || typeof data.guid === "string" && data.guid.trim() !== "") return [];
 
   return [serviceFinding({
-    id: "SERVICE_AUTOCOMPLETE_GUID_MISSING",
+    id: check.endpoint === "search" ? "SERVICE_SEARCH_GUID_MISSING" : "SERVICE_AUTOCOMPLETE_GUID_MISSING",
     severity: "P1",
-    title: "Autocomplete response is missing guid",
-    message: `${checkLabel(check, index)} did not return a guid for correlating autocomplete analytics.`,
+    title: check.endpoint === "search" ? "Search response is missing guid" : "Autocomplete response is missing guid",
+    message: `${checkLabel(check, index)} did not return a guid for correlating analytics.`,
     evidencePath: `${artifactPath}:checks[${index}].response.guid`,
-    remediation: "Use the documented Autocomplete API response and pass the guid into analytics filters when the integration path requires _Guid tracking.",
-    docs: ["autocomplete/api/v2/autocomplete", "analytics/api/events"],
+    remediation: "Use the documented API response and pass the guid into analytics filters when the integration path requires _Guid tracking.",
+    docs: check.endpoint === "search" ? ["search/api/v1/search", "analytics/api/events"] : ["autocomplete/api/v2/autocomplete", "analytics/api/events"],
     confidence: 0.84
   })];
 }
@@ -637,7 +862,7 @@ function validateHitTypes(
       severity: "P1",
       title: "Expected result type is missing",
       message: `${checkLabel(check, index)} did not return any ${type} hit.`,
-      evidencePath: `${artifactPath}:checks[${index}].response.hits`,
+      evidencePath: hitsEvidencePath(artifactPath, check, index),
       remediation: "Check the type parameter counts and catalog content for the expected object type.",
       docs: docsForEndpoint(check.endpoint),
       confidence: 0.88
@@ -667,7 +892,7 @@ function validateContainsIdentities(
       severity: "P1",
       title: "Expected catalog identity is missing from service response",
       message: `${checkLabel(check, index)} did not return ${identity}.`,
-      evidencePath: `${artifactPath}:checks[${index}].response.hits`,
+      evidencePath: hitsEvidencePath(artifactPath, check, index),
       remediation: "Verify the object exists in the catalog, is indexed, matches the query/filter, and is not excluded by availability/ranking setup.",
       docs: docsForEndpoint(check.endpoint),
       confidence: 0.88
@@ -695,7 +920,7 @@ function validateHitFields(
         severity: "P1",
         title: "Service hit is missing expected top-level field",
         message: `${checkLabel(check, index)} has a hit missing ${field}.`,
-        evidencePath: `${artifactPath}:checks[${index}].response.hits[${missing}].${field}`,
+        evidencePath: `${hitsEvidencePath(artifactPath, check, index)}[${missing}].${field}`,
         remediation: "Confirm hit_fields and rendering code use fields returned by the documented response shape.",
         docs: docsForEndpoint(check.endpoint),
         confidence: 0.86
@@ -713,7 +938,7 @@ function validateHitFields(
         severity: "P1",
         title: "Service hit is missing expected attribute",
         message: `${checkLabel(check, index)} has a hit missing attributes.${field}.`,
-        evidencePath: `${artifactPath}:checks[${index}].response.hits[${missing}].attributes.${field}`,
+        evidencePath: `${hitsEvidencePath(artifactPath, check, index)}[${missing}].attributes.${field}`,
         remediation: "Include the attribute in hit_fields and verify it is indexed in the catalog fields.",
         docs: docsForEndpoint(check.endpoint),
         confidence: 0.86
@@ -737,7 +962,7 @@ function wrongListFinding(
     message: `${checkLabel(check, index)} should be tracked as ${expectedListName}, but declares ${check.analytics?.viewListName ?? "nothing"}.`,
     evidencePath: `${artifactPath}:checks[${index}].analytics.viewListName`,
     remediation: `Set analytics.viewListName to ${expectedListName} for this endpoint behavior.`,
-    docs: ["quickstart/autocomplete/query-suggestions", "quickstart/autocomplete/top-items-api", "quickstart/autocomplete/trending-queries"],
+    docs: ["quickstart/autocomplete/query-suggestions", "quickstart/autocomplete/top-items-api", "quickstart/autocomplete/trending-queries", "quickstart/search/building-custom-ui"],
     confidence: 0.9
   });
 }
@@ -780,21 +1005,66 @@ function hasParam(params: Record<string, unknown>, key: string): boolean {
   return String(value).trim() !== "";
 }
 
+function firstParamValue(params: Record<string, unknown> | undefined, key: string): unknown {
+  const value = params?.[key];
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+function paramValues(params: Record<string, unknown> | undefined, key: string): unknown[] {
+  const value = params?.[key];
+  if (value === undefined || value === null) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+function requestTypeFilters(check: ServiceCheck): Set<string> {
+  return typeFiltersFromValues([
+    ...paramValues(check.request.params, "f[]"),
+    ...paramValues(check.request.params, "f_must[]")
+  ]);
+}
+
+function typeFiltersFromValues(values: unknown[]): Set<string> {
+  const filters = new Set<string>();
+
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const match = /^type:(.+)$/i.exec(value.trim());
+    if (match?.[1]) {
+      filters.add(match[1]);
+    }
+  }
+
+  return filters;
+}
+
 function hasMeaningfulValue(value: unknown): boolean {
   if (typeof value === "string") return value.trim() !== "";
   if (Array.isArray(value)) return value.length > 0;
   return value !== undefined && value !== null;
 }
 
-function isKnownEndpoint(value: unknown): value is AutocompleteEndpoint {
-  return value === "autocomplete" || value === "top_items" || value === "personalized_top_items" || value === "trending_queries";
+function hitsEvidencePath(artifactPath: string, check: ServiceCheck, index: number): string {
+  const path = check.endpoint === "search" ? "results.hits" : "hits";
+  return `${artifactPath}:checks[${index}].response.${path}`;
 }
 
-function docsForEndpoint(endpoint: AutocompleteEndpoint): string[] {
+function isKnownEndpoint(value: unknown): value is ServiceEndpoint {
+  return (
+    value === "autocomplete" ||
+    value === "top_items" ||
+    value === "personalized_top_items" ||
+    value === "trending_queries" ||
+    value === "search"
+  );
+}
+
+function docsForEndpoint(endpoint: ServiceEndpoint): string[] {
   if (endpoint === "autocomplete") return ["autocomplete/api/v2/autocomplete", "quickstart/autocomplete/query-suggestions"];
   if (endpoint === "top_items") return ["autocomplete/api/v1/top-items", "quickstart/autocomplete/top-items-api"];
   if (endpoint === "personalized_top_items") return ["autocomplete/api/v1/top-items", "quickstart/autocomplete/top-items-api"];
-  return ["autocomplete/api/v2/trending-queries", "quickstart/autocomplete/trending-queries"];
+  if (endpoint === "trending_queries") return ["autocomplete/api/v2/trending-queries", "quickstart/autocomplete/trending-queries"];
+  return ["search/api/v1/search", "quickstart/search/building-custom-ui"];
 }
 
 function checkLabel(check: ServiceCheck, index: number): string {

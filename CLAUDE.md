@@ -19,6 +19,7 @@ Hard rules:
 - If asked for corrected snippets, open the docs/examples cited by the report before writing code.
 - Do not invent API fields, event names, payload shapes, or script tags.
 - If no docs-backed snippet exists, say so and provide a plain-English fix only.
+- For Search API/custom search UI work, verify against `search/api/v1/search`, `quickstart/search/building-custom-ui`, `public/examples/search/custom-search-ui.html`, and `public/examples/search/custom-search-ui-datalayer.html` before giving snippets.
 
 Default frontend review:
 
@@ -42,6 +43,17 @@ yarn agent review-catalog <files...> \
   --profile <catalog-profile.json> \
   --report results/llm-catalog-review.md
 ```
+
+Default Search API visibility review:
+
+```bash
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+yarn validate service fixtures/service/search-visibility-good.json \
+  --report results/llm-search-service-review.md
+```
+
+Use Search API service validation to catch cases where objects are indexed but the UI filters a different hit type, for example asking for `type:item` when `/search` returns the objects as `type:digital-products`.
 
 Final summaries should say whether the integration is READY, RISKY, or BLOCKED and list the P0/P1/P2 findings with evidence lines and cited docs.
 

@@ -25,6 +25,7 @@ When reviewing Luigi's Box integration evidence:
 - Source mentions must use absolute `https://docs.luigisbox.com/<source>` links. Direct docs quotes must use Markdown blockquotes.
 - Treat P0 as blocking, P1 as important, and P2 as advisory.
 - Do not invent corrected code snippets. Open cited docs/examples first and cite the exact local path and line used.
+- For Search API/custom search UI work, verify against `search/api/v1/search`, `quickstart/search/building-custom-ui`, `public/examples/search/custom-search-ui.html`, and `public/examples/search/custom-search-ui-datalayer.html` before giving snippets.
 
 Frontend autocomplete review:
 
@@ -44,6 +45,15 @@ yarn agent review-catalog <files...> \
   --profile <catalog-profile.json> \
   --report results/llm-catalog-review.md
 ```
+
+Search API visibility review:
+
+```bash
+yarn validate service fixtures/service/search-visibility-good.json \
+  --report results/llm-search-service-review.md
+```
+
+Use this for indexed-but-not-visible failures: compare the UI's `f[]=type:<type>` filter to the hit `type` returned by `/search`, and check Search Results view/click/no-results analytics.
 
 After running the tool, read the generated report and summarize READY, RISKY, or BLOCKED with evidence lines, P0/P1/P2 findings, fixes, and cited docs.
 

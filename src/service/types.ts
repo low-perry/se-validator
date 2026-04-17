@@ -4,16 +4,20 @@ export type AutocompleteEndpoint =
   | "personalized_top_items"
   | "trending_queries";
 
+export type SearchEndpoint = "search";
+
+export type ServiceEndpoint = AutocompleteEndpoint | SearchEndpoint;
+
 export type QueryParamValue = string | number | boolean | Array<string | number | boolean>;
 
 export interface ServiceProfile {
-  service: "autocomplete-api";
+  service: "autocomplete-api" | "search-api" | "search-visibility";
   checks: ServiceCheck[];
 }
 
 export interface ServiceCheck {
   name: string;
-  endpoint: AutocompleteEndpoint;
+  endpoint: ServiceEndpoint;
   request: ServiceRequest;
   expect?: ServiceExpectation;
   analytics?: ServiceAnalyticsExpectation;
@@ -33,6 +37,7 @@ export interface ServiceExpectation {
   resultTypes?: string[];
   containsIdentities?: string[];
   requiredRootFields?: string[];
+  requiredResultsFields?: string[];
   requiredHitFields?: string[];
   requiredAttributeFields?: string[];
   requireGuid?: boolean;
@@ -60,7 +65,7 @@ export interface ServiceArtifact {
 export interface ServiceCheckExecution {
   artifactPath: string;
   checkName: string;
-  endpoint: AutocompleteEndpoint | "unknown";
+  endpoint: ServiceEndpoint | "unknown";
   url: string;
   status: number | undefined;
   durationMs: number | undefined;

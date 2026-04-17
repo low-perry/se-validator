@@ -4,7 +4,7 @@ import { isRecord } from "../catalog/detect.js";
 import { parseServiceProfiles } from "./parse.js";
 import { executeServiceCheck } from "./http.js";
 import { serviceRules } from "./rules.js";
-import type { AutocompleteEndpoint, ServiceArtifact, ServiceCheck, ServiceCheckExecution } from "./types.js";
+import type { ServiceArtifact, ServiceCheck, ServiceCheckExecution, ServiceEndpoint } from "./types.js";
 
 export async function validateService(
   paths: string[]
@@ -14,7 +14,7 @@ export async function validateService(
   const findings = serviceRules.flatMap((rule) => rule(artifacts, executions));
 
   return {
-    title: "Autocomplete Service API Validation Report",
+    title: "Service API Validation Report",
     artifacts: artifacts.map(
       (artifact) =>
         `${artifact.path}: ${artifact.profile?.service ?? "unknown"} (${artifact.profile?.checks.length ?? 0} check${
@@ -49,6 +49,12 @@ function isExecutableCheck(value: unknown): value is ServiceCheck {
   return isRecord(value) && isKnownEndpoint(value.endpoint) && isRecord(value.request) && typeof value.request.url === "string";
 }
 
-function isKnownEndpoint(value: unknown): value is AutocompleteEndpoint {
-  return value === "autocomplete" || value === "top_items" || value === "personalized_top_items" || value === "trending_queries";
+function isKnownEndpoint(value: unknown): value is ServiceEndpoint {
+  return (
+    value === "autocomplete" ||
+    value === "top_items" ||
+    value === "personalized_top_items" ||
+    value === "trending_queries" ||
+    value === "search"
+  );
 }

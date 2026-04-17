@@ -59,3 +59,9 @@ Next action:
 - If docs and validator disagree, label it `docs-validator mismatch` and do not guess which source is right.
 - Corrected snippets must be backed by exact local docs or examples paths and line numbers.
 - Prefer examples under `$SE_VALIDATOR_DOCS_ROOT/public/examples/` for frontend snippets.
+- For Search API or custom search UI claims, check the Search API reference, the custom search UI quickstart, and both public examples before writing snippets:
+  - `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/search/api/v1/search.mdx`
+  - `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/search/building-custom-ui.md`
+  - `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui.html`
+  - `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui-datalayer.html`
+- For Search API type visibility, treat the indexed hit `type` returned by `/search` as the type the UI must request with `f[]=type:<type>` unless the client intentionally mixes result types.

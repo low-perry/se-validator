@@ -1,0 +1,40 @@
+{
+  "service": "search-api",
+  "checks": [
+    {
+      "name": "Digital products are visible in Search API",
+      "endpoint": "search",
+      "request": {
+        "url": "https://live.luigisbox.com/search",
+        "params": {
+          "tracker_id": "757876-1071971",
+          "q": "shirt",
+          "f[]": ["type:digital-products"],
+          "facets": "brand,category,price_amount",
+          "hit_fields": "title,web_url,price_eur,image_link_l,nested,id,category",
+          "size": 5
+        }
+      },
+      "expect": {
+        "status": 200,
+        "minResults": 1,
+        "resultTypes": ["digital-products"],
+        "containsIdentities": ["digSKU-1001"],
+        "requiredResultsFields": ["total_hits"],
+        "requiredHitFields": ["url", "type"],
+        "requiredAttributeFields": ["title"],
+        "requireGuid": true
+      },
+      "analytics": {
+        "viewListName": "Search Results",
+        "clickAction": "click",
+        "noResultsEventRequired": true,
+        "notes": [
+          "Search UI calls /search with f[]=type:digital-products because the digital product feed indexed this custom type.",
+          "After rendering data.results.hits, send a Search Results view event.",
+          "Send the same Search Results view with an empty items array when results.hits is empty."
+        ]
+      }
+    }
+  ]
+}

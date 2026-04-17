@@ -48,6 +48,11 @@ Hard rules:
 - Do not invent API fields, event names, payload shapes, or script tags.
 - Do not write corrected code from memory.
 - Prefer examples from $SE_VALIDATOR_DOCS_ROOT/public/examples/.
+- For Search API/custom search UI fixes, inspect all four sources before writing snippets:
+  - `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/search/api/v1/search.mdx`
+  - `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/search/building-custom-ui.md`
+  - `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui.html`
+  - `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui-datalayer.html`
 - For every corrected snippet, cite the exact docs/example line using an absolute docs link: https://docs.luigisbox.com/<source>.
 - When quoting docs, use a Markdown blockquote under the source link.
 - If the cited docs/examples do not contain enough information, say: "I can explain the fix, but I cannot provide a source-backed snippet."
@@ -131,6 +136,7 @@ First, identify the evidence type:
 - Catalog feed XML or JSON -> use catalog validation.
 - Content Update payload JSON -> use catalog validation or agent catalog review.
 - Frontend HTML/JS autocomplete integration -> use agent review-ui.
+- Search API visibility/service profile JSON -> use service validation.
 - Service profile JSON -> use service validation.
 - Analytics event payload -> use analytics validation.
 
@@ -148,6 +154,14 @@ yarn agent review-catalog <files...> \
 Docs claim verification:
 scripts/docs-search.sh '<term-or-rg-pattern>'
 scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8
+
+Search API visibility validation:
+yarn validate service fixtures/service/search-visibility-good.json \
+  --report results/search-visibility-good-report.md
+
+Search API type-mismatch validation:
+yarn validate service fixtures/service/search-visibility-bad.json \
+  --report results/search-visibility-bad-report.md
 
 Frontend autocomplete review:
 yarn agent review-ui <html-or-js-files...> \
@@ -213,6 +227,33 @@ Then read results/llm-ui-review.md and tell me:
 - Which code lines are most likely responsible?
 - What should the client change first?
 - Which docs did the validator cite?
+```
+
+## Search API Visibility Review
+
+```text
+Review this Search API integration.
+
+Run:
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+yarn validate service \
+  fixtures/service/search-visibility-good.json \
+  --report results/llm-search-service-review.md
+
+Then read results/llm-search-service-review.md and tell me:
+- Is the Search API profile READY, RISKY, or BLOCKED?
+- Which type filter is the Search UI using?
+- Which hit types did the API actually return?
+- Do the expected catalog identities appear?
+- Does the analytics contract send Search Results views, clicks, and no-results events?
+- Which docs did the validator cite?
+
+Before giving corrected snippets, verify against:
+- `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/search/api/v1/search.mdx`
+- `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/search/building-custom-ui.md`
+- `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui.html`
+- `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui-datalayer.html`
 ```
 
 ## Catalog Review
@@ -310,6 +351,7 @@ First inspect the file names and contents enough to classify them:
 - frontend autocomplete HTML/JS
 - analytics event payload
 - service profile
+- Search API service profile
 
 Then choose the right validator command. If it is frontend evidence, use --explain. If it is catalog evidence and there is no profile, run the generic validator first and then propose a profile.
 

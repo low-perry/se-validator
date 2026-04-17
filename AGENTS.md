@@ -20,6 +20,7 @@ cd "$SE_VALIDATOR_ROOT"
 - Treat P0 as blocking, P1 as important, and P2 as advisory.
 - Keep API keys and secrets out of responses and report snippets.
 - Do not invent corrected snippets. If the user asks for fixes, enter source-backed fix mode: open the docs/examples cited by the generated report first, then cite the exact local file path and line used for the snippet.
+- For Search API/custom search UI work, verify against the Search API reference, the custom search UI quickstart, and both public examples before correcting snippets.
 
 ## Default Commands
 
@@ -41,6 +42,15 @@ yarn agent review-catalog <files...> \
   --profile <catalog-profile.json> \
   --report results/llm-catalog-review.md
 ```
+
+Search API visibility review:
+
+```bash
+yarn validate service fixtures/service/search-visibility-good.json \
+  --report results/llm-search-service-review.md
+```
+
+Use this for the indexed-but-not-visible failure mode: validate that the UI's `f[]=type:<type>` filter matches the hit `type` returned by `/search`, and that Search Results analytics are declared for views, clicks, and no-results.
 
 After running a review, read the report and summarize readiness as READY, RISKY, or BLOCKED with P0/P1/P2 findings, likely code lines, recommended fixes, and cited docs.
 

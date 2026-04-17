@@ -1,0 +1,35 @@
+{
+  "service": "search-visibility",
+  "checks": [
+    {
+      "name": "Digital products queried with item filter",
+      "endpoint": "search",
+      "request": {
+        "url": "https://live.luigisbox.com/search",
+        "params": {
+          "tracker_id": "757876-1071971",
+          "q": "shirt",
+          "f[]": ["type:item"],
+          "hit_fields": "title,web_url",
+          "size": 5
+        }
+      },
+      "expect": {
+        "status": 200,
+        "minResults": 1,
+        "resultTypes": ["digital-products"],
+        "containsIdentities": ["digSKU-1001"],
+        "requiredResultsFields": ["total_hits"],
+        "requiredHitFields": ["url", "type"],
+        "requiredAttributeFields": ["title"],
+        "requireGuid": true
+      },
+      "analytics": {
+        "viewListName": "Autocomplete",
+        "notes": [
+          "This intentionally models the failure mode where the catalog indexed a custom digital-products type but the Search UI still asks for item results."
+        ]
+      }
+    }
+  ]
+}

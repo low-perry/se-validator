@@ -23,6 +23,7 @@ The bootstrap exports `SE_VALIDATOR_ROOT` and `SE_VALIDATOR_DOCS_ROOT`; do not h
 - XML or JSON catalog feed: run `yarn validate catalog <files...>` for quick validation, or `yarn agent review-catalog <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --report results/llm-catalog-review.md` for doc-aware review.
 - Content Update JSON payload: review as catalog evidence with `yarn agent review-catalog`.
 - Frontend autocomplete HTML/JS: run `yarn agent review-ui <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --profile fixtures/frontend/autocomplete-profile-full.json --explain --report results/llm-review.md`.
+- Search API service profile JSON: run `yarn validate service <files...>`; use `fixtures/service/search-visibility-good.json` as the passing reference profile.
 - Analytics event payload JSON: run `yarn validate analytics <files...>`.
 - Service profile JSON: run `yarn validate service <files...>`.
 
@@ -38,6 +39,17 @@ If the user pastes raw evidence in chat, save it exactly under `tmp/agent-input/
 - Include validator evidence lines and cited docs when present.
 - Source mentions must use absolute `https://docs.luigisbox.com/<source>` links. Direct docs quotes must use Markdown blockquotes.
 - Keep API keys and secrets out of the response.
+
+## Search API Reviews
+
+For Search API or custom search UI evidence, verify against these sources before explaining or correcting snippets:
+
+- `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/search/api/v1/search.mdx`
+- `$SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/search/building-custom-ui.md`
+- `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui.html`
+- `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui-datalayer.html`
+
+When a catalog object is indexed under a custom type, validate that Search API requests use the matching `f[]=type:<indexed-type>` filter. Do not assume the UI should ask for `type:item`, `type:product`, or any other type unless the service profile or Search API response proves that type is what the tracker returns.
 
 ## Fixes
 

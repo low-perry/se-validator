@@ -96,7 +96,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
   validate
     .command("service")
-    .description("Validate live service API checks, starting with Autocomplete API")
+    .description("Validate live service API checks for Autocomplete and Search")
     .argument("<paths...>", "Service profile path(s)")
     .option("--json", "Print machine-readable JSON")
     .option("--report <path>", "Write a human-readable report file")
@@ -412,7 +412,7 @@ function formatServiceReport(report: Awaited<ReturnType<typeof validateService>>
 
   if (report.findings.length === 0) {
     lines.push("");
-    lines.push("No findings. Autocomplete service checks pass the current rule set.");
+    lines.push("No findings. Service API checks pass the current rule set.");
     return lines.join("\n");
   }
 
@@ -489,9 +489,20 @@ function formatFinding(finding: ValidationFinding, evidence: FindingEvidence[] =
     lines.push(`  Likely code: ${match.path}:${match.line}`);
     lines.push(`  Snippet: \`${match.snippet}\``);
   }
-  lines.push(`  Docs: ${finding.docs.join(", ")}`);
+  lines.push(`  Docs: ${formatFindingDocs(finding.docs)}`);
   lines.push(`  Confidence: ${finding.confidence}`);
   return lines;
+}
+
+function formatFindingDocs(docs: string[]): string {
+  if (docs.length === 0) return "none";
+  return docs.map(docsMarkdownLink).join(", ");
+}
+
+function docsMarkdownLink(source: string): string {
+  if (/^https?:\/\//.test(source)) return `[${source}](${source})`;
+  const normalized = source.replace(/^\/+/, "");
+  return `[${normalized}](https://docs.luigisbox.com/${normalized})`;
 }
 
 function defaultDocsRoot(): string {
