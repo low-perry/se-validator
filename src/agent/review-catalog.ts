@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { ValidationFinding } from "../core/types.js";
 import { createFinding, scoreFindings, summarizeFindings, type FindingInput } from "../core/findings.js";
@@ -12,7 +11,8 @@ import {
 } from "../catalog/profile.js";
 import { validateCatalog } from "../catalog/validate.js";
 import { findRelevantDocs } from "./docs.js";
-import type { AgentCatalogReview, AgentCatalogReviewOptions, CatalogStructureSummary, FindingEvidence } from "./types.js";
+import { locateCatalogEvidence } from "./evidence.js";
+import type { AgentCatalogReview, AgentCatalogReviewOptions, CatalogStructureSummary } from "./types.js";
 
 const variantFields = ["color", "colour", "color_code", "size", "material", "pattern", "style", "variant"];
 
@@ -39,7 +39,7 @@ export async function reviewCatalog(paths: string[], options: AgentCatalogReview
     score: scoreFindings([...baseValidation.findings, ...profileFindings]),
     summary: summarizeFindings([...baseValidation.findings, ...profileFindings])
   };
-  const evidence = await locateCatalogFindingEvidence(paths, validation.findings);
+  const evidence = await locateCatalogEvidence(paths, validation.findings);
   const docsHits = await findRelevantDocs({
     docsRoot: options.docsRoot,
     service: "catalog",
@@ -917,92 +917,6 @@ function buildCatalogFollowUpPrompt(
   ].join("\n");
 }
 
-async function locateCatalogFindingEvidence(paths: string[], findings: ValidationFinding[]): Promise<FindingEvidence[]> {
-  const rawByPath = new Map<string, string>();
-  const evidence: FindingEvidence[] = [];
-
-  for (const path of paths) {
-    rawByPath.set(path, await readFile(path, "utf8").catch(() => ""));
-  }
-
-  for (const finding of findings) {
-    const path = paths.find((candidate) => finding.evidencePath.startsWith(candidate)) ?? paths[0];
-    if (!path) continue;
-
-    const raw = rawByPath.get(path);
-    if (!raw) continue;
-
-    const line = locateCatalogLine(raw, finding);
-    if (!line) continue;
-
-    evidence.push({
-      findingId: finding.id,
-      evidencePath: finding.evidencePath,
-      path,
-      line: line.line,
-      snippet: line.snippet,
-      reason: line.reason
-    });
-  }
-
-  return evidence;
-}
-
-function locateCatalogLine(raw: string, finding: ValidationFinding): { line: number; snippet: string; reason: string } | undefined {
-  const patterns = catalogEvidencePatterns(finding);
-  const lines = raw.split(/\r?\n/);
-
-  for (const pattern of patterns) {
-    const index = lines.findIndex((line) => pattern.test(line));
-    if (index !== -1) {
-      return {
-        line: index + 1,
-        snippet: truncate(lines[index]!.trim(), 180),
-        reason: pattern.source
-      };
-    }
-  }
-
-  return undefined;
-}
-
-function catalogEvidencePatterns(finding: ValidationFinding): RegExp[] {
-  const patterns: RegExp[] = [];
-  const quotedValues = [...finding.message.matchAll(/"([^"]+)"/g)].map((match) => match[1]).filter(Boolean);
-  for (const value of quotedValues) patterns.push(new RegExp(escapeRegExp(value!), "i"));
-
-  const field = finding.evidencePath.match(/\.([A-Za-z_][A-Za-z0-9_]*)$/)?.[1];
-  if (field) {
-    patterns.push(new RegExp(`<${escapeRegExp(field)}(?:\\s|>)`, "i"));
-    patterns.push(new RegExp(`"${escapeRegExp(field)}"\\s*:`, "i"));
-  }
-
-  if (finding.evidencePath.includes("nested")) patterns.push(/"nested"\s*:|<nested/i);
-  if (finding.evidencePath.includes("objects")) patterns.push(/"objects"\s*:/i);
-
-  const byId: Record<string, RegExp[]> = {
-    CATALOG_REQUIRED_FIELDS: [/<identity>|"identity"\s*:/i, /<title>|"title"\s*:/i, /<web_url>|"web_url"\s*:/i],
-    XML_MIXED_ELEMENT_SHAPE: [/<category/i],
-    XML_PRODUCT_CATEGORY_PRIMARY_INVALID: [/<category/i],
-    CONTENT_UPDATE_SHAPE_INVALID: [/"objects"\s*:/i, /"fields"\s*:/i],
-    CONTENT_UPDATE_NESTED_CATEGORY_SHAPE: [/"type"\s*:\s*"category"/i, /"ancestors"\s*:/i],
-    CONTENT_UPDATE_NESTED_VARIANT_SHAPE: [/"type"\s*:\s*"variant"/i],
-    CONTENT_UPDATE_NESTED_VARIANT_ID_MISSING: [/"type"\s*:\s*"variant"/i],
-    CONTENT_UPDATE_NESTED_VARIANT_DISTINGUISHING_FIELD_MISSING: [/"type"\s*:\s*"variant"/i],
-    CATEGORY_PAIRING_MISMATCH: [/"category_id"\s*:/i, /<category_id>/i],
-    CATEGORY_PAIRING_FIELD_MISSING: [/"category_id"\s*:/i, /<category_id>/i],
-    VARIANT_GROUP_NOT_CONSECUTIVE: [/<item_group_id>|"item_group_id"\s*:/i],
-    VARIANT_GROUP_SINGLETON: [/<item_group_id>|"item_group_id"\s*:/i],
-    VARIANT_GROUP_DISTINGUISHING_FIELD_MISSING: [/<item_group_id>|"item_group_id"\s*:/i],
-    AVAILABILITY_INVALID: [/<availability>|"availability"\s*:/i],
-    AVAILABILITY_RANK_INVALID: [/<availability_rank>|"availability_rank"\s*:/i],
-    FIELD_NAME_DISCOURAGED: [/"[^"]+[. [\\]][^"]*"\s*:/i]
-  };
-
-  patterns.push(...(byId[finding.id] ?? []));
-  return patterns.length > 0 ? patterns : [/.+/];
-}
-
 function countFields(objects: NormalizedCatalogObject[]): Map<string, number> {
   const fields = new Map<string, number>();
   for (const object of objects) {
@@ -1062,13 +976,4 @@ function sortedFindings(findings: ValidationFinding[]): ValidationFinding[] {
     if (severity !== 0) return severity;
     return left.id.localeCompare(right.id);
   });
-}
-
-function truncate(value: string, length: number): string {
-  if (value.length <= length) return value;
-  return `${value.slice(0, length - 3).trimEnd()}...`;
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

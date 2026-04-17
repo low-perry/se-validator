@@ -10,7 +10,8 @@ import { validateFrontend } from "../frontend/validate.js";
 import { loadFrontendValidationProfile } from "../frontend/profile.js";
 import { formatAgentCatalogReview, reviewCatalog } from "../agent/review-catalog.js";
 import { formatAgentUiReview, reviewUi } from "../agent/review-ui.js";
-import type { AgentReviewService } from "../agent/types.js";
+import { locateCatalogEvidence } from "../agent/evidence.js";
+import type { AgentReviewService, FindingEvidence } from "../agent/types.js";
 
 export async function runCli(argv: string[]): Promise<void> {
   const program = new Command();
@@ -30,17 +31,18 @@ export async function runCli(argv: string[]): Promise<void> {
     .option("--report <path>", "Write a human-readable report file")
     .action(async (paths: string[], options: { json?: boolean; report?: string }) => {
       const report = await validateCatalog(paths);
+      const evidence = await locateCatalogEvidence(paths, report.findings);
 
       if (options.json) {
-        console.log(JSON.stringify(report, null, 2));
+        console.log(JSON.stringify({ ...report, evidence }, null, 2));
         if (options.report) {
-          await writeReport(options.report, JSON.stringify(report, null, 2));
+          await writeReport(options.report, JSON.stringify({ ...report, evidence }, null, 2));
           console.error(`Report written to ${options.report}`);
         }
         return;
       }
 
-      const output = formatCatalogReport(report);
+      const output = formatCatalogReport(report, evidence);
       console.log(output);
 
       if (options.report) {
@@ -305,7 +307,10 @@ function formatAnalyticsReport(report: Awaited<ReturnType<typeof validateAnalyti
   return lines.join("\n");
 }
 
-function formatCatalogReport(report: Awaited<ReturnType<typeof validateCatalog>>): string {
+function formatCatalogReport(
+  report: Awaited<ReturnType<typeof validateCatalog>>,
+  evidence: FindingEvidence[] = []
+): string {
   const lines: string[] = [];
 
   lines.push("");
@@ -332,7 +337,7 @@ function formatCatalogReport(report: Awaited<ReturnType<typeof validateCatalog>>
     lines.push("");
     lines.push(`${severity} Findings`);
     for (const finding of findings) {
-      lines.push(...formatFinding(finding));
+      lines.push(...formatFinding(finding, evidence));
     }
   }
 
@@ -432,17 +437,25 @@ function formatFrontendReport(report: Awaited<ReturnType<typeof validateFrontend
   return lines.join("\n");
 }
 
-function formatFinding(finding: ValidationFinding): string[] {
+function formatFinding(finding: ValidationFinding, evidence: FindingEvidence[] = []): string[] {
   const state = finding.state === "unknown" ? "UNKNOWN " : "";
-  return [
+  const match = evidence.find(
+    (candidate) => candidate.findingId === finding.id && candidate.evidencePath === finding.evidencePath
+  );
+  const lines = [
     "",
     `- ${state}[${finding.id}] ${finding.title}`,
     `  Evidence: ${finding.evidencePath}`,
     `  Why: ${finding.message}`,
-    `  Fix: ${finding.remediation}`,
-    `  Docs: ${finding.docs.join(", ")}`,
-    `  Confidence: ${finding.confidence}`
+    `  Fix: ${finding.remediation}`
   ];
+  if (match) {
+    lines.push(`  Likely code: ${match.path}:${match.line}`);
+    lines.push(`  Snippet: \`${match.snippet}\``);
+  }
+  lines.push(`  Docs: ${finding.docs.join(", ")}`);
+  lines.push(`  Confidence: ${finding.confidence}`);
+  return lines;
 }
 
 function defaultDocsRoot(): string {
