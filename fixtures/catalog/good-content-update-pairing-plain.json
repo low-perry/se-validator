@@ -1,0 +1,27 @@
+{
+  "objects": [
+    {
+      "identity": "pairingplain",
+      "type": "category",
+      "fields": {
+        "id": "pairingplain",
+        "title": "Pairing Plain",
+        "web_url": "https://shop.example.com/categories/pairing-plain"
+      }
+    },
+    {
+      "identity": "pairingplain-SKU-1",
+      "type": "item",
+      "fields": {
+        "title": "Pairing Plain Jacket",
+        "web_url": "https://shop.example.com/products/pairing-plain-jacket",
+        "category_id": "pairingplain",
+        "brand": "Pairing Brand",
+        "availability": 1,
+        "availability_rank": 2,
+        "price": 169.9,
+        "image_link_l": "https://shop.example.com/images/pairing-plain-jacket.jpg"
+      }
+    }
+  ]
+}

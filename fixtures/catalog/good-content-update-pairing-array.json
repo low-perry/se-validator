@@ -1,0 +1,36 @@
+{
+  "objects": [
+    {
+      "identity": "pairing-array-primary",
+      "type": "category",
+      "fields": {
+        "id": "pairing-array-primary",
+        "title": "Pairing Array Primary",
+        "web_url": "https://shop.example.com/categories/pairing-array-primary"
+      }
+    },
+    {
+      "identity": "pairing-array-secondary",
+      "type": "category",
+      "fields": {
+        "id": "pairing-array-secondary",
+        "title": "Pairing Array Secondary",
+        "web_url": "https://shop.example.com/categories/pairing-array-secondary"
+      }
+    },
+    {
+      "identity": "pairing-array-SKU-1",
+      "type": "item",
+      "fields": {
+        "title": "Pairing Array Multi Category Jacket",
+        "web_url": "https://shop.example.com/products/pairing-array-multi-category-jacket",
+        "category_id": ["pairing-array-primary", "pairing-array-secondary"],
+        "brand": "Pairing Brand",
+        "availability": 1,
+        "availability_rank": 2,
+        "price": 189.9,
+        "image_link_l": "https://shop.example.com/images/pairing-array-multi-category-jacket.jpg"
+      }
+    }
+  ]
+}

@@ -718,17 +718,26 @@ function validateCategoryPairing(catalog: NormalizedCatalog): ValidationFinding[
 
   if (products.length === 0) return [];
 
+  const independentPairingFindings = validateIndependentCategoryPairing(categories, products);
+  const productsWithoutCategoryPaths = products.filter((product) => product.categoryPaths.length === 0);
+  const productsWithIndependentPairing = products.filter((product) => fieldValues(product.fields.category_id).length > 0);
+
   if (products.every((product) => product.categoryPaths.length === 0)) {
+    if (productsWithIndependentPairing.length > 0) {
+      return [...independentPairingFindings, ...missingProductPairingEvidenceFindings(productsWithoutCategoryPaths)];
+    }
+
     return [
       createFinding({
         id: "CATEGORY_PAIRING_EVIDENCE_MISSING",
         severity: "P1",
         state: "unknown",
         title: "Cannot verify product/category pairing",
-        message: "Product category paths or category feed evidence is missing.",
+        message: "Product category paths, nested category evidence, or category-item pairing fields are missing.",
         evidencePath: "catalog.categoryPaths",
-        remediation: "Provide both product feed category paths and a category feed to validate exact hierarchy/title matching.",
-        docs: ["indexing/feeds.md"],
+        remediation:
+          "Provide feed/nested category paths, or declare category-item pairing with category fields.id and item fields.category_id.",
+        docs: ["indexing/feeds.md", "product-listing/guides/pairing.md"],
         confidence: 0.65
       })
     ];
@@ -762,8 +771,11 @@ function validateCategoryPairing(catalog: NormalizedCatalog): ValidationFinding[
     })
   );
 
-  return products.flatMap((product) =>
-    product.categoryPaths
+  return [
+    ...independentPairingFindings,
+    ...missingProductPairingEvidenceFindings(productsWithoutCategoryPaths),
+    ...products.flatMap((product) =>
+      product.categoryPaths
       .filter((path) => !categoryPaths.has(path))
       .map((path) =>
         createFinding({
@@ -774,6 +786,84 @@ function validateCategoryPairing(catalog: NormalizedCatalog): ValidationFinding[
           evidencePath: `${objectPath(product)}.category`,
           remediation: "Make product category paths match category feed hierarchy + title exactly, including spelling and delimiters.",
           docs: ["indexing/feeds.md"],
+          confidence: 0.9
+        })
+      )
+    )
+  ];
+}
+
+function missingProductPairingEvidenceFindings(products: NormalizedCatalogObject[]): ValidationFinding[] {
+  return products
+    .filter((product) => fieldValues(product.fields.category_id).length === 0)
+    .map((product) =>
+      createFinding({
+        id: "CATEGORY_PAIRING_EVIDENCE_MISSING",
+        severity: "P1",
+        state: "unknown",
+        title: "Cannot verify product/category pairing",
+        message: `${label(product)} has neither category paths nor fields.category_id pairing evidence.`,
+        evidencePath: objectPath(product),
+        remediation:
+          "Provide nested category evidence for hierarchy filters, or provide fields.category_id that maps to a category fields.id value.",
+        docs: ["indexing/data-layout.md", "product-listing/guides/pairing.md"],
+        confidence: 0.65
+      })
+    );
+}
+
+function validateIndependentCategoryPairing(
+  categories: NormalizedCatalogObject[],
+  products: NormalizedCatalogObject[]
+): ValidationFinding[] {
+  const categoryIds = new Set(categories.flatMap((category) => fieldValues(category.fields.id)));
+  const productsWithCategoryIds = products.filter((product) => fieldValues(product.fields.category_id).length > 0);
+
+  if (productsWithCategoryIds.length === 0) return [];
+
+  if (categories.length === 0) {
+    return [
+      createFinding({
+        id: "CATEGORY_PAIRING_EVIDENCE_MISSING",
+        severity: "P1",
+        state: "unknown",
+        title: "Cannot verify category-item pairing",
+        message: "Items use fields.category_id, but no category objects are available in the provided evidence.",
+        evidencePath: "catalog.categories",
+        remediation: "Provide category objects with fields.id values matching item fields.category_id.",
+        docs: ["product-listing/guides/pairing.md"],
+        confidence: 0.75
+      })
+    ];
+  }
+
+  if (categoryIds.size === 0) {
+    return [
+      createFinding({
+        id: "CATEGORY_PAIRING_FIELD_MISSING",
+        severity: "P1",
+        title: "Category objects are missing pairing ids",
+        message: "Items use fields.category_id, but category objects do not expose fields.id values.",
+        evidencePath: "catalog.categories.fields.id",
+        remediation: "Add fields.id to category objects, or confirm the configured pairing field.",
+        docs: ["product-listing/guides/pairing.md"],
+        confidence: 0.85
+      })
+    ];
+  }
+
+  return productsWithCategoryIds.flatMap((product) =>
+    fieldValues(product.fields.category_id)
+      .filter((categoryId) => !categoryIds.has(categoryId))
+      .map((categoryId) =>
+        createFinding({
+          id: "CATEGORY_PAIRING_MISMATCH",
+          severity: "P1",
+          title: "Item category_id does not match a category id",
+          message: `${label(product)} references category_id "${categoryId}", but no category object has fields.id "${categoryId}".`,
+          evidencePath: `${objectPath(product)}.fields.category_id`,
+          remediation: "Make item fields.category_id values match category fields.id exactly, including case and type.",
+          docs: ["product-listing/guides/pairing.md"],
           confidence: 0.9
         })
       )
@@ -950,6 +1040,12 @@ function categoryHierarchyValue(value: unknown): string | undefined {
   }
 
   return stringValue(value);
+}
+
+function fieldValues(value: unknown): string[] {
+  return toArray(value)
+    .map(stringValue)
+    .filter((entry): entry is string => Boolean(entry));
 }
 
 function xmlAttributeValue(value: unknown, attributeName: string): string | undefined {

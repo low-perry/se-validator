@@ -1,0 +1,14 @@
+[
+  {
+    "identity": "pairingjson-cat-primary",
+    "id": "pairingjson-primary",
+    "title": "Pairing JSON Primary",
+    "web_url": "https://shop.example.com/categories/pairing-json-primary"
+  },
+  {
+    "identity": "pairingjson-cat-secondary",
+    "id": "pairingjson-secondary",
+    "title": "Pairing JSON Secondary",
+    "web_url": "https://shop.example.com/categories/pairing-json-secondary"
+  }
+]

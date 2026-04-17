@@ -61,6 +61,8 @@ For now this is acceptable for the hackathon prototype. The validator should sti
 
 - Add an import parity validator that compares Search API attributes for equivalent XML/JSON/content identities.
 - Add a rule or report note for primary category ordering when products have multiple category paths.
-- Confirm whether Content Update uses the first nested category as the primary `category_path`.
-- After Content Update API testing, compare `content-SKU-*` objects against `SKU-*` and `json-SKU-*`.
+- Confirmed through live Search API checks that Content Update uses the first nested category as the primary `category_path`.
+- Compared `content-SKU-*` objects against `SKU-*` and `json-SKU-*`; see `results/search-api-content-update-parity-report.md`.
+- Do not validate raw `category` response shape parity across XML, JSON, and Content Update. Content Update should use `nested` categories with `ancestors`; validator parity should focus on functional category behavior.
+- Added category-item pairing validation and XML/JSON/Content Update fixtures for the default `category.id -> item.category_id` model; see `results/product-listing-pairing-report.md`.
 - Decide whether `availability` and `availability_rank` type differences matter for client integrations.

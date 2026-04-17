@@ -16,12 +16,16 @@ yarn validate catalog fixtures/catalog/missing-primary-feed.xml fixtures/catalog
 yarn validate catalog fixtures/catalog/bad-content-update.json
 yarn validate catalog fixtures/catalog/bad-content-update-primary-order.json
 yarn validate catalog fixtures/catalog/bad-content-update-nested-variants.json
+yarn validate catalog fixtures/catalog/bad-content-update-pairing.json
 yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-categories.xml
 yarn validate catalog fixtures/catalog/good-feed.xml fixtures/catalog/good-feed-cat.xml
 yarn validate catalog fixtures/catalog/good-json-feed.json fixtures/catalog/good-json-categories.json
+yarn validate catalog fixtures/catalog/good-pairing-feed.xml fixtures/catalog/good-pairing-categories.xml
+yarn validate catalog fixtures/catalog/good-json-pairing-feed.json fixtures/catalog/good-json-pairing-categories.json
 yarn validate catalog fixtures/catalog/good-content-update.json
 yarn validate catalog fixtures/catalog/good-content-update-full.json
 yarn validate catalog fixtures/catalog/good-content-update-nested-variants.json
+yarn validate catalog fixtures/catalog/good-content-update-pairing.json fixtures/catalog/good-content-update-pairing-plain.json fixtures/catalog/good-content-update-pairing-array.json
 yarn validate analytics fixtures/analytics/events-api-good.json
 yarn validate analytics fixtures/analytics/events-api-bad.json
 yarn validate analytics fixtures/analytics/datalayer-good.html

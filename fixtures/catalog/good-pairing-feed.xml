@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+  <item>
+    <identity>pairingxml-SKU-1</identity>
+    <title>Pairing XML Blue Jacket</title>
+    <web_url>https://shop.example.com/products/pairing-xml-blue-jacket</web_url>
+    <category_id>pairingxml-primary</category_id>
+    <brand>Pairing Brand</brand>
+    <availability>1</availability>
+    <availability_rank>2</availability_rank>
+    <price_eur>149.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/pairing-xml-blue-jacket.jpg</image_link_l>
+  </item>
+  <item>
+    <identity>pairingxml-SKU-2</identity>
+    <title>Pairing XML Red Jacket</title>
+    <web_url>https://shop.example.com/products/pairing-xml-red-jacket</web_url>
+    <category_id>pairingxml-primary</category_id>
+    <category_id>pairingxml-secondary</category_id>
+    <brand>Pairing Brand</brand>
+    <availability>1</availability>
+    <availability_rank>4</availability_rank>
+    <price_eur>159.90 EUR</price_eur>
+    <image_link_l>https://shop.example.com/images/pairing-xml-red-jacket.jpg</image_link_l>
+  </item>
+</items>

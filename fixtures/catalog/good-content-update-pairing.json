@@ -1,0 +1,42 @@
+{
+  "objects": [
+    {
+      "identity": "pairing-cat-clearance",
+      "type": "category",
+      "fields": {
+        "id": "pairing-clearance",
+        "title": "Pairing Clearance",
+        "web_url": "https://shop.example.com/categories/pairing-clearance",
+        "hierarchy": ["Pairing Tests"]
+      }
+    },
+    {
+      "identity": "pairing-SKU-1",
+      "type": "item",
+      "fields": {
+        "title": "Pairing Test Blue Jacket",
+        "web_url": "https://shop.example.com/products/pairing-blue-jacket",
+        "category_id": "pairing-clearance",
+        "brand": "Pairing Brand",
+        "availability": 1,
+        "availability_rank": 2,
+        "price": 149.9,
+        "image_link_l": "https://shop.example.com/images/pairing-blue-jacket.jpg"
+      }
+    },
+    {
+      "identity": "pairing-SKU-2",
+      "type": "item",
+      "fields": {
+        "title": "Pairing Test Red Jacket",
+        "web_url": "https://shop.example.com/products/pairing-red-jacket",
+        "category_id": "pairing-clearance",
+        "brand": "Pairing Brand",
+        "availability": 1,
+        "availability_rank": 4,
+        "price": 159.9,
+        "image_link_l": "https://shop.example.com/images/pairing-red-jacket.jpg"
+      }
+    }
+  ]
+}

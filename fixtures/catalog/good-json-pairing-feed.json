@@ -1,0 +1,24 @@
+[
+  {
+    "identity": "pairingjson-SKU-1",
+    "title": "Pairing JSON Blue Jacket",
+    "web_url": "https://shop.example.com/products/pairing-json-blue-jacket",
+    "category_id": "pairingjson-primary",
+    "brand": "Pairing Brand",
+    "availability": 1,
+    "availability_rank": 2,
+    "price_eur": "149.90 EUR",
+    "image_link_l": "https://shop.example.com/images/pairing-json-blue-jacket.jpg"
+  },
+  {
+    "identity": "pairingjson-SKU-2",
+    "title": "Pairing JSON Red Jacket",
+    "web_url": "https://shop.example.com/products/pairing-json-red-jacket",
+    "category_id": ["pairingjson-primary", "pairingjson-secondary"],
+    "brand": "Pairing Brand",
+    "availability": 1,
+    "availability_rank": 4,
+    "price_eur": "159.90 EUR",
+    "image_link_l": "https://shop.example.com/images/pairing-json-red-jacket.jpg"
+  }
+]

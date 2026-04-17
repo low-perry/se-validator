@@ -150,6 +150,8 @@
         "availability": 1,
         "availability_rank": 3,
         "item_group_id": "content-SHIRT-1",
+        "color": "Blue",
+        "size": "M",
         "price": 29.9,
         "image_link_l": "https://shop.example.com/images/sku-1.jpg"
       },
@@ -210,6 +212,8 @@
         "availability": 0,
         "availability_rank": 15,
         "item_group_id": "content-SHIRT-1",
+        "color": "Red",
+        "size": "M",
         "price": 29.9,
         "image_link_l": "https://shop.example.com/images/sku-2.jpg"
       },
@@ -270,6 +274,8 @@
         "availability": 1,
         "availability_rank": 1,
         "item_group_id": "content-HOODIE-1",
+        "color": "Black",
+        "size": "M",
         "price": 59.9,
         "image_link_l": "https://shop.example.com/images/sku-3.jpg"
       },
@@ -330,6 +336,8 @@
         "availability": 1,
         "availability_rank": 5,
         "item_group_id": "content-HOODIE-1",
+        "color": "Gray",
+        "size": "M",
         "price": 59.9,
         "image_link_l": "https://shop.example.com/images/sku-4.jpg"
       },
@@ -372,6 +380,8 @@
         "availability": 1,
         "availability_rank": 2,
         "item_group_id": "content-DRESS-1",
+        "color": "Yellow",
+        "size": "S",
         "price": 79.9,
         "image_link_l": "https://shop.example.com/images/sku-5.jpg"
       },
@@ -432,6 +442,8 @@
         "availability": 0,
         "availability_rank": 15,
         "item_group_id": "content-DRESS-1",
+        "color": "Black",
+        "size": "M",
         "price": 84.9,
         "image_link_l": "https://shop.example.com/images/sku-6.jpg"
       },
@@ -474,6 +486,8 @@
         "availability": 1,
         "availability_rank": 1,
         "item_group_id": "content-WTEE-1",
+        "color": "White",
+        "size": "S",
         "price": 24.9,
         "image_link_l": "https://shop.example.com/images/sku-7.jpg"
       },
@@ -534,6 +548,8 @@
         "availability": 1,
         "availability_rank": 4,
         "item_group_id": "content-WTEE-1",
+        "color": "Green",
+        "size": "M",
         "price": 24.9,
         "image_link_l": "https://shop.example.com/images/sku-8.jpg"
       },
@@ -660,6 +676,8 @@
         "availability": 1,
         "availability_rank": 1,
         "item_group_id": "content-SNEAKER-1",
+        "color": "Black",
+        "size": "42",
         "price": 119.9,
         "image_link_l": "https://shop.example.com/images/sku-11.jpg"
       },
@@ -712,6 +730,8 @@
         "availability": 1,
         "availability_rank": 2,
         "item_group_id": "content-SNEAKER-1",
+        "color": "White",
+        "size": "42",
         "price": 119.9,
         "image_link_l": "https://shop.example.com/images/sku-12.jpg"
       },

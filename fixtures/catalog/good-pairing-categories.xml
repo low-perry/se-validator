@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<categories>
+  <category>
+    <identity>pairingxml-cat-primary</identity>
+    <id>pairingxml-primary</id>
+    <title>Pairing XML Primary</title>
+    <web_url>https://shop.example.com/categories/pairing-xml-primary</web_url>
+  </category>
+  <category>
+    <identity>pairingxml-cat-secondary</identity>
+    <id>pairingxml-secondary</id>
+    <title>Pairing XML Secondary</title>
+    <web_url>https://shop.example.com/categories/pairing-xml-secondary</web_url>
+  </category>
+</categories>

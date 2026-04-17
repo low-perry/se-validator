@@ -1,0 +1,24 @@
+{
+  "objects": [
+    {
+      "identity": "bad-pairing-cat-clearance",
+      "type": "category",
+      "fields": {
+        "id": "bad-pairing-clearance",
+        "title": "Bad Pairing Clearance",
+        "web_url": "https://shop.example.com/categories/bad-pairing-clearance"
+      }
+    },
+    {
+      "identity": "bad-pairing-SKU-1",
+      "type": "item",
+      "fields": {
+        "title": "Bad Pairing Jacket",
+        "web_url": "https://shop.example.com/products/bad-pairing-jacket",
+        "category_id": "missing-pairing-category",
+        "availability": 1,
+        "availability_rank": 2
+      }
+    }
+  ]
+}
