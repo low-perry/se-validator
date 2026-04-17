@@ -96,7 +96,9 @@ export function formatAgentUiReview(review: AgentUiReview): string {
       lines.push(`Evidence: ${finding.evidencePath}`);
       lines.push(`Problem: ${finding.message}`);
       lines.push(`Recommended fix: ${finding.remediation}`);
-      const evidence = review.evidence.find((candidate) => candidate.findingId === finding.id);
+      const evidence = review.evidence.find(
+        (candidate) => candidate.findingId === finding.id && candidate.evidencePath === finding.evidencePath
+      );
       if (evidence) {
         lines.push(`Likely code: ${evidence.path}:${evidence.line}`);
         lines.push(`Snippet: \`${evidence.snippet}\``);

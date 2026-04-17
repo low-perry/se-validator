@@ -7,6 +7,7 @@ import { validateAnalytics } from "../analytics/validate.js";
 import { validateService } from "../service/validate.js";
 import { validateFrontend } from "../frontend/validate.js";
 import { loadFrontendValidationProfile } from "../frontend/profile.js";
+import { formatAgentCatalogReview, reviewCatalog } from "../agent/review-catalog.js";
 import { formatAgentUiReview, reviewUi } from "../agent/review-ui.js";
 import type { AgentReviewService } from "../agent/types.js";
 
@@ -212,6 +213,42 @@ export async function runCli(argv: string[]): Promise<void> {
         }
       }
     );
+
+  agent
+    .command("review-catalog")
+    .description("Review catalog feeds or Content Update payloads with structure summaries and docs")
+    .argument("<paths...>", "Catalog artifact path(s)")
+    .option("--docs <path>", "Local docs repository path")
+    .option("--max-docs <count>", "Maximum docs to include", parsePositiveInteger, 12)
+    .option("--json", "Print machine-readable JSON")
+    .option("--report <path>", "Write a Markdown report file")
+    .action(async (paths: string[], options: { docs?: string; maxDocs: number; json?: boolean; report?: string }) => {
+      const review = await reviewCatalog(paths, {
+        docsRoot: options.docs ?? defaultDocsRoot(),
+        maxDocs: options.maxDocs
+      });
+
+      if (options.json) {
+        console.log(JSON.stringify(review, null, 2));
+        if (options.report) {
+          await writeReport(options.report, JSON.stringify(review, null, 2));
+          console.error(`Report written to ${options.report}`);
+        }
+        return;
+      }
+
+      const output = formatAgentCatalogReview(review);
+      console.log(output);
+
+      if (options.report) {
+        await writeReport(options.report, output);
+        console.log(`\nReport written to ${options.report}`);
+      }
+
+      if (review.validation.summary.P0 > 0) {
+        process.exitCode = 2;
+      }
+    });
 
   await program.parseAsync(argv);
 }

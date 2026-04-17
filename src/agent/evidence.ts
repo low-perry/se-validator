@@ -53,6 +53,7 @@ export async function locateFindingEvidence(paths: string[], findings: Validatio
 
     evidence.push({
       findingId: finding.id,
+      evidencePath: finding.evidencePath,
       path: artifact.path,
       line: line.line,
       snippet: line.snippet,

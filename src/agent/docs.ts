@@ -15,6 +15,18 @@ const DIRECT_DOCS_BY_SERVICE: Record<DocsSearchInput["service"], string[]> = {
     "analytics/api_guides/search-and-discovery",
     "platform-foundations/lbx-script",
     "autocomplete/guides/integration-best-practices"
+  ],
+  catalog: [
+    "indexing/feeds",
+    "indexing/data-layout",
+    "indexing/api/v1/content-update",
+    "indexing/feeds-to-api",
+    "platform-foundations/identity",
+    "product-listing/guides/pairing",
+    "search/guides/variants",
+    "quickstart/indexing",
+    "quickstart/indexing/data-layout",
+    "quickstart/indexing/indexing-api"
   ]
 };
 
@@ -26,7 +38,8 @@ const EXAMPLES_BY_SERVICE: Record<DocsSearchInput["service"], string[]> = {
     "public/examples/autocomplete/top-items-datalayer.html",
     "public/examples/autocomplete/trending-queries.html",
     "public/examples/autocomplete/trending-queries-datalayer.html"
-  ]
+  ],
+  catalog: []
 };
 
 const SEARCHABLE_EXTENSIONS = new Set([".md", ".mdx", ".html", ".js", ".ts"]);
@@ -62,6 +75,10 @@ export async function findRelevantDocs(input: DocsSearchInput): Promise<DocsHit[
 }
 
 function buildSearchTerms(input: DocsSearchInput): string[] {
+  if (input.service === "catalog") {
+    return buildCatalogSearchTerms(input);
+  }
+
   const terms = new Set<string>([
     "autocomplete",
     "autocomplete api",
@@ -88,6 +105,41 @@ function buildSearchTerms(input: DocsSearchInput): string[] {
     terms.add("trending_queries");
     terms.add("Trending Queries");
   }
+
+  for (const finding of input.findings) {
+    for (const token of finding.id.toLowerCase().split(/[^a-z0-9]+/)) {
+      if (token.length >= 4) terms.add(token);
+    }
+
+    for (const doc of finding.docs) {
+      for (const token of doc.split(/[/-]/)) {
+        if (token.length >= 4) terms.add(token);
+      }
+    }
+  }
+
+  return [...terms];
+}
+
+function buildCatalogSearchTerms(input: DocsSearchInput): string[] {
+  const terms = new Set<string>([
+    "feed",
+    "feeds",
+    "content update",
+    "objects",
+    "identity",
+    "title",
+    "web_url",
+    "category",
+    "hierarchy",
+    "nested",
+    "variant",
+    "item_group_id",
+    "category_id",
+    "availability",
+    "availability_rank",
+    "ancestors"
+  ]);
 
   for (const finding of input.findings) {
     for (const token of finding.id.toLowerCase().split(/[^a-z0-9]+/)) {
@@ -331,6 +383,16 @@ function isServiceRelevantPath(path: string, service: DocsSearchInput["service"]
       normalized.endsWith("/src/content/docs/autocomplete/index.md") ||
       normalized.endsWith("/src/content/docs/tutorials/autocomplete.md") ||
       normalized.includes("/public/examples/autocomplete/")
+    );
+  }
+
+  if (service === "catalog") {
+    return (
+      normalized.includes("/indexing/") ||
+      normalized.includes("/platform-foundations/identity") ||
+      normalized.includes("/product-listing/guides/pairing") ||
+      normalized.includes("/search/guides/variants") ||
+      normalized.includes("/quickstart/indexing")
     );
   }
 

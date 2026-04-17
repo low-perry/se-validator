@@ -1,7 +1,7 @@
 import type { ValidationFinding, ValidationReport } from "../core/types.js";
 import type { FrontendValidationProfile } from "../frontend/types.js";
 
-export type AgentReviewService = "autocomplete";
+export type AgentReviewService = "autocomplete" | "catalog";
 
 export interface AgentReviewOptions {
   docsRoot: string;
@@ -42,6 +42,19 @@ export interface AgentUiReview {
   promptForFollowUp: string;
 }
 
+export interface AgentCatalogReview {
+  title: string;
+  generatedAt: string;
+  docsRoot: string;
+  inputs: string[];
+  validation: ValidationReport & { artifacts: string[] };
+  structures: CatalogStructureSummary[];
+  evidence: FindingEvidence[];
+  docsHits: DocsHit[];
+  nextActions: string[];
+  promptForFollowUp: string;
+}
+
 export interface DocsSearchInput {
   docsRoot: string;
   service: AgentReviewService;
@@ -52,6 +65,7 @@ export interface DocsSearchInput {
 
 export interface FindingEvidence {
   findingId: string;
+  evidencePath: string;
   path: string;
   line: number;
   snippet: string;
@@ -72,4 +86,26 @@ export interface BrowserReviewResult {
   renderedText: string | undefined;
   resultElementCount: number | undefined;
   observations: string[];
+}
+
+export interface CatalogStructureSummary {
+  path: string;
+  sourceKind: string;
+  role: string;
+  rootKey: string | undefined;
+  confidence: number;
+  parseError: string | undefined;
+  recordCount: number;
+  objectCounts: Record<string, number>;
+  requiredCoverage: {
+    identity: string;
+    title: string;
+    webUrl: string;
+  };
+  fieldCoverage: string[];
+  categoryModel: string[];
+  contentUpdateModel: string[];
+  variantModel: string[];
+  pairingModel: string[];
+  examples: string[];
 }
