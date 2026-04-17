@@ -3,7 +3,7 @@ import type { ValidationFinding } from "../core/types.js";
 import { defaultFrontendValidationProfile, summarizeFrontendValidationProfile } from "../frontend/profile.js";
 import { validateFrontend } from "../frontend/validate.js";
 import { runBrowserReview } from "./browser.js";
-import { findRelevantDocs } from "./docs.js";
+import { docsMarkdownLink, findRelevantDocs } from "./docs.js";
 import { locateFindingEvidence } from "./evidence.js";
 import type { AgentReviewOptions, AgentUiReview, DocsHit, FindingEvidence } from "./types.js";
 
@@ -310,7 +310,7 @@ export function formatAgentUiReview(review: AgentUiReview, options: FormatAgentU
         lines.push(`Likely code: ${evidence.path}:${evidence.line}`);
         lines.push(`Snippet: \`${evidence.snippet}\``);
       }
-      lines.push(`Docs: ${finding.docs.join(", ")}`);
+      lines.push(`Docs: ${formatFindingDocs(finding.docs)}`);
       lines.push(`Confidence: ${finding.confidence}`);
       lines.push("");
       lines.push("Debug Notes:");
@@ -349,7 +349,7 @@ export function formatAgentUiReview(review: AgentUiReview, options: FormatAgentU
       lines.push(`  Reason: ${hit.reason}`);
       if (hit.heading) lines.push(`  Section: ${hit.heading}`);
       lines.push(`  Matched: ${hit.matchedTerms.join(", ") || "path/reference"}`);
-      lines.push(`  Excerpt: ${hit.excerpt}`);
+      lines.push(`  > ${quoteExcerpt(hit.excerpt)}`);
     }
   }
 
@@ -435,7 +435,7 @@ export function formatAgentUiReviewExplain(review: AgentUiReview): string[] {
     );
     for (const hit of review.docsHits) {
       const slug = hit.slug ? ` (${hit.slug})` : "";
-      lines.push(`  - ${hit.title}${slug}: ${hit.reason}`);
+      lines.push(`  - [${hit.title}](${hit.url})${slug}: ${hit.reason}`);
     }
   }
 
@@ -542,7 +542,18 @@ function sortedFindings(findings: ValidationFinding[]): ValidationFinding[] {
 
 function formatDocHit(hit: DocsHit): string {
   const slug = hit.slug ? ` (${hit.slug})` : "";
-  return `${hit.title}${slug}: ${hit.path}:${hit.line}`;
+  return `[${hit.title}](${hit.url})${slug}: ${hit.path}:${hit.line}`;
+}
+
+function formatFindingDocs(docs: string[]): string {
+  if (docs.length === 0) return "none";
+  return docs.map(docsMarkdownLink).join(", ");
+}
+
+function quoteExcerpt(excerpt: string): string {
+  const words = excerpt.split(/\s+/).filter(Boolean);
+  if (words.length <= 24) return excerpt;
+  return `${words.slice(0, 24).join(" ")}...`;
 }
 
 function buildFindingDebugNotes(finding: ValidationFinding, evidence: FindingEvidence | undefined): string[] {

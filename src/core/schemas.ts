@@ -77,6 +77,7 @@ export const frontendValidationReportSchema = validationReportSchema.extend({
 
 export const docsHitSchema = z.object({
   path: z.string(),
+  url: z.string(),
   title: z.string(),
   slug: optionalValue(z.string()),
   heading: optionalValue(z.string()),

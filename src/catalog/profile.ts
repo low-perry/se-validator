@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { z } from "zod";
 
 export type CatalogExpectedSource = "auto" | "feed-xml" | "feed-json" | "content-update-json";
-export type CatalogObjectType = "item" | "product" | "category" | "brand" | "article";
+export type CatalogObjectType = string;
 export type CatalogCategoryModel =
   | "auto"
   | "none"
@@ -24,10 +24,7 @@ export interface CatalogValidationProfile {
     immutableIdentityField: string;
   };
   requiredFieldsByType: {
-    item: string[];
-    category: string[];
-    brand: string[];
-    article: string[];
+    [objectType: string]: string[];
   };
   multipleCategoryHierarchies: CatalogMultipleCategoryHierarchies;
   primaryCategory: CatalogPrimaryCategoryMode;
@@ -35,7 +32,7 @@ export interface CatalogValidationProfile {
 
 const catalogProfileSchema = z.object({
   expectedSource: z.enum(["auto", "feed-xml", "feed-json", "content-update-json"]).default("auto"),
-  expectedObjectTypes: z.array(z.enum(["item", "product", "category", "brand", "article"])).default([]),
+  expectedObjectTypes: z.array(z.string().min(1)).default([]),
   categoryModel: z
     .enum([
       "auto",
@@ -63,6 +60,7 @@ const catalogProfileSchema = z.object({
       brand: z.array(z.string().min(1)).default([]),
       article: z.array(z.string().min(1)).default([])
     })
+    .catchall(z.array(z.string().min(1)))
     .default({
       item: [],
       category: [],

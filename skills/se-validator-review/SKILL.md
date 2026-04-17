@@ -36,6 +36,7 @@ If the user pastes raw evidence in chat, save it exactly under `tmp/agent-input/
 - Report score and P0/P1/P2 counts.
 - Lead with P0 findings, then P1, then P2.
 - Include validator evidence lines and cited docs when present.
+- Source mentions must use absolute `https://docs.luigisbox.com/<source>` links. Direct docs quotes must use Markdown blockquotes.
 - Keep API keys and secrets out of the response.
 
 ## Fixes

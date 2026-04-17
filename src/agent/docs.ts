@@ -2,6 +2,8 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import { extname, join, relative, resolve } from "node:path";
 import type { DocsHit, DocsSearchInput } from "./types.js";
 
+const DOCS_BASE_URL = "https://docs.luigisbox.com";
+
 const DIRECT_DOCS_BY_SERVICE: Record<DocsSearchInput["service"], string[]> = {
   autocomplete: [
     "autocomplete/api/v2/autocomplete",
@@ -277,6 +279,7 @@ function scoreDocument(
 
   return {
     path,
+    url: docsUrlFromPath(path, metadata.slug),
     title: metadata.title,
     slug: metadata.slug,
     heading: excerpt.heading,
@@ -286,6 +289,41 @@ function scoreDocument(
     score,
     matchedTerms: unique(matchedTerms).slice(0, 8)
   };
+}
+
+export function docsUrlFromReference(reference: string): string {
+  const normalized = reference
+    .replace(/^\/+/, "")
+    .replace(/\.(md|mdx)$/i, "")
+    .replace(/\/index$/i, "")
+    .replace(/^public\//, "");
+  return `${DOCS_BASE_URL}/${normalized}`;
+}
+
+export function docsMarkdownLink(reference: string): string {
+  const label = reference.replace(/\.(md|mdx)$/i, "");
+  return `[${label}](${docsUrlFromReference(reference)})`;
+}
+
+function docsUrlFromPath(path: string, slug: string | undefined): string {
+  if (slug) return `${DOCS_BASE_URL}/${slug.replace(/^\/+/, "").replace(/\/+$/, "")}`;
+
+  const normalized = path.replace(/\\/g, "/");
+  const docsMarker = "/src/content/docs/";
+  const docsIndex = normalized.indexOf(docsMarker);
+  if (docsIndex !== -1) {
+    const sourcePath = normalized.slice(docsIndex + docsMarker.length);
+    return docsUrlFromReference(sourcePath);
+  }
+
+  const publicMarker = "/public/";
+  const publicIndex = normalized.indexOf(publicMarker);
+  if (publicIndex !== -1) {
+    const publicPath = normalized.slice(publicIndex + publicMarker.length);
+    return `${DOCS_BASE_URL}/${publicPath.replace(/^\/+/, "")}`;
+  }
+
+  return DOCS_BASE_URL;
 }
 
 function extractMetadata(raw: string, path: string): { title: string; slug: string | undefined } {
@@ -338,7 +376,7 @@ function extractExcerpt(raw: string, terms: string[]): { text: string; line: num
     if (!best || score > best.score) {
       best = {
         score,
-        text: truncate(context || cleanLine(line), 260),
+        text: truncateWords(context || cleanLine(line), 24),
         line: index + 1,
         heading
       };
@@ -354,7 +392,7 @@ function extractExcerpt(raw: string, terms: string[]): { text: string; line: num
   }
 
   return {
-    text: truncate(cleanLine(lines.find((line) => line.trim() && !line.startsWith("---")) ?? ""), 260),
+    text: truncateWords(cleanLine(lines.find((line) => line.trim() && !line.startsWith("---")) ?? ""), 24),
     line: 1,
     heading: undefined
   };
@@ -439,9 +477,10 @@ function cleanLine(line: string): string {
     .trim();
 }
 
-function truncate(value: string, length: number): string {
-  if (value.length <= length) return value;
-  return `${value.slice(0, length - 3).trimEnd()}...`;
+function truncateWords(value: string, maxWords: number): string {
+  const words = value.split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return value;
+  return `${words.slice(0, maxWords).join(" ")}...`;
 }
 
 function unique(values: string[]): string[] {

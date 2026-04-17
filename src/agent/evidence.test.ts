@@ -145,6 +145,92 @@ describe.skipIf(!process.env.SE_VALIDATOR_REGENERATE_REPORTS)("regenerate report
 });
 
 describe("real fixture — catalog", () => {
+  it("validates digital_products/digital_product XML as a custom feed type", async () => {
+    const xml = [
+      "<?xml version=\"1.0\"?>",
+      "<digital_products>",
+      "  <digital_product>",
+      "    <identity>DIGI-1</identity>",
+      "    <title>Downloadable Course</title>",
+      "    <web_url>https://shop.example.com/digital/course</web_url>",
+      "    <availability>yes</availability>",
+      "  </digital_product>",
+      "</digital_products>",
+      ""
+    ].join("\n");
+    const path = await writeTemp("digital-products.xml", xml);
+
+    const report = await validateCatalog([path]);
+
+    expect(report.artifacts[0]).toContain("feed-xml / custom-feed");
+    expect(report.findings.some((entry) => entry.id === "CATALOG_ARTIFACT_UNRECOGNIZED")).toBe(false);
+    const availability = report.findings.find((entry) => entry.id === "AVAILABILITY_INVALID");
+    expect(availability).toBeDefined();
+    expect(availability!.evidencePath).toBe(`${path}:digital_product[0].availability`);
+  });
+
+  it("validates custom JSON feed wrappers without hardcoded object types", async () => {
+    const json = JSON.stringify(
+      {
+        venues: [
+          {
+            identity: "venue-1",
+            title: "Main Store",
+            web_url: "https://shop.example.com/stores/main",
+            availability_rank: 99
+          }
+        ]
+      },
+      null,
+      2
+    );
+    const path = await writeTemp("venues.json", json);
+
+    const report = await validateCatalog([path]);
+
+    expect(report.artifacts[0]).toContain("feed-json / custom-feed");
+    expect(report.findings.some((entry) => entry.id === "CATALOG_ARTIFACT_UNRECOGNIZED")).toBe(false);
+    const rank = report.findings.find((entry) => entry.id === "AVAILABILITY_RANK_INVALID");
+    expect(rank).toBeDefined();
+    expect(rank!.evidencePath).toBe(`${path}:venue[0].availability_rank`);
+  });
+
+  it("allows Content Update custom product-like types to own nested variants", async () => {
+    const json = JSON.stringify(
+      {
+        objects: [
+          {
+            type: "digital_product",
+            identity: "content-digi-1",
+            fields: {
+              title: "Content Digital Course",
+              web_url: "https://shop.example.com/digital/content-course"
+            },
+            nested: [
+              {
+                type: "variant",
+                identity: "content-digi-1-video",
+                fields: {
+                  title: "Video Edition",
+                  web_url: "https://shop.example.com/digital/content-course-video",
+                  format: "video"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      null,
+      2
+    );
+    const path = await writeTemp("content-digital-product.json", json);
+
+    const report = await validateCatalog([path]);
+
+    expect(report.findings.some((entry) => entry.id === "CONTENT_UPDATE_NESTED_VARIANT_PARENT_TYPE")).toBe(false);
+    expect(report.findings.some((entry) => entry.id === "CATALOG_REQUIRED_FIELDS")).toBe(false);
+  });
+
   it("locates deep-nesting at the correct objects[1].nested[2] in bad-content-update-nested-variants.json", async () => {
     const fixture = "/Users/lowperry/projects/se-validator/fixtures/catalog/bad-content-update-nested-variants.json";
     const report = await validateCatalog([fixture]);

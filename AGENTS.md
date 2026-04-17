@@ -16,6 +16,7 @@ cd "$SE_VALIDATOR_ROOT"
 - For doc-aware reviews, always pass `--docs "$SE_VALIDATOR_DOCS_ROOT"`.
 - Before saying what the docs support, run `scripts/docs-search.sh '<term-or-rg-pattern>'` and open the relevant lines with `scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8`.
 - If docs and validator behavior disagree, label it a docs-validator mismatch instead of guessing.
+- Source mentions must use absolute `https://docs.luigisbox.com/<source>` links. Direct docs quotes must use Markdown blockquotes.
 - Treat P0 as blocking, P1 as important, and P2 as advisory.
 - Keep API keys and secrets out of responses and report snippets.
 - Do not invent corrected snippets. If the user asks for fixes, enter source-backed fix mode: open the docs/examples cited by the generated report first, then cite the exact local file path and line used for the snippet.

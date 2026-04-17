@@ -18,6 +18,7 @@ export interface AgentReviewOptions {
 
 export interface DocsHit {
   path: string;
+  url: string;
   title: string;
   slug: string | undefined;
   heading: string | undefined;

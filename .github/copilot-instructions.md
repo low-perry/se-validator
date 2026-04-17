@@ -18,6 +18,7 @@ cd "$SE_VALIDATOR_ROOT"
 - Do not invent integration requirements. Use validator findings and cited docs.
 - Before making docs/support claims, run `scripts/docs-search.sh '<term-or-rg-pattern>'` and open relevant lines with `scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8`.
 - If docs and validator behavior disagree, call it a docs-validator mismatch.
+- Source mentions must use absolute `https://docs.luigisbox.com/<source>` links. Direct docs quotes must use Markdown blockquotes.
 - Do not provide corrected snippets from memory. Open the docs/examples cited in the generated report first.
 - If a source-backed snippet is not available, explain the fix without fabricating code.
 

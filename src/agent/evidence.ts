@@ -683,9 +683,9 @@ function inferJsonScope(structuralPath: string): string | undefined {
 }
 
 function inferXmlScopeSuffixes(structuralPath: string): string[] {
-  const feedMatch = structuralPath.match(/^([a-z-]+-feed)\[(\d+)\]/);
+  const feedMatch = structuralPath.match(/^([a-z0-9_-]+)\[(\d+)\]/);
   if (!feedMatch) return [];
-  const role = feedMatch[1]!;
+  const scope = feedMatch[1]!;
   const index = Number.parseInt(feedMatch[2]!, 10);
   if (!Number.isFinite(index)) return [];
 
@@ -695,7 +695,7 @@ function inferXmlScopeSuffixes(structuralPath: string): string[] {
     "brand-feed": ["brand"],
     "article-feed": ["article"]
   };
-  const tags = tagsByRole[role] ?? [];
+  const tags = tagsByRole[scope] ?? [scope];
   return tags.map((tag) => `${tag}[${index}]`);
 }
 

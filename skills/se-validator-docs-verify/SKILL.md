@@ -36,7 +36,8 @@ Use this structure for docs-claim answers:
 
 ```text
 Docs evidence:
-- <file>:<line> says/shows ...
+- [<source>](https://docs.luigisbox.com/<source>) — <file>:<line>
+> <short docs quote>
 
 Validator evidence:
 - <command/report> says ...
@@ -52,6 +53,8 @@ Next action:
 
 - Never make a docs claim from memory.
 - Never rely on `rg` snippets alone when the answer depends on wording; open context lines with `scripts/docs-context.sh`.
+- Source mentions must use absolute docs links in the form `https://docs.luigisbox.com/<source>`.
+- When quoting docs, put the quote in a Markdown blockquote under the source link.
 - If search returns no match, say no local docs evidence was found for the searched terms. Do not convert absence into certainty unless the validator also proves it.
 - If docs and validator disagree, label it `docs-validator mismatch` and do not guess which source is right.
 - Corrected snippets must be backed by exact local docs or examples paths and line numbers.

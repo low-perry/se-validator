@@ -56,9 +56,18 @@ esac
 
 start=$(( line > radius ? line - radius : 1 ))
 end=$(( line + radius ))
+relative_docs_path="$file_real"
+if [[ "$file_real" == "$docs_root_real/src/content/docs/"* ]]; then
+  relative_docs_path="${file_real#"$docs_root_real/src/content/docs/"}"
+  relative_docs_path="${relative_docs_path%.*}"
+  relative_docs_path="${relative_docs_path%/index}"
+elif [[ "$file_real" == "$docs_root_real/public/"* ]]; then
+  relative_docs_path="${file_real#"$docs_root_real/public/"}"
+fi
 
 echo "Docs root: $SE_VALIDATOR_DOCS_ROOT"
 echo "File: $file_real"
+echo "URL: https://docs.luigisbox.com/$relative_docs_path"
 echo "Lines: $start-$end"
 echo
 

@@ -15,6 +15,7 @@ Hard rules:
 - For doc-aware commands, pass `--docs "$SE_VALIDATOR_DOCS_ROOT"`.
 - Before making docs/support claims, run `scripts/docs-search.sh '<term-or-rg-pattern>'` and open relevant lines with `scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8`.
 - If docs and validator behavior disagree, call it a docs-validator mismatch.
+- Source mentions must use absolute `https://docs.luigisbox.com/<source>` links. Direct docs quotes must use Markdown blockquotes.
 - If asked for corrected snippets, open the docs/examples cited by the report before writing code.
 - Do not invent API fields, event names, payload shapes, or script tags.
 - If no docs-backed snippet exists, say so and provide a plain-English fix only.

@@ -7,6 +7,7 @@ export type CatalogArtifactRole =
   | "category-feed"
   | "brand-feed"
   | "article-feed"
+  | "custom-feed"
   | "content-update"
   | "unknown";
 
@@ -64,6 +65,7 @@ export function detectCatalogArtifact(path: string, raw: string): CatalogArtifac
 
     const parsed = xmlParser.parse(raw) as unknown;
     const rootKey = firstObjectKey(parsed);
+    const role = roleFromParsedFeed(rootKey, parsed);
     return {
       path,
       raw,
@@ -71,8 +73,8 @@ export function detectCatalogArtifact(path: string, raw: string): CatalogArtifac
       rootKey,
       parseError: undefined,
       sourceKind: "feed-xml",
-      role: roleFromRootKey(rootKey),
-      confidence: rootKey ? 0.95 : 0.4
+      role,
+      confidence: confidenceForRole(rootKey, role)
     };
   }
 
@@ -106,6 +108,7 @@ export function detectCatalogArtifact(path: string, raw: string): CatalogArtifac
     };
   }
 
+  const role = roleFromParsedFeed(rootKey, parsed);
   return {
     path,
     raw,
@@ -113,9 +116,19 @@ export function detectCatalogArtifact(path: string, raw: string): CatalogArtifac
     rootKey,
     parseError: undefined,
     sourceKind: rootKey ? "feed-json" : "unknown",
-    role: roleFromRootKey(rootKey),
-    confidence: rootKey ? 0.9 : 0.2
+    role,
+    confidence: confidenceForRole(rootKey, role)
   };
+}
+
+function roleFromParsedFeed(rootKey: string | undefined, parsed: unknown): CatalogArtifactRole {
+  const knownRole = roleFromRootKey(rootKey);
+  if (knownRole !== "unknown") return knownRole;
+  if (!rootKey || !isRecord(parsed)) return "unknown";
+
+  const root = parsed[rootKey];
+  if (feedRecordCandidates(rootKey, root).length > 0) return "custom-feed";
+  return "unknown";
 }
 
 function roleFromRootKey(rootKey: string | undefined): CatalogArtifactRole {
@@ -140,8 +153,49 @@ function roleFromJsonArray(path: string, records: unknown[]): CatalogArtifactRol
 
   if (recordObjects.some((record) => "hierarchy" in record)) return "category-feed";
   if (lowerPath.includes("item") || lowerPath.includes("product") || lowerPath.includes("feed")) return "product-feed";
+  if (recordObjects.some((record) => hasSearchableObjectFields(record) || typeof record.type === "string")) {
+    return "custom-feed";
+  }
 
   return "unknown";
+}
+
+function feedRecordCandidates(rootKey: string, root: unknown): string[] {
+  if (Array.isArray(root)) return root.some(isRecord) ? [singularize(rootKey)] : [];
+  if (!isRecord(root)) return [];
+
+  const singularRoot = singularize(rootKey);
+  const candidates: string[] = [];
+  if (hasRecordValue(root[singularRoot])) candidates.push(singularRoot);
+
+  for (const [key, value] of Object.entries(root)) {
+    if (candidates.includes(key)) continue;
+    if (hasRecordValue(value)) candidates.push(key);
+  }
+
+  return candidates;
+}
+
+function hasRecordValue(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(isRecord);
+  return isRecord(value);
+}
+
+function hasSearchableObjectFields(record: Record<string, unknown>): boolean {
+  return ["identity", "title", "web_url"].some((field) => field in record);
+}
+
+function confidenceForRole(rootKey: string | undefined, role: CatalogArtifactRole): number {
+  if (!rootKey) return 0.4;
+  if (role === "custom-feed") return 0.86;
+  if (role !== "unknown") return 0.95;
+  return 0.4;
+}
+
+function singularize(value: string): string {
+  if (value.endsWith("ies") && value.length > 3) return `${value.slice(0, -3)}y`;
+  if (value.endsWith("s") && value.length > 1) return value.slice(0, -1);
+  return value;
 }
 
 function firstObjectKey(value: unknown): string | undefined {

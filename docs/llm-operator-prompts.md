@@ -48,7 +48,8 @@ Hard rules:
 - Do not invent API fields, event names, payload shapes, or script tags.
 - Do not write corrected code from memory.
 - Prefer examples from $SE_VALIDATOR_DOCS_ROOT/public/examples/.
-- For every corrected snippet, cite the exact local docs/example file path and line number used for the pattern.
+- For every corrected snippet, cite the exact docs/example line using an absolute docs link: https://docs.luigisbox.com/<source>.
+- When quoting docs, use a Markdown blockquote under the source link.
 - If the cited docs/examples do not contain enough information, say: "I can explain the fix, but I cannot provide a source-backed snippet."
 
 For each P0/P1:
@@ -82,14 +83,16 @@ Required tools:
 Rules:
 - Do not say "the docs say", "the docs do not mention", "supported", or "not supported" from memory.
 - Do not rely on search result snippets alone when wording matters; open the context lines.
-- Cite exact local file path and line number for every docs-backed claim.
+- Cite exact local file path, line number, and an absolute docs link in the form https://docs.luigisbox.com/<source> for every docs-backed claim.
+- When quoting docs, put the quoted words in a Markdown blockquote immediately under the source link.
 - If no docs match is found, say which terms were searched and that no local docs evidence was found.
 - If the validator and docs disagree, call it a docs-validator mismatch. Do not guess which source is right.
 - If asked for a corrected snippet, use docs/examples as the pattern and explain any client-specific placeholders.
 
 Answer format:
 Docs evidence:
-- <file>:<line> ...
+- [<source>](https://docs.luigisbox.com/<source>) — <file>:<line>
+> <short docs quote>
 
 Validator evidence:
 - <command/report> ...
@@ -118,6 +121,7 @@ Rules:
 - Always pass `--docs "$SE_VALIDATOR_DOCS_ROOT"` for agent reviews.
 - Do not invent requirements. Use validator findings and docs citations.
 - Before making a docs/support claim, enter Docs Verification Mode and run `scripts/docs-search.sh` plus `scripts/docs-context.sh`.
+- Source mentions should use absolute `https://docs.luigisbox.com/<source>` links, and direct docs quotes should be formatted as blockquotes.
 - Treat P0 as blocking, P1 as important, P2 as advisory.
 - If the validator gives line-level evidence, include the file, line, and snippet in your explanation.
 - If the evidence does not match the intended integration path, say so clearly and recommend updating either the implementation or the profile.

@@ -2,7 +2,14 @@ import { resolve } from "node:path";
 import type { ValidationFinding } from "../core/types.js";
 import { createFinding, scoreFindings, summarizeFindings, type FindingInput } from "../core/findings.js";
 import { isRecord } from "../catalog/detect.js";
-import { normalizeCatalog, stringValue, toArray, type NormalizedCatalogObject } from "../catalog/normalize.js";
+import {
+  isCategoryObject,
+  isProductLikeObject,
+  normalizeCatalog,
+  stringValue,
+  toArray,
+  type NormalizedCatalogObject
+} from "../catalog/normalize.js";
 import { parseCatalogArtifacts } from "../catalog/parse.js";
 import {
   defaultCatalogValidationProfile,
@@ -10,7 +17,7 @@ import {
   type CatalogValidationProfile
 } from "../catalog/profile.js";
 import { validateCatalog } from "../catalog/validate.js";
-import { findRelevantDocs } from "./docs.js";
+import { docsMarkdownLink, findRelevantDocs } from "./docs.js";
 import { locateCatalogEvidence } from "./evidence.js";
 import type { AgentCatalogReview, AgentCatalogReviewOptions, CatalogStructureSummary } from "./types.js";
 
@@ -135,7 +142,7 @@ export function formatAgentCatalogReview(review: AgentCatalogReview): string {
         lines.push(`Likely code: ${evidence.path}:${evidence.line}`);
         lines.push(`Snippet: \`${evidence.snippet}\``);
       }
-      lines.push(`Docs: ${finding.docs.join(", ")}`);
+      lines.push(`Docs: ${formatFindingDocs(finding.docs)}`);
       lines.push(`Confidence: ${finding.confidence}`);
     }
   }
@@ -146,13 +153,12 @@ export function formatAgentCatalogReview(review: AgentCatalogReview): string {
     lines.push("No local docs were found for this review. Check the --docs path.");
   } else {
     for (const hit of review.docsHits) {
-      const slug = hit.slug ? ` (${hit.slug})` : "";
       lines.push("");
-      lines.push(`- ${hit.title}${slug}: ${hit.path}:${hit.line}`);
+      lines.push(`- ${formatDocHit(hit)}`);
       lines.push(`  Reason: ${hit.reason}`);
       if (hit.heading) lines.push(`  Section: ${hit.heading}`);
       lines.push(`  Matched: ${hit.matchedTerms.join(", ") || "path/reference"}`);
-      lines.push(`  Excerpt: ${hit.excerpt}`);
+      lines.push(`  > ${quoteExcerpt(hit.excerpt)}`);
     }
   }
 
@@ -217,8 +223,8 @@ function summarizeCatalogStructure(
 function summarizeCategoryModel(objects: NormalizedCatalogObject[]): string[] {
   if (objects.length === 0) return ["No objects parsed."];
 
-  const products = objects.filter((object) => object.objectType === "product");
-  const categories = objects.filter((object) => object.objectType === "category");
+  const products = objects.filter(isProductLikeObject);
+  const categories = objects.filter(isCategoryObject);
   const productsWithPaths = products.filter((product) => product.categoryPaths.length > 0);
   const productsWithMultiplePaths = products.filter((product) => product.categoryPaths.length > 1);
   const categoryPathCount = products.reduce((total, product) => total + product.categoryPaths.length, 0);
@@ -277,7 +283,7 @@ function summarizeContentUpdateModel(objects: NormalizedCatalogObject[]): string
 }
 
 function summarizeVariantModel(objects: NormalizedCatalogObject[]): string[] {
-  const products = objects.filter((object) => object.objectType === "product");
+  const products = objects.filter(isProductLikeObject);
   const grouped = new Map<string, NormalizedCatalogObject[]>();
   let nestedVariantCount = 0;
 
@@ -303,8 +309,8 @@ function summarizeVariantModel(objects: NormalizedCatalogObject[]): string[] {
 }
 
 function summarizePairingModel(objects: NormalizedCatalogObject[]): string[] {
-  const products = objects.filter((object) => object.objectType === "product");
-  const categories = objects.filter((object) => object.objectType === "category");
+  const products = objects.filter(isProductLikeObject);
+  const categories = objects.filter(isCategoryObject);
   const productsWithCategoryIds = products.filter((product) => fieldValues(product.fields.category_id).length > 0);
   const categoriesWithIds = categories.filter((category) => fieldValues(category.fields.id).length > 0);
   const models: string[] = [];
@@ -458,8 +464,8 @@ function validateProfileCategoryModel(
   objects: NormalizedCatalogObject[],
   profile: CatalogValidationProfile
 ): ValidationFinding[] {
-  const products = objects.filter((object) => object.objectType === "product");
-  const categories = objects.filter((object) => object.objectType === "category");
+  const products = objects.filter(isProductLikeObject);
+  const categories = objects.filter(isCategoryObject);
   const productsWithCategoryPaths = products.filter((product) => product.categoryPaths.length > 0);
   const productsWithNestedCategories = products.filter((product) => nestedRecordsOfType(product, "category").length > 0);
   const productsWithCategoryIds = products.filter((product) => fieldValues(product.fields.category_id).length > 0);
@@ -605,7 +611,7 @@ function validateProfileVariantModel(
 ): ValidationFinding[] {
   if (profile.variantModel === "auto") return [];
 
-  const products = objects.filter((object) => object.objectType === "product");
+  const products = objects.filter(isProductLikeObject);
   const productsWithItemGroupId = products.filter((product) => Boolean(product.itemGroupId));
   const nestedVariantCount = products.reduce((count, product) => count + nestedRecordsOfType(product, "variant").length, 0);
   const findings: ValidationFinding[] = [];
@@ -698,7 +704,7 @@ function validateProfileMultipleHierarchies(
   objects: NormalizedCatalogObject[],
   profile: CatalogValidationProfile
 ): ValidationFinding[] {
-  const products = objects.filter((object) => object.objectType === "product");
+  const products = objects.filter(isProductLikeObject);
   if (products.length === 0 || profile.multipleCategoryHierarchies === "allowed") return [];
 
   const productsWithMultiplePaths = products.filter((product) => product.categoryPaths.length > 1);
@@ -743,7 +749,7 @@ function validateProfilePrimaryCategory(
   if (profile.primaryCategory !== "required_when_multiple") return [];
 
   return objects
-    .filter((object) => object.objectType === "product" && object.categoryPaths.length > 1 && !hasExplicitPrimaryCategory(object))
+    .filter((object) => isProductLikeObject(object) && object.categoryPaths.length > 1 && !hasExplicitPrimaryCategory(object))
     .map((object) =>
       profileFinding({
         id: "CATALOG_PROFILE_PRIMARY_CATEGORY_MISSING",
@@ -762,20 +768,24 @@ function profileFinding(input: FindingInput): ValidationFinding {
   return createFinding(input);
 }
 
-function profileObjectType(type: string): NormalizedCatalogObject["objectType"] {
-  if (type === "item" || type === "product") return "product";
-  if (type === "category") return "category";
-  if (type === "brand") return "brand";
-  if (type === "article") return "article";
-  return "content-object";
+function profileObjectType(type: string): string {
+  const normalized = normalizeObjectType(type);
+  if (normalized === "item" || normalized === "product") return "product";
+  return normalized;
 }
 
 function requiredFieldsForObject(object: NormalizedCatalogObject, profile: CatalogValidationProfile): string[] {
-  if (object.objectType === "product") return profile.requiredFieldsByType.item;
-  if (object.objectType === "category") return profile.requiredFieldsByType.category;
-  if (object.objectType === "brand") return profile.requiredFieldsByType.brand;
-  if (object.objectType === "article") return profile.requiredFieldsByType.article;
+  const customRequiredFields = profile.requiredFieldsByType[object.objectType];
+  if (customRequiredFields) return customRequiredFields;
+  if (isProductLikeObject(object)) return profile.requiredFieldsByType.item ?? [];
+  if (object.objectType === "category") return profile.requiredFieldsByType.category ?? [];
+  if (object.objectType === "brand") return profile.requiredFieldsByType.brand ?? [];
+  if (object.objectType === "article") return profile.requiredFieldsByType.article ?? [];
   return [];
+}
+
+function normalizeObjectType(type: string): string {
+  return type.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "_").replace(/^_+|_+$/g, "") || "content-object";
 }
 
 function objectHasField(object: NormalizedCatalogObject, field: string): boolean {
@@ -853,7 +863,8 @@ function objectLabel(object: NormalizedCatalogObject): string {
 }
 
 function objectPath(object: NormalizedCatalogObject): string {
-  return `${object.sourcePath}:${object.role}[${object.index}]`;
+  const scope = object.role === "custom-feed" ? object.objectType : object.role;
+  return `${object.sourcePath}:${scope}[${object.index}]`;
 }
 
 function buildCatalogNextActions(findings: ValidationFinding[], structures: CatalogStructureSummary[]): string[] {
@@ -976,4 +987,20 @@ function sortedFindings(findings: ValidationFinding[]): ValidationFinding[] {
     if (severity !== 0) return severity;
     return left.id.localeCompare(right.id);
   });
+}
+
+function formatDocHit(hit: { title: string; url: string; slug: string | undefined; path: string; line: number }): string {
+  const slug = hit.slug ? ` (${hit.slug})` : "";
+  return `[${hit.title}](${hit.url})${slug}: ${hit.path}:${hit.line}`;
+}
+
+function formatFindingDocs(docs: string[]): string {
+  if (docs.length === 0) return "none";
+  return docs.map(docsMarkdownLink).join(", ");
+}
+
+function quoteExcerpt(excerpt: string): string {
+  const words = excerpt.split(/\s+/).filter(Boolean);
+  if (words.length <= 24) return excerpt;
+  return `${words.slice(0, 24).join(" ")}...`;
 }

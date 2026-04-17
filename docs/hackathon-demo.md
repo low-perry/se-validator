@@ -169,7 +169,7 @@ Reading `Analytics requests: 0` next to a `P0 FRONTEND_EXPECTED_EVENTS_API_ANALY
 
 ## What makes it agentic
 
-1. **Docs lookup, not hand-rolled messages.** The `agent review-ui` and `agent review-catalog` commands load the real docs repo (`--docs "$SE_VALIDATOR_DOCS_ROOT"`), search for sections relevant to each detected capability and each finding, and cite them inline with file path and line number.
+1. **Docs lookup, not hand-rolled messages.** The `agent review-ui` and `agent review-catalog` commands load the real docs repo (`--docs "$SE_VALIDATOR_DOCS_ROOT"`), search for sections relevant to each detected capability and each finding, and cite them inline with an absolute docs link plus local file path and line number.
 2. **Evidence plumbing.** Every finding carries `path:line` plus a code snippet, and the report lists the docs it pulled *and the reason* (`Referenced by FRONTEND_…`, `Quickstart guidance for implementation flow`, etc.). That traceability is what lets a reviewer accept or challenge a call.
 3. **Profile awareness.** `--profile` files under `fixtures/frontend/` turn Top Items / Trending Queries into `required`, `optional`, or `disabled`. The same fixture file produces a different report depending on the contract the integration is actually signed up for.
 4. **Optional browser verification.** `--browser` launches Playwright, types a query, and records network + DOM activity. Findings and browser evidence sit side by side so a human can validate the static call.

@@ -2,6 +2,8 @@ import { createFinding } from "../core/findings.js";
 import type { ValidationFinding } from "../core/types.js";
 import { isRecord } from "./detect.js";
 import {
+  isCategoryObject,
+  isProductLikeObject,
   normalizeCategoryPath,
   stringValue,
   toArray,
@@ -40,6 +42,19 @@ function validateRecognizedArtifacts(catalog: NormalizedCatalog): ValidationFind
       });
     }
 
+    if (artifact.role === "custom-feed" && catalog.objects.every((object) => object.sourcePath !== artifact.path)) {
+      return createFinding({
+        id: "CATALOG_ARTIFACT_UNRECOGNIZED",
+        severity: "P0",
+        title: "Custom catalog feed contains no detectable records",
+        message: `The artifact ${artifact.path} has root "${artifact.rootKey ?? "unknown"}", but the validator could not find record children inside it.`,
+        evidencePath: artifact.path,
+        remediation: "Use a wrapper/record shape such as <digital_products><digital_product>...</digital_product></digital_products> or { \"digital_products\": [{ ... }] }.",
+        docs: ["indexing/feeds.md"],
+        confidence: 0.86
+      });
+    }
+
     if (artifact.sourceKind !== "unknown" && artifact.role !== "unknown") return [];
 
     return createFinding({
@@ -48,7 +63,7 @@ function validateRecognizedArtifacts(catalog: NormalizedCatalog): ValidationFind
       title: "Catalog artifact could not be classified",
       message: `The artifact ${artifact.path} was parsed, but its root shape does not look like a known feed or Content Update payload.`,
       evidencePath: artifact.path,
-      remediation: "Provide an XML/JSON feed with a recognized root such as items, products, categories, brands, articles, or a Content Update payload with objects[].",
+      remediation: "Provide an XML/JSON feed with a root wrapper and record children such as items/item, products/product, digital_products/digital_product, or any custom type wrapper, or provide a Content Update payload with objects[].",
       docs: ["indexing/feeds.md", "indexing/api/v1/content-update.mdx"],
       confidence: 0.9
     });
@@ -127,7 +142,7 @@ function validateXmlMixedElementShapes(catalog: NormalizedCatalog): ValidationFi
 
 function validateXmlPrimaryCategoryMarkers(catalog: NormalizedCatalog): ValidationFinding[] {
   return catalog.objects.flatMap((object) => {
-    if (object.sourceKind !== "feed-xml" || object.objectType !== "product" || !isRecord(object.raw)) return [];
+    if (object.sourceKind !== "feed-xml" || !isProductLikeObject(object) || !isRecord(object.raw)) return [];
 
     const categories = toArray(object.raw.category);
     if (categories.length <= 1) return [];
@@ -561,7 +576,7 @@ function validateContentUpdateNestedVariant(
   const parentType = stringValue(parent.type)?.toLowerCase();
   const evidencePath = `${path}:objects[${objectIndex}].nested[${nestedIndex}]`;
 
-  if (parentType !== "item" && parentType !== "product") {
+  if (!isProductLikeContentType(parentType)) {
     findings.push(
       createFinding({
         id: "CONTENT_UPDATE_NESTED_VARIANT_PARENT_TYPE",
@@ -617,6 +632,11 @@ function validateContentUpdateNestedVariant(
   }
 
   return findings;
+}
+
+function isProductLikeContentType(type: string | undefined): boolean {
+  if (!type) return false;
+  return !["category", "brand", "article"].includes(type);
 }
 
 function validateContentUpdateNestedCategory(
@@ -697,7 +717,7 @@ function validateContentUpdateCategoryAncestor(
 
 function validateCategoryFeedFlatness(catalog: NormalizedCatalog): ValidationFinding[] {
   return catalog.objects.flatMap((object) => {
-    if (object.objectType !== "category" || !isRecord(object.raw) || !("category" in object.raw)) return [];
+    if (!isCategoryObject(object) || !isRecord(object.raw) || !("category" in object.raw)) return [];
 
     return createFinding({
       id: "CATEGORY_FEED_NOT_FLAT",
@@ -713,8 +733,8 @@ function validateCategoryFeedFlatness(catalog: NormalizedCatalog): ValidationFin
 }
 
 function validateCategoryPairing(catalog: NormalizedCatalog): ValidationFinding[] {
-  const categories = catalog.objects.filter((object) => object.objectType === "category");
-  const products = catalog.objects.filter((object) => object.objectType === "product");
+  const categories = catalog.objects.filter(isCategoryObject);
+  const products = catalog.objects.filter(isProductLikeObject);
 
   if (products.length === 0) return [];
 
@@ -872,7 +892,7 @@ function validateIndependentCategoryPairing(
 
 function validateAvailability(catalog: NormalizedCatalog): ValidationFinding[] {
   return catalog.objects.flatMap((object) => {
-    if (object.objectType !== "product" && object.objectType !== "content-object") return [];
+    if (!isProductLikeObject(object)) return [];
 
     const findings: ValidationFinding[] = [];
     const availability = stringValue(object.fields.availability);
@@ -935,7 +955,7 @@ function validateVariantGroupOrdering(catalog: NormalizedCatalog): ValidationFin
   const bySource = new Map<string, NormalizedCatalogObject[]>();
 
   for (const object of catalog.objects) {
-    if (object.objectType !== "product" || !object.itemGroupId) continue;
+    if (!isProductLikeObject(object) || !object.itemGroupId) continue;
     if (object.sourceKind !== "feed-xml" && object.sourceKind !== "feed-json") continue;
     bySource.set(object.sourcePath, [...(bySource.get(object.sourcePath) ?? []), object]);
   }
@@ -1185,7 +1205,8 @@ function label(object: NormalizedCatalogObject): string {
 }
 
 function objectPath(object: NormalizedCatalogObject): string {
-  return `${object.sourcePath}:${object.role}[${object.index}]`;
+  const scope = object.role === "custom-feed" ? object.objectType : object.role;
+  return `${object.sourcePath}:${scope}[${object.index}]`;
 }
 
 const variantDistinguishingFields = [
