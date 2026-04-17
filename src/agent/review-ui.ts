@@ -1,7 +1,10 @@
 import { resolve } from "node:path";
 import type { ValidationFinding } from "../core/types.js";
+import { defaultFrontendValidationProfile, summarizeFrontendValidationProfile } from "../frontend/profile.js";
 import { validateFrontend } from "../frontend/validate.js";
+import { runBrowserReview } from "./browser.js";
 import { findRelevantDocs } from "./docs.js";
+import { locateFindingEvidence } from "./evidence.js";
 import type { AgentReviewOptions, AgentUiReview, DocsHit } from "./types.js";
 
 const SEVERITY_RANK: Record<ValidationFinding["severity"], number> = {
@@ -11,7 +14,9 @@ const SEVERITY_RANK: Record<ValidationFinding["severity"], number> = {
 };
 
 export async function reviewUi(paths: string[], options: AgentReviewOptions): Promise<AgentUiReview> {
-  const validation = await validateFrontend(paths);
+  const profile = options.profile ?? defaultFrontendValidationProfile();
+  const validation = await validateFrontend(paths, { profile });
+  const evidence = await locateFindingEvidence(paths, validation.findings);
   const docsHits = await findRelevantDocs({
     docsRoot: options.docsRoot,
     service: options.service,
@@ -19,6 +24,14 @@ export async function reviewUi(paths: string[], options: AgentReviewOptions): Pr
     capabilities: validation.capabilities,
     maxDocs: options.maxDocs
   });
+  const browser =
+    options.browser?.enabled === true
+      ? await runBrowserReview(paths, {
+          query: options.browser.query,
+          timeoutMs: options.browser.timeoutMs,
+          profile
+        })
+      : [];
 
   return {
     title: "Agent UI Review Report",
@@ -27,9 +40,12 @@ export async function reviewUi(paths: string[], options: AgentReviewOptions): Pr
     docsRoot: resolve(options.docsRoot),
     inputs: paths.map((path) => resolve(path)),
     validation,
+    profile: summarizeFrontendValidationProfile(profile),
+    evidence,
     docsHits,
+    browser,
     nextActions: buildNextActions(validation.findings),
-    promptForFollowUp: buildPromptForFollowUp(paths, options, validation.findings)
+    promptForFollowUp: buildPromptForFollowUp(paths, options, validation.findings, profile)
   };
 }
 
@@ -41,6 +57,7 @@ export function formatAgentUiReview(review: AgentUiReview): string {
   lines.push(`Service: ${review.service}`);
   lines.push(`Generated: ${review.generatedAt}`);
   lines.push(`Docs root: ${review.docsRoot}`);
+  lines.push(`Profile: ${review.profile}`);
   lines.push(`Score: ${review.validation.score}/100`);
   lines.push(
     `Findings: P0=${review.validation.summary.P0} P1=${review.validation.summary.P1} P2=${review.validation.summary.P2}`
@@ -79,8 +96,31 @@ export function formatAgentUiReview(review: AgentUiReview): string {
       lines.push(`Evidence: ${finding.evidencePath}`);
       lines.push(`Problem: ${finding.message}`);
       lines.push(`Recommended fix: ${finding.remediation}`);
+      const evidence = review.evidence.find((candidate) => candidate.findingId === finding.id);
+      if (evidence) {
+        lines.push(`Likely code: ${evidence.path}:${evidence.line}`);
+        lines.push(`Snippet: \`${evidence.snippet}\``);
+      }
       lines.push(`Docs: ${finding.docs.join(", ")}`);
       lines.push(`Confidence: ${finding.confidence}`);
+    }
+  }
+
+  if (review.browser.length > 0) {
+    lines.push("");
+    lines.push("## Browser Evidence");
+    for (const result of review.browser) {
+      lines.push("");
+      lines.push(`- ${result.path}: ${result.status}`);
+      lines.push(`  ${result.message}`);
+      for (const observation of result.observations) {
+        lines.push(`  - ${observation}`);
+      }
+      lines.push(`  - Autocomplete requests: ${result.requests.autocomplete.length}`);
+      lines.push(`  - Top Items requests: ${result.requests.topItems.length}`);
+      lines.push(`  - Trending Queries requests: ${result.requests.trendingQueries.length}`);
+      lines.push(`  - Analytics requests: ${result.requests.analytics.length}`);
+      lines.push(`  - dataLayer events: ${result.dataLayerEvents.length}`);
     }
   }
 
@@ -135,7 +175,12 @@ function buildNextActions(findings: ValidationFinding[]): string[] {
   return actions;
 }
 
-function buildPromptForFollowUp(paths: string[], options: AgentReviewOptions, findings: ValidationFinding[]): string {
+function buildPromptForFollowUp(
+  paths: string[],
+  options: AgentReviewOptions,
+  findings: ValidationFinding[],
+  profile: ReturnType<typeof defaultFrontendValidationProfile>
+): string {
   const findingSummary = findings.length
     ? findings.map((finding) => `${finding.severity} ${finding.id}: ${finding.title}`).join("\n")
     : "No deterministic findings yet.";
@@ -143,6 +188,7 @@ function buildPromptForFollowUp(paths: string[], options: AgentReviewOptions, fi
   return [
     "You are reviewing a Luigi's Box autocomplete frontend integration.",
     `Service: ${options.service}`,
+    `Profile: ${summarizeFrontendValidationProfile(profile)}`,
     `Docs root: ${resolve(options.docsRoot)}`,
     `Files to inspect: ${paths.map((path) => resolve(path)).join(", ")}`,
     "",

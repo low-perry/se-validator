@@ -1,0 +1,10 @@
+{
+  "service": "autocomplete",
+  "trackerId": "757876-1071971",
+  "analyticsMode": "events-api",
+  "features": {
+    "autocomplete": "required",
+    "topItems": "required",
+    "trendingQueries": "required"
+  }
+}

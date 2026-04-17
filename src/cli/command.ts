@@ -6,6 +6,7 @@ import { validateCatalog } from "../catalog/validate.js";
 import { validateAnalytics } from "../analytics/validate.js";
 import { validateService } from "../service/validate.js";
 import { validateFrontend } from "../frontend/validate.js";
+import { loadFrontendValidationProfile } from "../frontend/profile.js";
 import { formatAgentUiReview, reviewUi } from "../agent/review-ui.js";
 import type { AgentReviewService } from "../agent/types.js";
 
@@ -116,10 +117,12 @@ export async function runCli(argv: string[]): Promise<void> {
     .command("frontend")
     .description("Validate frontend autocomplete API and analytics evidence")
     .argument("<paths...>", "Frontend HTML/JS evidence path(s)")
+    .option("--profile <path>", "Frontend validation profile JSON")
     .option("--json", "Print machine-readable JSON")
     .option("--report <path>", "Write a human-readable report file")
-    .action(async (paths: string[], options: { json?: boolean; report?: string }) => {
-      const report = await validateFrontend(paths);
+    .action(async (paths: string[], options: { profile?: string; json?: boolean; report?: string }) => {
+      const profile = options.profile ? await loadFrontendValidationProfile(options.profile) : undefined;
+      const report = await validateFrontend(paths, profile ? { profile } : {});
 
       if (options.json) {
         console.log(JSON.stringify(report, null, 2));
@@ -151,19 +154,40 @@ export async function runCli(argv: string[]): Promise<void> {
     .argument("<paths...>", "Frontend HTML/JS evidence path(s)")
     .option("--docs <path>", "Local docs repository path")
     .option("--service <service>", "Service being reviewed, currently autocomplete", "autocomplete")
+    .option("--profile <path>", "Frontend validation profile JSON")
     .option("--max-docs <count>", "Maximum docs/examples to include", parsePositiveInteger, 12)
+    .option("--browser", "Run optional browser/live evidence capture")
+    .option("--browser-query <query>", "Query to type during browser/live capture", "shirt")
+    .option("--browser-timeout <ms>", "Browser/live wait timeout in milliseconds", parsePositiveInteger, 2500)
     .option("--json", "Print machine-readable JSON")
     .option("--report <path>", "Write a Markdown report file")
     .action(
       async (
         paths: string[],
-        options: { docs?: string; service: string; maxDocs: number; json?: boolean; report?: string }
+        options: {
+          docs?: string;
+          service: string;
+          profile?: string;
+          maxDocs: number;
+          browser?: boolean;
+          browserQuery: string;
+          browserTimeout: number;
+          json?: boolean;
+          report?: string;
+        }
       ) => {
         const service = normalizeAgentReviewService(options.service);
+        const profile = options.profile ? await loadFrontendValidationProfile(options.profile) : undefined;
         const review = await reviewUi(paths, {
           docsRoot: options.docs ?? defaultDocsRoot(),
           service,
-          maxDocs: options.maxDocs
+          ...(profile ? { profile } : {}),
+          maxDocs: options.maxDocs,
+          browser: {
+            enabled: options.browser === true,
+            query: options.browserQuery,
+            timeoutMs: options.browserTimeout
+          }
         });
 
         if (options.json) {
@@ -329,6 +353,7 @@ function formatFrontendReport(report: Awaited<ReturnType<typeof validateFrontend
 
   lines.push("");
   lines.push(report.title);
+  lines.push(`Profile: ${report.profile}`);
   lines.push(`Score: ${report.score}/100`);
   lines.push(`Findings: P0=${report.summary.P0} P1=${report.summary.P1} P2=${report.summary.P2}`);
 

@@ -1,16 +1,25 @@
 import { scoreFindings, summarizeFindings } from "../core/findings.js";
 import type { ValidationReport } from "../core/types.js";
 import { parseFrontendArtifacts } from "./parse.js";
+import { defaultFrontendValidationProfile, summarizeFrontendValidationProfile } from "./profile.js";
 import { frontendRules } from "./rules.js";
+import type { FrontendValidationProfile } from "./types.js";
+
+export interface FrontendValidationOptions {
+  profile?: FrontendValidationProfile;
+}
 
 export async function validateFrontend(
-  paths: string[]
-): Promise<ValidationReport & { artifacts: string[]; capabilities: string[] }> {
+  paths: string[],
+  options: FrontendValidationOptions = {}
+): Promise<ValidationReport & { artifacts: string[]; capabilities: string[]; profile: string }> {
   const artifacts = await parseFrontendArtifacts(paths);
-  const findings = frontendRules.flatMap((rule) => rule(artifacts));
+  const profile = options.profile ?? defaultFrontendValidationProfile();
+  const findings = frontendRules.flatMap((rule) => rule(artifacts, profile));
 
   return {
     title: "Autocomplete Frontend Validation Report",
+    profile: summarizeFrontendValidationProfile(profile),
     artifacts: artifacts.map(
       (artifact) =>
         `${artifact.path}: ${artifact.sourceKind} / ${artifact.analyticsMode} (${Math.round(artifact.confidence * 100)}%)`

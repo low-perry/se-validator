@@ -2,6 +2,19 @@ import type { CollectorScriptEvidence } from "../analytics/types.js";
 
 export type FrontendSourceKind = "html" | "javascript" | "unknown";
 export type FrontendAnalyticsMode = "datalayer" | "events-api" | "mixed" | "unknown";
+export type FrontendExpectedAnalyticsMode = "any" | "datalayer" | "events-api";
+export type FrontendFeatureExpectation = "required" | "optional" | "disabled";
+
+export interface FrontendValidationProfile {
+  service: "autocomplete";
+  trackerId?: string;
+  analyticsMode: FrontendExpectedAnalyticsMode;
+  features: {
+    autocomplete: FrontendFeatureExpectation;
+    topItems: FrontendFeatureExpectation;
+    trendingQueries: FrontendFeatureExpectation;
+  };
+}
 
 export interface FrontendArtifact {
   path: string;

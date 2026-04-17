@@ -1,8 +1,9 @@
 # Agent UI Review Report
 
 Service: autocomplete
-Generated: 2026-04-17T00:30:16.592Z
+Generated: 2026-04-17T00:41:01.243Z
 Docs root: /Users/lowperry/projects/docs
+Profile: service=autocomplete; analyticsMode=events-api; autocomplete=required; topItems=required; trendingQueries=required trackerId=757876-1071971
 Score: 100/100
 Findings: P0=0 P1=0 P2=0
 
@@ -97,6 +98,7 @@ Use this prompt if you want another AI to continue the review with the same fram
 ```text
 You are reviewing a Luigi's Box autocomplete frontend integration.
 Service: autocomplete
+Profile: service=autocomplete; analyticsMode=events-api; autocomplete=required; topItems=required; trendingQueries=required trackerId=757876-1071971
 Docs root: /Users/lowperry/projects/docs
 Files to inspect: /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-events-api-good.html
 

@@ -1,0 +1,9 @@
+{
+  "service": "autocomplete",
+  "analyticsMode": "any",
+  "features": {
+    "autocomplete": "required",
+    "topItems": "disabled",
+    "trendingQueries": "disabled"
+  }
+}

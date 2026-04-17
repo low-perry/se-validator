@@ -1,11 +1,11 @@
 # Agent UI Review Report
 
 Service: autocomplete
-Generated: 2026-04-17T00:41:01.376Z
+Generated: 2026-04-17T00:41:05.208Z
 Docs root: /Users/lowperry/projects/docs
-Profile: service=autocomplete; analyticsMode=events-api; autocomplete=required; topItems=required; trendingQueries=required trackerId=757876-1071971
-Score: 0/100
-Findings: P0=4 P1=7 P2=4
+Profile: service=autocomplete; analyticsMode=any; autocomplete=required; topItems=disabled; trendingQueries=disabled
+Score: 20/100
+Findings: P0=2 P1=5 P2=5
 
 ## Inputs Reviewed
 - /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-bad.html
@@ -34,31 +34,11 @@ State: failed
 Area: frontend
 Evidence: fixtures/frontend/autocomplete-bad.html:head
 Problem: fixtures/frontend/autocomplete-bad.html uses dataLayer.push but does not include the Luigi's Box collector script.
-Recommended fix: Add <script async src="https://scripts.luigisbox.tech/LBX-1071971.js"></script> to the shared head.
+Recommended fix: Add <script async src="https://scripts.luigisbox.tech/LBX-YOUR_TRACKER_ID.js"></script> to the shared head.
 Likely code: fixtures/frontend/autocomplete-bad.html:3
 Snippet: `<head>`
 Docs: analytics/collector, platform-foundations/lbx-script
 Confidence: 0.95
-
-### P0 FRONTEND_EXPECTED_EVENTS_API_ANALYTICS_MISSING
-State: failed
-Area: frontend
-Evidence: fixtures/frontend/autocomplete-bad.html
-Problem: fixtures/frontend/autocomplete-bad.html was reviewed with analyticsMode=events-api but does not show Events API POST evidence.
-Recommended fix: Either add Events API POST analytics, or update the profile to the actual analytics path.
-Likely code: fixtures/frontend/autocomplete-bad.html:18
-Snippet: `const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({`
-Docs: analytics/api/events, quickstart/autocomplete/query-suggestions
-Confidence: 0.9
-
-### P0 FRONTEND_TOP_ITEMS_RECOMMENDATION_ANALYTICS_MISSING
-State: failed
-Area: frontend
-Evidence: fixtures/frontend/autocomplete-bad.html
-Problem: fixtures/frontend/autocomplete-bad.html calls Top Items but does not show Recommendation list analytics.
-Recommended fix: Track top items shown in autocomplete as a Recommendation view, not as Autocomplete.
-Docs: autocomplete/api/v1/top-items, quickstart/autocomplete/top-items-api
-Confidence: 0.92
 
 ### P1 FRONTEND_ANALYTICS_IDENTITY_NOT_HIT_URL
 State: failed
@@ -111,24 +91,6 @@ Snippet: `itemButton.dataset.itemId = item.attributes.title;`
 Docs: autocomplete/api/v2/autocomplete, quickstart/autocomplete/query-suggestions
 Confidence: 0.84
 
-### P1 FRONTEND_TOP_ITEMS_AUTOCOMPLETE_POPUP_PLACEMENT_MISSING
-State: failed
-Area: frontend
-Evidence: fixtures/frontend/autocomplete-bad.html
-Problem: fixtures/frontend/autocomplete-bad.html does not show autocomplete_popup in Recommendation analytics filters.
-Recommended fix: Set RecommenderClientId and/or Recommender to autocomplete_popup for top items in the autocomplete dropdown.
-Docs: quickstart/autocomplete/top-items-api, analytics/api/events
-Confidence: 0.88
-
-### P1 FRONTEND_TRENDING_QUERIES_ENDPOINT_NOT_EVIDENCED
-State: failed
-Area: frontend
-Evidence: fixtures/frontend/autocomplete-bad.html
-Problem: fixtures/frontend/autocomplete-bad.html does not reference https://live.luigisbox.com/v2/trending_queries.
-Recommended fix: Add evidence for the expected Trending Queries API call.
-Docs: autocomplete/api/v2/trending-queries, quickstart/autocomplete/trending-queries
-Confidence: 0.86
-
 ### P2 FRONTEND_AUTOCOMPLETE_DEBOUNCE_MISSING
 State: failed
 Area: frontend
@@ -173,6 +135,30 @@ Snippet: `const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/
 Docs: autocomplete/guides/integration-best-practices
 Confidence: 0.82
 
+### P2 FRONTEND_TOP_ITEMS_UNEXPECTED_BY_PROFILE
+State: failed
+Area: frontend
+Evidence: fixtures/frontend/autocomplete-bad.html
+Problem: fixtures/frontend/autocomplete-bad.html references Top Items, while the validation profile sets topItems=disabled.
+Recommended fix: Either remove the Top Items integration from the UI evidence, or update the profile to topItems=optional/required.
+Likely code: fixtures/frontend/autocomplete-bad.html:13
+Snippet: `const TOP_ITEMS_API_URL = "https://live.luigisbox.com/v1/top_items";`
+Docs: autocomplete/api/v1/top-items, quickstart/autocomplete/top-items-api
+Confidence: 0.78
+
+## Browser Evidence
+
+- fixtures/frontend/autocomplete-bad.html: passed
+  Browser evidence was observed.
+  - Observed 1 Autocomplete API request(s).
+  - Observed 1 Top Items request(s).
+  - Observed rendered output (5 candidate element(s)).
+  - Autocomplete requests: 1
+  - Top Items requests: 1
+  - Trending Queries requests: 0
+  - Analytics requests: 0
+  - dataLayer events: 0
+
 ## Docs Consulted
 
 - Getting query suggestions via the Autocomplete API (quickstart/autocomplete/query-suggestions): /Users/lowperry/projects/docs/src/content/docs/quickstart/autocomplete/query-suggestions.md:120
@@ -187,23 +173,17 @@ Confidence: 0.82
   Matched: autocomplete, tracker_id, `type`, analytics, Autocomplete, click, Recommendation, autocomplete_popup
   Excerpt: If your empty-state autocomplete shows **Top Items** on focus, do **not** track it as `Autocomplete`. Track it as a [Recommendation event](#recommendation-events) and set both `Recommender` and `RecommenderClientId` to `autocomplete_popup`.
 
-- Implementing top items with the API (quickstart/autocomplete/top-items-api): /Users/lowperry/projects/docs/src/content/docs/quickstart/autocomplete/top-items-api.md:108
-  Reason: Referenced by FRONTEND_TOP_ITEMS_RECOMMENDATION_ANALYTICS_MISSING
-  Section: Step 3: Update analytics for different suggestion types
-  Matched: autocomplete, autocomplete api, tracker_id, `q`, `type`, hit_fields, hits, hit.url
-  Excerpt: To distinguish between regular query-based suggestions and top items shown on focus, we need to adjust our analytics tracking. You have two options for sending analytics: the **DataLayer Collector** (recommended for web integrations that already use a `data...
-
 - DataLayer collector (analytics/collector): /Users/lowperry/projects/docs/src/content/docs/analytics/collector.md:340
   Reason: Referenced by FRONTEND_DATALAYER_COLLECTOR_SCRIPT_MISSING
   Section: Recommendations
   Matched: autocomplete, autocomplete api, `type`, analytics, Autocomplete, view_item_list, click, no results
   Excerpt: Send a [`view_item_list`](https://developers.google.com/analytics/devguides/collection/ga4/reference/events?client_type=gtag#view_item_list) event when a recommendation widget displays items.
 
-- Implementing trending queries suggestions (quickstart/autocomplete/trending-queries): /Users/lowperry/projects/docs/src/content/docs/quickstart/autocomplete/trending-queries.md:215
-  Reason: Referenced by FRONTEND_TRENDING_QUERIES_ENDPOINT_NOT_EVIDENCED
-  Section: Analytics for trending queries
-  Matched: autocomplete, tracker_id, `q`, hits, hit.url, analytics, Autocomplete, view_item_list
-  Excerpt: This does not replace the normal analytics requirements for your autocomplete requests. If an autocomplete request returns no hits, still send the Autocomplete view event with an empty `items` array so zero-result queries can be learned from. See [Tracking...
+- Implementing top items with the API (quickstart/autocomplete/top-items-api): /Users/lowperry/projects/docs/src/content/docs/quickstart/autocomplete/top-items-api.md:108
+  Reason: Referenced by FRONTEND_TOP_ITEMS_UNEXPECTED_BY_PROFILE
+  Section: Step 3: Update analytics for different suggestion types
+  Matched: autocomplete, autocomplete api, tracker_id, `q`, `type`, hit_fields, hits, hit.url
+  Excerpt: To distinguish between regular query-based suggestions and top items shown on focus, we need to adjust our analytics tracking. You have two options for sending analytics: the **DataLayer Collector** (recommended for web integrations that already use a `data...
 
 - Autocomplete API (autocomplete/api/v2/autocomplete): /Users/lowperry/projects/docs/src/content/docs/autocomplete/api/v2/autocomplete.mdx:29
   Reason: Referenced by FRONTEND_AUTOCOMPLETE_REQUIRED_PARAM_MISSING
@@ -212,16 +192,10 @@ Confidence: 0.82
   Excerpt: This endpoint is public and requires no authentication. We strongly recommend implementing it directly on the frontend to minimize latency. For guidance on when to use the API directly versus `Autocomplete.js`, see [Integration Best Practices](/autocomplete...
 
 - Top Items API (autocomplete/api/v1/top-items): /Users/lowperry/projects/docs/src/content/docs/autocomplete/api/v1/top-items.mdx:23
-  Reason: Referenced by FRONTEND_TOP_ITEMS_RECOMMENDATION_ANALYTICS_MISSING
+  Reason: Referenced by FRONTEND_TOP_ITEMS_UNEXPECTED_BY_PROFILE
   Section: Overview
   Matched: autocomplete, tracker_id, `type`, hit_fields, hits, analytics, Autocomplete, top_items
   Excerpt: If you show top items inside an autocomplete dropdown when the user focuses an empty search box, track the rendered list as a recommendation event, not as autocomplete. Use `autocomplete_popup` as the placement identifier. See [Events API](/analytics/api/ev...
-
-- Trending Queries API (autocomplete/api/v2/trending-queries): /Users/lowperry/projects/docs/src/content/docs/autocomplete/api/v2/trending-queries.mdx:63
-  Reason: Referenced by FRONTEND_TRENDING_QUERIES_ENDPOINT_NOT_EVIDENCED
-  Section: How to Make a Request
-  Matched: autocomplete, tracker_id, analytics, Autocomplete, required, param, missing, quickstart
-  Excerpt: For implementation guidance, see [Quickstart: Trending Queries](/quickstart/autocomplete/trending-queries/).
 
 - Integration best practices (autocomplete/guides/integration-best-practices): /Users/lowperry/projects/docs/src/content/docs/autocomplete/guides/integration-best-practices.md:40
   Reason: Referenced by FRONTEND_HIT_FIELDS_MISSING
@@ -234,11 +208,21 @@ Confidence: 0.82
   Matched: autocomplete, analytics, Autocomplete, required, integration, script, platform, foundations
   Excerpt: :::note This script is required unless you are performing a full server-side integration via the API. :::
 
-- Autocomplete tutorial (tutorials/autocomplete): /Users/lowperry/projects/docs/src/content/docs/tutorials/autocomplete.md:72
+- Autocomplete tutorial (tutorials/autocomplete): /Users/lowperry/projects/docs/src/content/docs/tutorials/autocomplete.md:164
   Reason: Related docs search match
-  Section: User clicks into empty searchbox
+  Section: Fire dataLayer event
   Matched: autocomplete, autocomplete api, tracker_id, `q`, `type`, hit_fields, hits, analytics
-  Excerpt: When the user clicks into the searchbox, display the autocomplete popup immediately, showing recommendations. Call the [Top items](/autocomplete/api/v1/top-items/) API endpoint to load recommendations for categories, brands, products and other types you hav...
+  Excerpt: After the top items recommendations have been rendered, fire a [recommendation dataLayer event](/analytics/collector/#recommender-example) describing what you have just rendered.
+
+- ../docs/public/examples/autocomplete/top-items.html: /Users/lowperry/projects/docs/public/examples/autocomplete/top-items.html:409
+  Reason: Runnable public example for this service
+  Matched: autocomplete, tracker_id, hit_fields, hits, hit.url, analytics, Autocomplete, click
+  Excerpt: // Send analytics for this on-focus Top Items view (Recommendation list) sendTopItemsViewAnalytics(hits);
+
+- ../docs/public/examples/autocomplete/top-items-datalayer.html: /Users/lowperry/projects/docs/public/examples/autocomplete/top-items-datalayer.html:386
+  Reason: Runnable public example for this service
+  Matched: autocomplete, tracker_id, hit_fields, hits, hit.url, analytics, Autocomplete, view_item_list
+  Excerpt: // Top Items on focus are tracked as Recommendation with autocomplete_popup trackTopItemsView(hits);
 
 - ../docs/public/examples/autocomplete/trending-queries.html: /Users/lowperry/projects/docs/public/examples/autocomplete/trending-queries.html:424
   Reason: Runnable public example for this service
@@ -247,11 +231,11 @@ Confidence: 0.82
 
 ## Next Actions
 - P0: Send the current search input value as q for query autocomplete.
-- P0: Add <script async src="https://scripts.luigisbox.tech/LBX-1071971.js"></script> to the shared head.
-- P0: Either add Events API POST analytics, or update the profile to the actual analytics path.
-- P0: Track top items shown in autocomplete as a Recommendation view, not as Autocomplete.
+- P0: Add <script async src="https://scripts.luigisbox.tech/LBX-YOUR_TRACKER_ID.js"></script> to the shared head.
 - P1: Map analytics items from hits with item_id/url set to hit.url so API response, UI, and analytics use the same identity.
 - P1: Track selected suggestions as DataLayer select_item or Events API click with the rendered item identity.
+- P1: When hits is empty, still send the Autocomplete view event with items: [].
+- P1: Include the user's autocomplete query as search_term in DataLayer or query.string in Events API.
 - Re-run this command after fixing P0 items; P0 means the implementation likely cannot be considered integrated.
 
 ## Follow-up Prompt
@@ -260,7 +244,7 @@ Use this prompt if you want another AI to continue the review with the same fram
 ```text
 You are reviewing a Luigi's Box autocomplete frontend integration.
 Service: autocomplete
-Profile: service=autocomplete; analyticsMode=events-api; autocomplete=required; topItems=required; trendingQueries=required trackerId=757876-1071971
+Profile: service=autocomplete; analyticsMode=any; autocomplete=required; topItems=disabled; trendingQueries=disabled
 Docs root: /Users/lowperry/projects/docs
 Files to inspect: /Users/lowperry/projects/se-validator/fixtures/frontend/autocomplete-bad.html
 
@@ -280,13 +264,10 @@ P2 FRONTEND_DNS_PREFETCH_MISSING: Frontend is missing DNS prefetch for live API
 P2 FRONTEND_AUTOCOMPLETE_DEBOUNCE_MISSING: Autocomplete input is not debounced
 P1 FRONTEND_RENDERED_IDENTITY_NOT_HIT_URL: Rendered suggestion identity may not match catalog identity
 P1 FRONTEND_ANALYTICS_IDENTITY_NOT_HIT_URL: Autocomplete analytics may not use returned hit identity
-P0 FRONTEND_EXPECTED_EVENTS_API_ANALYTICS_MISSING: Profile expects Events API analytics but evidence uses another path
 P0 FRONTEND_DATALAYER_COLLECTOR_SCRIPT_MISSING: DataLayer autocomplete page is missing the collector script
 P1 FRONTEND_AUTOCOMPLETE_QUERY_ANALYTICS_MISSING: Autocomplete analytics do not include the query
 P2 FRONTEND_AUTOCOMPLETE_ITEM_POSITION_MISSING: Autocomplete analytics item position is missing
 P1 FRONTEND_AUTOCOMPLETE_NO_RESULTS_NOT_TRACKED: Autocomplete no-results branch is not tracked
 P1 FRONTEND_AUTOCOMPLETE_CLICK_ANALYTICS_MISSING: Autocomplete click analytics are missing
-P0 FRONTEND_TOP_ITEMS_RECOMMENDATION_ANALYTICS_MISSING: Top Items are not tracked as Recommendation
-P1 FRONTEND_TOP_ITEMS_AUTOCOMPLETE_POPUP_PLACEMENT_MISSING: Top Items Recommendation placement is missing
-P1 FRONTEND_TRENDING_QUERIES_ENDPOINT_NOT_EVIDENCED: Trending Queries integration is not evidenced
+P2 FRONTEND_TOP_ITEMS_UNEXPECTED_BY_PROFILE: Top Items are present but profile says they are not used
 ```

@@ -1,8 +1,8 @@
 import { createFinding } from "../core/findings.js";
 import type { ValidationFinding } from "../core/types.js";
-import type { FrontendArtifact } from "./types.js";
+import type { FrontendArtifact, FrontendFeatureExpectation, FrontendValidationProfile } from "./types.js";
 
-export type FrontendRule = (artifacts: FrontendArtifact[]) => ValidationFinding[];
+export type FrontendRule = (artifacts: FrontendArtifact[], profile: FrontendValidationProfile) => ValidationFinding[];
 
 export const frontendRules: FrontendRule[] = [
   validateParseErrors,
@@ -32,7 +32,12 @@ function validateParseErrors(artifacts: FrontendArtifact[]): ValidationFinding[]
   });
 }
 
-function validateCoreAutocompleteApi(artifacts: FrontendArtifact[]): ValidationFinding[] {
+function validateCoreAutocompleteApi(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
+  if (profile.features.autocomplete === "disabled") return [];
+
   return artifacts.flatMap((artifact) => {
     const findings: ValidationFinding[] = [];
 
@@ -88,7 +93,12 @@ function validateCoreAutocompleteApi(artifacts: FrontendArtifact[]): ValidationF
   });
 }
 
-function validateBrowserIntegration(artifacts: FrontendArtifact[]): ValidationFinding[] {
+function validateBrowserIntegration(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
+  if (profile.features.autocomplete === "disabled") return [];
+
   return artifacts.flatMap((artifact) => {
     const findings: ValidationFinding[] = [];
 
@@ -141,7 +151,12 @@ function validateBrowserIntegration(artifacts: FrontendArtifact[]): ValidationFi
   });
 }
 
-function validateResponseAndIdentityFlow(artifacts: FrontendArtifact[]): ValidationFinding[] {
+function validateResponseAndIdentityFlow(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
+  if (profile.features.autocomplete === "disabled") return [];
+
   return artifacts.flatMap((artifact) => {
     const findings: ValidationFinding[] = [];
 
@@ -209,7 +224,10 @@ function validateResponseAndIdentityFlow(artifacts: FrontendArtifact[]): Validat
   });
 }
 
-function validateAnalyticsMode(artifacts: FrontendArtifact[]): ValidationFinding[] {
+function validateAnalyticsMode(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
   return artifacts.flatMap((artifact) => {
     const findings: ValidationFinding[] = [];
 
@@ -228,6 +246,36 @@ function validateAnalyticsMode(artifacts: FrontendArtifact[]): ValidationFinding
       );
     }
 
+    if (profile.analyticsMode === "datalayer" && !["datalayer", "mixed"].includes(artifact.analyticsMode)) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_EXPECTED_DATALAYER_ANALYTICS_MISSING",
+          severity: "P0",
+          title: "Profile expects DataLayer analytics but evidence uses another path",
+          message: `${artifact.path} was reviewed with analyticsMode=datalayer but does not show dataLayer.push evidence.`,
+          evidencePath: artifact.path,
+          remediation: "Either add dataLayer.push analytics and the collector script, or update the profile to the actual analytics path.",
+          docs: ["analytics/collector", "platform-foundations/lbx-script"],
+          confidence: 0.9
+        })
+      );
+    }
+
+    if (profile.analyticsMode === "events-api" && !["events-api", "mixed"].includes(artifact.analyticsMode)) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_EXPECTED_EVENTS_API_ANALYTICS_MISSING",
+          severity: "P0",
+          title: "Profile expects Events API analytics but evidence uses another path",
+          message: `${artifact.path} was reviewed with analyticsMode=events-api but does not show Events API POST evidence.`,
+          evidencePath: artifact.path,
+          remediation: "Either add Events API POST analytics, or update the profile to the actual analytics path.",
+          docs: ["analytics/api/events", "quickstart/autocomplete/query-suggestions"],
+          confidence: 0.9
+        })
+      );
+    }
+
     if (artifact.analyticsMode === "datalayer" || artifact.analyticsMode === "mixed") {
       if (!artifact.collectorScript?.present) {
         findings.push(
@@ -237,7 +285,7 @@ function validateAnalyticsMode(artifacts: FrontendArtifact[]): ValidationFinding
             title: "DataLayer autocomplete page is missing the collector script",
             message: `${artifact.path} uses dataLayer.push but does not include the Luigi's Box collector script.`,
             evidencePath: `${artifact.path}:head`,
-            remediation: "Add <script async src=\"https://scripts.luigisbox.tech/LBX-1071971.js\"></script> to the shared head.",
+            remediation: `Add ${collectorScriptSnippet(profile)} to the shared head.`,
             docs: ["analytics/collector", "platform-foundations/lbx-script"],
             confidence: 0.95
           })
@@ -326,7 +374,12 @@ function validateAnalyticsMode(artifacts: FrontendArtifact[]): ValidationFinding
   });
 }
 
-function validateAutocompleteAnalytics(artifacts: FrontendArtifact[]): ValidationFinding[] {
+function validateAutocompleteAnalytics(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
+  if (profile.features.autocomplete === "disabled") return [];
+
   return artifacts.flatMap((artifact) => {
     const findings: ValidationFinding[] = [];
 
@@ -439,21 +492,46 @@ function validateAutocompleteAnalytics(artifacts: FrontendArtifact[]): Validatio
   });
 }
 
-function validateTopItemsFlow(artifacts: FrontendArtifact[]): ValidationFinding[] {
+function validateTopItemsFlow(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
   return artifacts.flatMap((artifact) => {
     const findings: ValidationFinding[] = [];
+    const expectation = profile.features.topItems;
 
     if (!artifact.capabilities.endpoints.topItems) {
+      if (expectation !== "disabled") {
+        findings.push(
+          frontendFinding({
+            id: "FRONTEND_TOP_ITEMS_ENDPOINT_NOT_EVIDENCED",
+            severity: severityForMissingExpectedFeature(expectation),
+            title: "Top Items on focus is not evidenced",
+            message: `${artifact.path} does not reference https://live.luigisbox.com/v1/top_items.`,
+            evidencePath: artifact.path,
+            remediation:
+              expectation === "required"
+                ? "Add evidence for the expected Top Items API call on empty search focus."
+                : "If the autocomplete UX shows suggestions on empty search focus, provide evidence for the Top Items API call.",
+            docs: ["autocomplete/api/v1/top-items", "quickstart/autocomplete/top-items-api"],
+            confidence: expectation === "required" ? 0.88 : 0.72
+          })
+        );
+      }
+      return findings;
+    }
+
+    if (expectation === "disabled") {
       findings.push(
         frontendFinding({
-          id: "FRONTEND_TOP_ITEMS_ENDPOINT_NOT_EVIDENCED",
+          id: "FRONTEND_TOP_ITEMS_UNEXPECTED_BY_PROFILE",
           severity: "P2",
-          title: "Top Items on focus is not evidenced",
-          message: `${artifact.path} does not reference https://live.luigisbox.com/v1/top_items.`,
+          title: "Top Items are present but profile says they are not used",
+          message: `${artifact.path} references Top Items, while the validation profile sets topItems=disabled.`,
           evidencePath: artifact.path,
-          remediation: "If the autocomplete UX shows suggestions on empty search focus, provide evidence for the Top Items API call.",
+          remediation: "Either remove the Top Items integration from the UI evidence, or update the profile to topItems=optional/required.",
           docs: ["autocomplete/api/v1/top-items", "quickstart/autocomplete/top-items-api"],
-          confidence: 0.72
+          confidence: 0.78
         })
       );
       return findings;
@@ -508,21 +586,47 @@ function validateTopItemsFlow(artifacts: FrontendArtifact[]): ValidationFinding[
   });
 }
 
-function validateTrendingQueriesFlow(artifacts: FrontendArtifact[]): ValidationFinding[] {
+function validateTrendingQueriesFlow(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
   return artifacts.flatMap((artifact) => {
     const findings: ValidationFinding[] = [];
+    const expectation = profile.features.trendingQueries;
 
     if (!artifact.capabilities.endpoints.trendingQueries) {
+      if (expectation !== "disabled") {
+        findings.push(
+          frontendFinding({
+            id: "FRONTEND_TRENDING_QUERIES_ENDPOINT_NOT_EVIDENCED",
+            severity: severityForMissingExpectedFeature(expectation),
+            title: "Trending Queries integration is not evidenced",
+            message: `${artifact.path} does not reference https://live.luigisbox.com/v2/trending_queries.`,
+            evidencePath: artifact.path,
+            remediation:
+              expectation === "required"
+                ? "Add evidence for the expected Trending Queries API call."
+                : "If the UX uses dashboard-managed trending queries, provide evidence for the Trending Queries API call.",
+            docs: ["autocomplete/api/v2/trending-queries", "quickstart/autocomplete/trending-queries"],
+            confidence: expectation === "required" ? 0.86 : 0.72
+          })
+        );
+      }
+      return findings;
+    }
+
+    if (expectation === "disabled") {
       findings.push(
         frontendFinding({
-          id: "FRONTEND_TRENDING_QUERIES_ENDPOINT_NOT_EVIDENCED",
+          id: "FRONTEND_TRENDING_QUERIES_UNEXPECTED_BY_PROFILE",
           severity: "P2",
-          title: "Trending Queries integration is not evidenced",
-          message: `${artifact.path} does not reference https://live.luigisbox.com/v2/trending_queries.`,
+          title: "Trending Queries are present but profile says they are not used",
+          message: `${artifact.path} references Trending Queries, while the validation profile sets trendingQueries=disabled.`,
           evidencePath: artifact.path,
-          remediation: "If the UX uses dashboard-managed trending queries, provide evidence for the Trending Queries API call.",
+          remediation:
+            "Either remove the Trending Queries integration from the UI evidence, or update the profile to trendingQueries=optional/required.",
           docs: ["autocomplete/api/v2/trending-queries", "quickstart/autocomplete/trending-queries"],
-          confidence: 0.72
+          confidence: 0.78
         })
       );
       return findings;
@@ -577,4 +681,15 @@ function requiredParamFinding(artifact: FrontendArtifact, param: string, remedia
 
 function frontendFinding(input: Omit<Parameters<typeof createFinding>[0], "area">): ValidationFinding {
   return createFinding({ area: "frontend", ...input });
+}
+
+function severityForMissingExpectedFeature(expectation: FrontendFeatureExpectation): "P1" | "P2" {
+  return expectation === "required" ? "P1" : "P2";
+}
+
+function collectorScriptSnippet(profile: FrontendValidationProfile): string {
+  if (!profile.trackerId) return '<script async src="https://scripts.luigisbox.tech/LBX-YOUR_TRACKER_ID.js"></script>';
+
+  const scriptId = profile.trackerId.includes("-") ? profile.trackerId.split("-").at(-1) : profile.trackerId;
+  return `<script async src="https://scripts.luigisbox.tech/LBX-${scriptId}.js"></script>`;
 }
