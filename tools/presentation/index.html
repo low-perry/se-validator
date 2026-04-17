@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SE Validator — 3 Minute Demo</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="deck">
+    <header class="deck-header" aria-hidden="true">
+      <div class="deck-title">SE Validator</div>
+      <div class="deck-progress">
+        <span id="slide-current">1</span> / <span id="slide-total">8</span>
+      </div>
+    </header>
+
+    <main id="stage" class="stage">
+
+      <!-- Slide 1: title + problem -->
+      <section class="slide" data-slide="1" data-title="Why this exists">
+        <div class="slide-body centered">
+          <p class="eyebrow">Hackathon demo · 3 minutes</p>
+          <h1 class="hero">
+            Catch broken Luigi's Box integrations
+            <span class="accent">before</span> the back-and-forth.
+          </h1>
+          <p class="lede">
+            SE Validator reads client integration evidence — catalog feeds, frontend HTML/JS,
+            service profiles — and returns a scored, cited report in seconds.
+          </p>
+          <ul class="pain-list">
+            <li>Reviewers squint at XML, diff against docs, and miss subtle issues.</li>
+            <li>Every review is a round-trip: client pastes, SE reads, client re-pastes.</li>
+            <li>Severity is inconsistent across reviewers. So is "ready."</li>
+          </ul>
+          <p class="kicker">
+            One command in. A report with <span class="p0 badge">P0</span>
+            <span class="p1 badge">P1</span> <span class="p2 badge">P2</span> findings,
+            evidence paths, and absolute docs links out.
+          </p>
+        </div>
+      </section>
+
+      <!-- Slide 2: how it works pipeline -->
+      <section class="slide" data-slide="2" data-title="How it works">
+        <div class="slide-body">
+          <h2>How it works</h2>
+          <p class="muted">Evidence in. Rules and docs. Scored report out.</p>
+
+          <div class="pipeline">
+            <div class="pipe-col">
+              <div class="pipe-label">Evidence</div>
+              <ul class="pipe-list">
+                <li>
+                  <strong>Catalog</strong>
+                  <span class="muted">XML / JSON feeds, Content Update payloads</span>
+                </li>
+                <li>
+                  <strong>Analytics</strong>
+                  <span class="muted">Events API JSON, DataLayer HTML</span>
+                </li>
+                <li>
+                  <strong>Services</strong>
+                  <span class="muted">Live Autocomplete + Search API probes</span>
+                </li>
+                <li>
+                  <strong>Frontend</strong>
+                  <span class="muted">Custom Autocomplete / Search UI HTML + JS</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="pipe-arrow" aria-hidden="true">→</div>
+
+            <div class="pipe-col">
+              <div class="pipe-label">Validator</div>
+              <ul class="pipe-list">
+                <li>
+                  <strong>Deterministic rules</strong>
+                  <span class="muted">Identity uniqueness, required fields, collector placement, analytics parity</span>
+                </li>
+                <li>
+                  <strong>Doc-aware agent</strong>
+                  <span class="muted">Opens the docs repo, matches sections, cites them inline</span>
+                </li>
+                <li>
+                  <strong>Optional browser capture</strong>
+                  <span class="muted">Playwright records real network + DOM activity</span>
+                </li>
+              </ul>
+            </div>
+
+            <div class="pipe-arrow" aria-hidden="true">→</div>
+
+            <div class="pipe-col">
+              <div class="pipe-label">Report</div>
+              <ul class="pipe-list">
+                <li>
+                  <strong>Score</strong>
+                  <span class="muted">0–100, deterministic from findings</span>
+                </li>
+                <li>
+                  <strong>Findings</strong>
+                  <span class="badge p0">P0</span>
+                  <span class="badge p1">P1</span>
+                  <span class="badge p2">P2</span>
+                  <span class="muted">with evidence + fix + docs</span>
+                </li>
+                <li>
+                  <strong>Readiness</strong>
+                  <span class="status-chip status-ready">READY</span>
+                  <span class="status-chip status-risky">RISKY</span>
+                  <span class="status-chip status-blocked">BLOCKED</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <p class="takeaway">
+            <strong>READY</strong> = no P0, no P1. <strong>RISKY</strong> = P1 but no P0.
+            <strong>BLOCKED</strong> = any P0. Reviewers can forward the report as-is.
+          </p>
+        </div>
+      </section>
+
+      <!-- Slide 3: catalog bad vs good -->
+      <section class="slide" data-slide="3" data-title="Catalog demo">
+        <div class="slide-body">
+          <h2>Catalog review — bad vs good</h2>
+          <p class="muted">
+            Same validator. Two fixtures. Click "Open full report" on either side to drill in.
+          </p>
+          <div class="compare" id="slide-3-compare">
+            <div class="compare-col" data-role="bad">
+              <div class="col-header">
+                <span class="col-tag bad">Failing integration</span>
+                <span class="col-source mono" id="bad-source">…</span>
+              </div>
+              <div class="col-score-row">
+                <span class="score-chip" id="bad-score">–/100</span>
+                <span class="tally p0 badge"><span id="bad-p0">0</span> P0</span>
+                <span class="tally p1 badge"><span id="bad-p1">0</span> P1</span>
+                <span class="tally p2 badge"><span id="bad-p2">0</span> P2</span>
+              </div>
+              <div class="col-findings" id="bad-findings" aria-live="polite"></div>
+              <a class="open-full" id="bad-open" href="#" target="_blank" rel="noopener">
+                Open full report ↗
+              </a>
+            </div>
+            <div class="compare-col" data-role="good">
+              <div class="col-header">
+                <span class="col-tag good">Clean integration</span>
+                <span class="col-source mono" id="good-source">…</span>
+              </div>
+              <div class="col-score-row">
+                <span class="score-chip good" id="good-score">–/100</span>
+                <span class="tally p0 badge"><span id="good-p0">0</span> P0</span>
+                <span class="tally p1 badge"><span id="good-p1">0</span> P1</span>
+                <span class="tally p2 badge"><span id="good-p2">0</span> P2</span>
+              </div>
+              <div class="col-findings" id="good-findings" aria-live="polite"></div>
+              <a class="open-full" id="good-open" href="#" target="_blank" rel="noopener">
+                Open full report ↗
+              </a>
+            </div>
+          </div>
+          <p class="takeaway">
+            Every finding carries the <strong>file + path</strong>, a plain-language
+            <strong>why</strong>, a <strong>fix</strong>, and <strong>docs references</strong>.
+            That is what clients paste back into their own code review.
+          </p>
+        </div>
+      </section>
+
+      <!-- Slide 4: frontend bad vs good -->
+      <section class="slide" data-slide="4" data-title="Frontend demo">
+        <div class="slide-body">
+          <h2>Frontend review — bad vs good</h2>
+          <p class="muted">
+            Custom Autocomplete UI. The profile states which features are required;
+            the validator checks each one.
+          </p>
+          <div class="compare">
+            <div class="compare-col" data-role="bad">
+              <div class="col-header">
+                <span class="col-tag bad">Broken UI</span>
+                <span class="col-source mono" id="ui-bad-source">…</span>
+              </div>
+              <div class="col-score-row">
+                <span class="score-chip" id="ui-bad-score">–/100</span>
+                <span class="tally p0 badge"><span id="ui-bad-p0">0</span> P0</span>
+                <span class="tally p1 badge"><span id="ui-bad-p1">0</span> P1</span>
+                <span class="tally p2 badge"><span id="ui-bad-p2">0</span> P2</span>
+              </div>
+              <div class="caps-row" id="ui-bad-caps"></div>
+              <div class="col-findings" id="ui-bad-findings" aria-live="polite"></div>
+              <a class="open-full" id="ui-bad-open" href="#" target="_blank" rel="noopener">
+                Open full report ↗
+              </a>
+            </div>
+            <div class="compare-col" data-role="good">
+              <div class="col-header">
+                <span class="col-tag good">Clean UI</span>
+                <span class="col-source mono" id="ui-good-source">…</span>
+              </div>
+              <div class="col-score-row">
+                <span class="score-chip good" id="ui-good-score">–/100</span>
+                <span class="tally p0 badge"><span id="ui-good-p0">0</span> P0</span>
+                <span class="tally p1 badge"><span id="ui-good-p1">0</span> P1</span>
+                <span class="tally p2 badge"><span id="ui-good-p2">0</span> P2</span>
+              </div>
+              <div class="caps-row" id="ui-good-caps"></div>
+              <div class="col-findings" id="ui-good-findings" aria-live="polite"></div>
+              <a class="open-full" id="ui-good-open" href="#" target="_blank" rel="noopener">
+                Open full report ↗
+              </a>
+            </div>
+          </div>
+          <p class="takeaway">
+            Detected capabilities are part of the contract: if the profile says
+            <strong>autocomplete=required</strong> but the page doesn't send <code>q</code>,
+            that's a P0 — not a style suggestion.
+          </p>
+        </div>
+      </section>
+
+      <!-- Slide 5: agentic loop -->
+      <section class="slide" data-slide="5" data-title="The agentic loop">
+        <div class="slide-body">
+          <h2>What makes it agentic</h2>
+          <p class="muted">
+            The validator doesn't just score — it opens the docs, matches sections,
+            and cites them next to each finding.
+          </p>
+
+          <ol class="loop">
+            <li>
+              <div class="loop-step">1. Evidence</div>
+              <div class="loop-body">
+                Pasted into <code>tmp/agent-input/</code>, or a path inside
+                <code>fixtures/</code>. HTML, JSON, XML, JS.
+              </div>
+            </li>
+            <li>
+              <div class="loop-step">2. Deterministic rules</div>
+              <div class="loop-body">
+                <code>yarn validate</code> or <code>yarn agent review-*</code> runs the rule
+                set. Each rule fires with priority, fix, and evidence path.
+              </div>
+            </li>
+            <li>
+              <div class="loop-step">3. Doc lookup</div>
+              <div class="loop-body">
+                For every finding and every detected capability, the agent searches
+                <code>$SE_VALIDATOR_DOCS_ROOT</code> and records the section it matched
+                plus the reason.
+              </div>
+            </li>
+            <li>
+              <div class="loop-step">4. Report</div>
+              <div class="loop-body">
+                Markdown (for humans / report-viewer) or JSON (for other agents).
+                Docs cited with absolute <code>docs.luigisbox.com</code> links.
+              </div>
+            </li>
+          </ol>
+
+          <div class="citation-card">
+            <div class="citation-head">
+              <span class="badge">Real citation</span>
+              <span class="muted">Excerpt from <code>agent-ui-review-good-report.md</code></span>
+            </div>
+            <div class="citation-title" id="slide-5-citation-title">…</div>
+            <div class="citation-path mono" id="slide-5-citation-path">…</div>
+            <div class="citation-reason" id="slide-5-citation-reason"></div>
+            <div class="citation-excerpt" id="slide-5-citation-excerpt"></div>
+          </div>
+
+          <p class="takeaway">
+            If a reviewer disagrees with a finding, they can follow the cited
+            <code>path:line</code> and challenge the validator with facts — not opinions.
+          </p>
+        </div>
+      </section>
+
+      <!-- Slide 6: profile generator -->
+      <section class="slide" data-slide="6" data-title="Profile generator">
+        <div class="slide-body">
+          <h2>Profile generators — intent from live API</h2>
+          <p class="muted">
+            HTML alone doesn't say which hit type the client indexed. A live profile
+            captures that intent before anyone opens the file.
+          </p>
+
+          <div class="gen-flow">
+            <div class="gen-step">
+              <div class="gen-step-n">1</div>
+              <div class="gen-step-body">
+                <strong>Input: tracker + query</strong>
+                <pre><code>yarn suggest search-profile \
+  --tracker-id 757876-1071971 \
+  --query shirt \
+  --filter type:digital-products \
+  --out results/search-profile-digital-products-suggested.json</code></pre>
+              </div>
+            </div>
+            <div class="gen-step">
+              <div class="gen-step-n">2</div>
+              <div class="gen-step-body">
+                <strong>Live API probe</strong>
+                <p class="muted">
+                  Hits <code>search/api/v1/search</code> with the client's tracker ID,
+                  counts the hit types returned, records analytics mode from the
+                  DataLayer collector probe.
+                </p>
+              </div>
+            </div>
+            <div class="gen-step">
+              <div class="gen-step-n">3</div>
+              <div class="gen-step-body">
+                <strong>Generated profile</strong>
+                <pre><code>{
+  "service": "search",
+  "trackerId": "757876-1071971",
+  "analyticsMode": "datalayer",
+  "features": { "search": "required" },
+  "search": {
+    "expectedResultTypes": ["digital-products"]
+  }
+}</code></pre>
+              </div>
+            </div>
+            <div class="gen-step">
+              <div class="gen-step-n">4</div>
+              <div class="gen-step-body">
+                <strong>Fed into the review</strong>
+                <pre><code>yarn agent review-ui fixtures/frontend/search-bad.html \
+  --service search \
+  --profile results/search-profile-digital-products-suggested.json \
+  --docs "$SE_VALIDATOR_DOCS_ROOT"</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <p class="takeaway">
+            This is how the validator catches the classic mismatch —
+            <code>f[]=type:item</code> in the UI when the live Search API returns
+            <code>type:digital-products</code>. The profile knows the ground truth.
+          </p>
+        </div>
+      </section>
+
+      <!-- Slide 7: browser verification -->
+      <section class="slide" data-slide="7" data-title="Browser verification">
+        <div class="slide-body">
+          <h2>Optional: browser-verified with Playwright</h2>
+          <p class="muted">
+            Static checks are fast but heuristic. <code>--browser</code> launches a real
+            browser, types a query, and records what actually happens.
+          </p>
+
+          <div class="compare">
+            <div class="compare-col" data-role="bad">
+              <div class="col-header">
+                <span class="col-tag bad">Static finding</span>
+              </div>
+              <div class="col-findings" id="browser-static-finding"></div>
+            </div>
+            <div class="compare-col" data-role="good">
+              <div class="col-header">
+                <span class="col-tag good">Browser evidence</span>
+                <span class="col-source mono">Playwright · <code>--browser-query "shirt"</code></span>
+              </div>
+              <ul class="browser-stats" id="browser-stats"></ul>
+            </div>
+          </div>
+
+          <p class="takeaway">
+            Reading <strong>Analytics requests: 0</strong> next to
+            <strong>FRONTEND_EXPECTED_EVENTS_API_ANALYTICS_MISSING</strong> is the kind of
+            independent corroboration that makes a reviewer trust the static call.
+          </p>
+        </div>
+      </section>
+
+      <!-- Slide 8: status -->
+      <section class="slide" data-slide="8" data-title="What works, what's next">
+        <div class="slide-body">
+          <h2>Status — what works, what doesn't, what's next</h2>
+          <div class="status-grid">
+            <div class="status-col status-works">
+              <div class="status-head">Works today</div>
+              <ul>
+                <li>Catalog rules for XML, JSON, and Content Update payloads.</li>
+                <li>Analytics checks for Events API + DataLayer collector.</li>
+                <li>Live service probes with profile JSON.</li>
+                <li>Frontend reviews for custom Autocomplete + Search UIs.</li>
+                <li>Profile generators that pull ground truth from live APIs.</li>
+                <li>Doc-aware reports with <code>docs.luigisbox.com</code> citations.</li>
+                <li>Static report viewer for humans, JSON output for agents.</li>
+              </ul>
+            </div>
+            <div class="status-col status-limits">
+              <div class="status-head">Known limits</div>
+              <ul>
+                <li>
+                  Regex detection is file-scoped — a <code>tracker_id</code> in an HTML
+                  comment can pass a capability gate.
+                </li>
+                <li>
+                  Setter vs reader confusion: assigning <code>item.url</code> in the
+                  renderer doesn't prove the click handler reads it.
+                </li>
+                <li>
+                  <code>topItems=optional</code> still emits <code>…_NOT_EVIDENCED</code>
+                  P2s for integrations that don't need that endpoint.
+                </li>
+                <li>Doc lookup needs a local docs repo; path varies per developer.</li>
+              </ul>
+            </div>
+            <div class="status-col status-next">
+              <div class="status-head">Next</div>
+              <ul>
+                <li>Strip comments before capability regex; scope to reader context.</li>
+                <li>Only emit <code>…_NOT_EVIDENCED</code> when the feature is required.</li>
+                <li>
+                  Import-parity validator that diffs catalog inputs against Search API
+                  responses for each identity.
+                </li>
+                <li>
+                  Surface confidence (high / low) when a finding relies on a heuristic
+                  flagged as brittle.
+                </li>
+                <li>
+                  <code>yarn doctor</code> that prints resolved roots + diagnoses missing
+                  docs.
+                </li>
+              </ul>
+            </div>
+          </div>
+          <p class="kicker">
+            One command in. A report clients can act on, out.
+            <span class="accent">Ready → Risky → Blocked.</span>
+          </p>
+        </div>
+      </section>
+
+    </main>
+
+    <nav class="deck-nav" aria-label="Slide navigation">
+      <button id="prev-btn" class="nav-btn" type="button" aria-label="Previous slide">‹</button>
+      <ol id="slide-dots" class="dots" role="tablist"></ol>
+      <button id="next-btn" class="nav-btn" type="button" aria-label="Next slide">›</button>
+      <span class="nav-hint muted">← → to navigate · 1–8 to jump</span>
+    </nav>
+  </div>
+
+  <script type="module" src="./deck.js"></script>
+</body>
+</html>
