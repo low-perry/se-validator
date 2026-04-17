@@ -28,10 +28,25 @@ eval "$(scripts/agent-env.sh)"
 cd "$SE_VALIDATOR_ROOT"
 yarn agent review-ui <file> \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --service autocomplete \
   --profile fixtures/frontend/autocomplete-profile-full.json \
   --explain \
   --report results/llm-review.md
 ```
+
+Default Search UI review:
+
+```bash
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+yarn agent review-ui <file> \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --service search \
+  --explain \
+  --report results/llm-search-ui-review.md
+```
+
+If the client indexed a custom Search type, pass a profile such as `fixtures/frontend/search-profile-digital-products.json` so Claude can catch wrong `f[]=type:<type>` filters.
 
 Default catalog review:
 

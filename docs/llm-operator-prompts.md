@@ -136,6 +136,7 @@ First, identify the evidence type:
 - Catalog feed XML or JSON -> use catalog validation.
 - Content Update payload JSON -> use catalog validation or agent catalog review.
 - Frontend HTML/JS autocomplete integration -> use agent review-ui.
+- Frontend HTML/JS Search API integration -> use agent review-ui with `--service search`.
 - Search API visibility/service profile JSON -> use service validation.
 - Service profile JSON -> use service validation.
 - Analytics event payload -> use analytics validation.
@@ -166,19 +167,30 @@ yarn validate service fixtures/service/search-visibility-bad.json \
 Frontend autocomplete review:
 yarn agent review-ui <html-or-js-files...> \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --service autocomplete \
   --profile <frontend-profile.json> \
   --report results/<name>.md
 
 Frontend autocomplete review with explanations:
 yarn agent review-ui <html-or-js-files...> \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --service autocomplete \
   --profile <frontend-profile.json> \
+  --explain \
+  --report results/<name>.md
+
+Frontend Search API review:
+yarn agent review-ui <html-or-js-files...> \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --service search \
+  --profile fixtures/frontend/search-profile-digital-products.json \
   --explain \
   --report results/<name>.md
 
 Frontend autocomplete review with browser evidence:
 yarn agent review-ui <html-file> \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --service autocomplete \
   --profile <frontend-profile.json> \
   --browser \
   --browser-query "shirt" \
@@ -256,6 +268,31 @@ Before giving corrected snippets, verify against:
 - `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui-datalayer.html`
 ```
 
+## Search UI Review
+
+```text
+Review this custom Search API frontend integration.
+
+Run:
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+yarn agent review-ui \
+  fixtures/frontend/search-bad.html \
+  --service search \
+  --profile fixtures/frontend/search-profile-digital-products.json \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --explain \
+  --report results/llm-search-ui-review.md
+
+Then read results/llm-search-ui-review.md and tell me:
+- Is the Search UI READY, RISKY, or BLOCKED?
+- Does the request use the right `f[]=type:<indexed-type>` filter?
+- Does it read `data.results.hits` instead of `data.hits`?
+- Does it render from `results.hits`?
+- Does Search Results analytics include query, items from hits, position, clicks, and no-results?
+- Which docs/examples did the validator cite?
+```
+
 ## Catalog Review
 
 ```text
@@ -317,9 +354,17 @@ Steps:
    - Frontend HTML/JS:
      yarn agent review-ui tmp/agent-input/frontend.html \
        --docs "$SE_VALIDATOR_DOCS_ROOT" \
+       --service autocomplete \
        --profile fixtures/frontend/autocomplete-profile-full.json \
        --explain \
        --report results/pasted-ui-review.md
+
+   - Frontend Search API HTML/JS:
+     yarn agent review-ui tmp/agent-input/search-ui.html \
+       --docs "$SE_VALIDATOR_DOCS_ROOT" \
+       --service search \
+       --explain \
+       --report results/pasted-search-ui-review.md
 
 5. Read the generated report and summarize:
    - READY, RISKY, or BLOCKED,

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Search UI bad fixture</title>
+  </head>
+  <body>
+    <form id="search-form">
+      <input id="search-input" type="search" name="q" />
+    </form>
+    <section id="results-container"></section>
+
+    <script>
+      const TRACKER_ID = "757876-1071971";
+      const API_ENDPOINT = "https://live.luigisbox.com/search";
+      const resultsContainer = document.getElementById("results-container");
+
+      async function getSearchResults(query) {
+        const params = {
+          tracker_id: TRACKER_ID,
+          q: query,
+          "f[]": ["type:item"]
+        };
+
+        const response = await axios.get(API_ENDPOINT, { params });
+        const data = response.data;
+        const hits = data.hits || [];
+        renderResults(hits);
+        trackAutocompleteView(query, hits);
+      }
+
+      function renderResults(hits) {
+        if (hits.length === 0) {
+          resultsContainer.innerHTML = "<p>No results</p>";
+          return;
+        }
+
+        resultsContainer.innerHTML = hits.map((hit) => {
+          return `<a class="result-link" href="${hit.url}" data-product-id="${hit.attributes.id}">${hit.attributes.title}</a>`;
+        }).join("");
+      }
+
+      function trackAutocompleteView(query, hits) {
+        if (!hits || hits.length === 0) return;
+
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: "view_item_list",
+          ecommerce: {
+            item_list_name: "Autocomplete",
+            search_term: query,
+            items: hits.map((hit, index) => ({
+              item_id: hit.attributes.id,
+              item_name: hit.attributes.title,
+              index: index + 1
+            }))
+          }
+        });
+      }
+
+      document.getElementById("search-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        getSearchResults(document.getElementById("search-input").value);
+      });
+    </script>
+  </body>
+</html>

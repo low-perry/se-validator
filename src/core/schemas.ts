@@ -103,6 +103,7 @@ export const browserReviewResultSchema = z.object({
   message: z.string(),
   requests: z.object({
     autocomplete: z.array(z.string()),
+    search: z.array(z.string()),
     topItems: z.array(z.string()),
     trendingQueries: z.array(z.string()),
     analytics: z.array(z.string())
@@ -142,7 +143,7 @@ export const catalogStructureSummarySchema = z.object({
 });
 
 /** Agent review service enum (matches `AgentReviewService`). */
-export const agentReviewServiceSchema = z.enum(["autocomplete", "catalog"]);
+export const agentReviewServiceSchema = z.enum(["autocomplete", "search", "catalog"]);
 
 /** Shape returned by {@link reviewUi}. */
 export const agentUiReviewSchema = z.object({

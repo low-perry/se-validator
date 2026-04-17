@@ -166,7 +166,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .description("Review frontend UI evidence against validator rules plus local docs")
     .argument("<paths...>", "Frontend HTML/JS evidence path(s)")
     .option("--docs <path>", "Local docs repository path")
-    .option("--service <service>", "Service being reviewed, currently autocomplete", "autocomplete")
+    .option("--service <service>", "Service being reviewed: autocomplete or search", "autocomplete")
     .option("--profile <path>", "Frontend validation profile JSON")
     .option("--max-docs <count>", "Maximum docs/examples to include", parsePositiveInteger, 12)
     .option("--browser", "Run optional browser/live evidence capture")
@@ -455,7 +455,7 @@ function formatFrontendReport(report: Awaited<ReturnType<typeof validateFrontend
 
   if (report.findings.length === 0) {
     lines.push("");
-    lines.push("No findings. Autocomplete frontend evidence passes the current rule set.");
+    lines.push("No findings. Frontend evidence passes the current rule set.");
     return lines.join("\n");
   }
 
@@ -511,6 +511,7 @@ function defaultDocsRoot(): string {
 
 function normalizeAgentReviewService(service: string): AgentReviewService {
   if (service === "autocomplete") return service;
+  if (service === "search") return service;
   throw new Error(`Unsupported agent review service: ${service}`);
 }
 

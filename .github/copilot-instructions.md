@@ -30,10 +30,23 @@ Frontend autocomplete:
 ```bash
 yarn agent review-ui <file> \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --service autocomplete \
   --profile fixtures/frontend/autocomplete-profile-full.json \
   --explain \
   --report results/llm-review.md
 ```
+
+Frontend Search API:
+
+```bash
+yarn agent review-ui <file> \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
+  --service search \
+  --explain \
+  --report results/llm-search-ui-review.md
+```
+
+When the expected indexed type is known, pass a profile such as `fixtures/frontend/search-profile-digital-products.json`.
 
 Catalog:
 

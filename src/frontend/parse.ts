@@ -77,14 +77,20 @@ function detectCapabilities(raw: string): FrontendCapabilities {
   return {
     endpoints: {
       autocomplete: /live\.luigisbox\.com\/autocomplete\/v2/.test(raw),
+      search: /live\.luigisbox\.com\/search\b|["'`]\/search["'`]/.test(raw),
       topItems: /live\.luigisbox\.com\/v1\/top_items/.test(raw),
       trendingQueries: /live\.luigisbox\.com\/v2\/trending_queries/.test(raw)
     },
     requestParams: {
       trackerId: /\btracker_id\b/.test(raw),
-      query: /(?:^|[,{(\s])q\s*[:=]\s*query\b|["']q["']\s*,\s*query\b/.test(raw),
+      query: /(?:^|[,{(\s])q\s*[:=]\s*query\b|["']q["']\s*,\s*query\b|urlParams\.set\s*\(\s*["']q["']|params\.q\s*=/.test(raw),
       typeCounts: /\btype\s*[:=]\s*["'][^"']+:[1-9][0-9]*[^"']*["']|["']type["']\s*,\s*["'][^"']+:[1-9][0-9]*[^"']*["']/.test(raw),
-      hitFields: /\bhit_fields\b/.test(raw)
+      searchTypeFilter: extractSearchTypeFilters(raw).length > 0,
+      searchTypeFilters: extractSearchTypeFilters(raw),
+      hitFields: /\bhit_fields\b/.test(raw),
+      facets: /\bfacets\b/.test(raw),
+      page: /(?:^|[,{(\s])page\s*[:=]\s*page\b|\bcurrentPage\b|urlParams\.set\s*\(\s*["']page["']/.test(raw),
+      size: /(?:^|[,{(\s])size\s*[:=]|RESULTS_PER_PAGE|resultsPerPage/i.test(raw)
     },
     browser: {
       dnsPrefetch: /<link\b[^>]*rel\s*=\s*["']dns-prefetch["'][^>]*live\.luigisbox\.com|<link\b[^>]*live\.luigisbox\.com[^>]*rel\s*=\s*["']dns-prefetch["']/i.test(raw),
@@ -94,16 +100,22 @@ function detectCapabilities(raw: string): FrontendCapabilities {
     },
     responseFlow: {
       readsHits: /response\.data\.hits|\bdata\.hits\b|const\s*\{\s*hits\s*\}\s*=\s*await\s+response\.json\s*\(\s*\)|\bjson\.hits\b/.test(raw),
+      readsSearchResults: /response\.data\.results|\bdata\.results\b|renderResults\s*\(\s*data\.results\s*\)/.test(raw),
+      readsSearchHits: /response\.data\.results\.hits|\bdata\.results\.hits\b|\bresultsData\.hits\b/.test(raw),
       rendersHits: /\brenderResults\s*\(\s*hits\b|hits\.forEach\s*\(|hits\.map\s*\(/.test(raw),
+      rendersSearchHits: /resultsData\.hits\.map\s*\(|resultsData\.hits\.forEach\s*\(|data\.results\.hits\.map\s*\(|renderResults\s*\(\s*data\.results\s*\)/.test(raw),
+      rendersFacets: /renderFacets\s*\(|results\.facets|data\.results\.facets|\bfacetsData\b/.test(raw),
+      rendersPagination: /renderPagination\s*\(|data\.results\.total_hits|resultsData\.total_hits|\bpagination\b/i.test(raw),
       handlesNoResults: /!\s*hits\s*\|\|\s*hits\.length\s*={2,3}\s*0|hits\.length\s*={2,3}\s*0|No results|no-results/i.test(raw),
-      tracksNoResults: /\b(?:trackAutocompleteView|sendAutocompleteViewAnalytics|sendViewEvent)\s*\(\s*query\s*,\s*\[\s*\]\s*\)|items\s*:\s*\[\s*\]/.test(raw),
+      tracksNoResults: /\b(?:trackAutocompleteView|sendAutocompleteViewAnalytics|sendViewEvent)\s*\(\s*query\s*,\s*\[\s*\]\s*\)|items\s*:\s*\[\s*\]|hits\.length\s*={2,3}\s*0\s*\?\s*\[\s*\]/.test(raw),
+      skipsNoResultsTracking: /if\s*\(\s*!\s*hits\s*\|\|\s*hits\.length\s*={2,3}\s*0\s*\)\s*return\b|if\s*\(\s*hits\.length\s*={2,3}\s*0\s*\)\s*return\b/.test(raw),
       mapsTrendingTitles: /response\.data\.map\s*\(\s*\(?\s*item\s*\)?\s*=>\s*item\.title|\.map\s*\(\s*\(?\s*item\s*\)?\s*=>\s*item\.title/.test(raw),
       usesTrendingAsPlaceholder: /placeholderAnimator|searchInput\.placeholder|animatePlaceholder/.test(raw)
     },
     identityFlow: {
-      renderedIdentityUsesHitUrl: /dataset\.itemId\s*=\s*item\.url|data-item-id[^>]*(?:item\.url|hit\.url)|itemId\s*:\s*item\.url/.test(raw),
+      renderedIdentityUsesHitUrl: /dataset\.(?:itemId|productUrl)\s*=\s*(?:item|hit|result)\.url|data-(?:item-id|product-url)[^>]*(?:item\.url|hit\.url|\$\{url\})|itemId\s*:\s*item\.url/.test(raw),
       analyticsItemsUseHitUrl: /item_id\s*:\s*hit\.url|url\s*:\s*hit\.url|resource_identifier\s*:\s*hit\.url/.test(raw),
-      clickUsesRenderedIdentity: /dataset\.itemId|dataset\.itemid|getAttribute\s*\(\s*["']data-item-id["']/.test(raw)
+      clickUsesRenderedIdentity: /dataset\.(?:itemId|itemid|productUrl)|getAttribute\s*\(\s*["']data-(?:item-id|product-url)["']/.test(raw)
     },
     analytics: {
       dataLayerPush: /\b(?:window\.)?dataLayer\.push\s*\(/.test(raw),
@@ -112,7 +124,8 @@ function detectCapabilities(raw: string): FrontendCapabilities {
       eventId: /\bid\s*:\s*(?:generateUUID|crypto\.randomUUID|uuid\.v4)|\bgenerateUUID\s*\(|\bcrypto\.randomUUID\s*\(/.test(raw),
       autocompleteView: /item_list_name\s*:\s*["']Autocomplete["']|\bAutocomplete\s*:\s*\{/.test(raw),
       autocompleteSearchTerm: /search_term\s*:\s*query|string\s*:\s*query|string\s*:\s*query\s*\|\|\s*["']/.test(raw),
-      analyticsItemsFromHits: /items\s*:\s*hits\.map/.test(raw),
+      searchResultsQuery: /search_term\s*:\s*query|query\s*:\s*\{\s*string\s*:\s*query/.test(raw),
+      analyticsItemsFromHits: /items\s*:\s*hits\.map|items\s*=\s*hits[\s\S]{0,100}hits\.map/.test(raw),
       itemPosition: /\bindex\s*:\s*index\s*\+\s*1|\bposition\s*:\s*index\s*\+\s*1/.test(raw),
       clickEvent: /event\s*:\s*["']select_item["']|type\s*:\s*["']click["'][\s\S]{0,300}resource_identifier/.test(raw),
       addToCartEvent: /event\s*:\s*["']add_to_cart["']|type\s*:\s*["']add-to-cart["']/.test(raw),
@@ -121,6 +134,27 @@ function detectCapabilities(raw: string): FrontendCapabilities {
       searchResultsView: /item_list_name\s*:\s*["']Search Results["']|["']Search Results["']\s*:\s*\{/.test(raw)
     }
   };
+}
+
+function extractSearchTypeFilters(raw: string): string[] {
+  const filters = new Set<string>();
+  const patterns = [
+    /["']f\[\]["']\s*:\s*\[[^\]]*["']type:([^"'\]]+)["']/g,
+    /params\[['"]f\[\]["']\]\.push\s*\(\s*["']type:([^"']+)["']\s*\)/g,
+    /(?:append|set)\s*\(\s*["']f\[\]["']\s*,\s*["']type:([^"']+)["']\s*\)/g,
+    /[?&]f(?:%5B%5D|\[\])=type(?::|%3A)([^&"'\s]+)/gi
+  ];
+
+  for (const pattern of patterns) {
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(raw)) !== null) {
+      if (match[1]) {
+        filters.add(decodeURIComponent(match[1]).trim());
+      }
+    }
+  }
+
+  return [...filters].filter(Boolean);
 }
 
 function detectCollectorScript(raw: string): CollectorScriptEvidence {
@@ -167,6 +201,7 @@ function emptyCapabilities(): FrontendCapabilities {
   return {
     endpoints: {
       autocomplete: false,
+      search: false,
       topItems: false,
       trendingQueries: false
     },
@@ -174,7 +209,12 @@ function emptyCapabilities(): FrontendCapabilities {
       trackerId: false,
       query: false,
       typeCounts: false,
-      hitFields: false
+      searchTypeFilter: false,
+      searchTypeFilters: [],
+      hitFields: false,
+      facets: false,
+      page: false,
+      size: false
     },
     browser: {
       dnsPrefetch: false,
@@ -184,9 +224,15 @@ function emptyCapabilities(): FrontendCapabilities {
     },
     responseFlow: {
       readsHits: false,
+      readsSearchResults: false,
+      readsSearchHits: false,
       rendersHits: false,
+      rendersSearchHits: false,
+      rendersFacets: false,
+      rendersPagination: false,
       handlesNoResults: false,
       tracksNoResults: false,
+      skipsNoResultsTracking: false,
       mapsTrendingTitles: false,
       usesTrendingAsPlaceholder: false
     },
@@ -202,6 +248,7 @@ function emptyCapabilities(): FrontendCapabilities {
       eventId: false,
       autocompleteView: false,
       autocompleteSearchTerm: false,
+      searchResultsQuery: false,
       analyticsItemsFromHits: false,
       itemPosition: false,
       clickEvent: false,

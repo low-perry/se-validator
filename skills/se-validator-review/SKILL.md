@@ -22,7 +22,8 @@ The bootstrap exports `SE_VALIDATOR_ROOT` and `SE_VALIDATOR_DOCS_ROOT`; do not h
 
 - XML or JSON catalog feed: run `yarn validate catalog <files...>` for quick validation, or `yarn agent review-catalog <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --report results/llm-catalog-review.md` for doc-aware review.
 - Content Update JSON payload: review as catalog evidence with `yarn agent review-catalog`.
-- Frontend autocomplete HTML/JS: run `yarn agent review-ui <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --profile fixtures/frontend/autocomplete-profile-full.json --explain --report results/llm-review.md`.
+- Frontend autocomplete HTML/JS: run `yarn agent review-ui <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --service autocomplete --profile fixtures/frontend/autocomplete-profile-full.json --explain --report results/llm-review.md`.
+- Frontend Search API HTML/JS: run `yarn agent review-ui <files...> --docs "$SE_VALIDATOR_DOCS_ROOT" --service search --explain --report results/llm-search-ui-review.md`. If the expected indexed type is known, pass a Search frontend profile such as `fixtures/frontend/search-profile-digital-products.json`.
 - Search API service profile JSON: run `yarn validate service <files...>`; use `fixtures/service/search-visibility-good.json` as the passing reference profile.
 - Analytics event payload JSON: run `yarn validate analytics <files...>`.
 - Service profile JSON: run `yarn validate service <files...>`.
@@ -50,6 +51,8 @@ For Search API or custom search UI evidence, verify against these sources before
 - `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui-datalayer.html`
 
 When a catalog object is indexed under a custom type, validate that Search API requests use the matching `f[]=type:<indexed-type>` filter. Do not assume the UI should ask for `type:item`, `type:product`, or any other type unless the service profile or Search API response proves that type is what the tracker returns.
+
+For pasted Search UI snippets, save the snippet exactly under `tmp/agent-input/search-ui.html` or `tmp/agent-input/search-ui.js`, then run `yarn agent review-ui ... --service search`. Do not review pasted Search code from memory.
 
 ## Fixes
 

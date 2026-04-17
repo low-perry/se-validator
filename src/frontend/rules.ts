@@ -7,10 +7,13 @@ export type FrontendRule = (artifacts: FrontendArtifact[], profile: FrontendVali
 export const frontendRules: FrontendRule[] = [
   validateParseErrors,
   validateCoreAutocompleteApi,
+  validateCoreSearchApi,
   validateBrowserIntegration,
   validateResponseAndIdentityFlow,
+  validateSearchResponseAndIdentityFlow,
   validateAnalyticsMode,
   validateAutocompleteAnalytics,
+  validateSearchAnalytics,
   validateTopItemsFlow,
   validateTrendingQueriesFlow
 ];
@@ -151,6 +154,81 @@ function validateBrowserIntegration(
   });
 }
 
+function validateCoreSearchApi(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
+  if (profile.features.search === "disabled") return [];
+
+  return artifacts.flatMap((artifact) => {
+    const findings: ValidationFinding[] = [];
+
+    if (!artifact.capabilities.endpoints.search) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_ENDPOINT_MISSING",
+          severity: "P0",
+          title: "Frontend does not call the Search API",
+          message: `${artifact.path} does not reference https://live.luigisbox.com/search or a declared Search API endpoint.`,
+          evidencePath: artifact.path,
+          remediation: "Call the Search API from the search results page, or provide a profile/evidence that declares the backend proxy used for Search.",
+          docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+          confidence: 0.9
+        })
+      );
+    }
+
+    if (!artifact.capabilities.requestParams.trackerId) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_TRACKER_ID_MISSING",
+          severity: "P0",
+          title: "Search request is missing tracker_id",
+          message: `${artifact.path} does not show tracker_id in the Search API request.`,
+          evidencePath: artifact.path,
+          remediation: "Send the public tracker_id with every Search API request.",
+          docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+          confidence: 0.92
+        })
+      );
+    }
+
+    if (!artifact.capabilities.requestParams.query && !artifact.capabilities.requestParams.searchTypeFilter) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_QUERY_OR_FILTER_MISSING",
+          severity: "P1",
+          title: "Search request has neither query nor filters",
+          message: `${artifact.path} does not show q or f[] in the Search API request.`,
+          evidencePath: artifact.path,
+          remediation: "Send q for user-entered searches, or send f[] filters for filter-only pages.",
+          docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+          confidence: 0.82
+        })
+      );
+    }
+
+    findings.push(...validateSearchTypeFilters(artifact, profile));
+
+    if (!artifact.capabilities.requestParams.hitFields) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_HIT_FIELDS_MISSING",
+          severity: "P2",
+          title: "Search request does not limit hit_fields",
+          message: `${artifact.path} does not include hit_fields in the Search API request.`,
+          evidencePath: artifact.path,
+          remediation: "Request only fields rendered in the results UI, such as title,url,price_amount,image_link,brand,nested.",
+          docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+          confidence: 0.82
+        })
+      );
+    }
+
+    return findings;
+  });
+}
+
 function validateResponseAndIdentityFlow(
   artifacts: FrontendArtifact[],
   profile: FrontendValidationProfile
@@ -224,6 +302,112 @@ function validateResponseAndIdentityFlow(
   });
 }
 
+function validateSearchResponseAndIdentityFlow(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
+  if (profile.features.search === "disabled") return [];
+
+  return artifacts.flatMap((artifact) => {
+    const findings: ValidationFinding[] = [];
+
+    if (!artifact.capabilities.responseFlow.readsSearchResults) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_RESULTS_OBJECT_NOT_READ",
+          severity: "P1",
+          title: "Frontend does not read Search API results object",
+          message: `${artifact.path} does not show response.data.results or data.results from the Search API response.`,
+          evidencePath: artifact.path,
+          remediation: "Read Search API responses from response.data.results, then use results.hits, results.facets, and results.total_hits.",
+          docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+          confidence: 0.86
+        })
+      );
+    }
+
+    if (!artifact.capabilities.responseFlow.readsSearchHits) {
+      const readsAutocompleteShape = artifact.capabilities.responseFlow.readsHits;
+      findings.push(
+        frontendFinding({
+          id: readsAutocompleteShape ? "FRONTEND_SEARCH_HITS_WRONG_RESPONSE_SHAPE" : "FRONTEND_SEARCH_HITS_NOT_READ",
+          severity: "P1",
+          title: readsAutocompleteShape ? "Search UI reads root hits instead of results.hits" : "Frontend does not read Search results.hits",
+          message: readsAutocompleteShape
+            ? `${artifact.path} appears to read data.hits/root hits, but Search API hits live under results.hits.`
+            : `${artifact.path} does not show data.results.hits or equivalent Search API hit parsing.`,
+          evidencePath: artifact.path,
+          remediation: "Use data.results.hits as the source for rendering and analytics on Search result pages.",
+          docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+          confidence: readsAutocompleteShape ? 0.9 : 0.84
+        })
+      );
+    }
+
+    if (!artifact.capabilities.responseFlow.rendersSearchHits) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_HITS_NOT_RENDERED",
+          severity: "P1",
+          title: "Frontend does not render Search API hits",
+          message: `${artifact.path} does not show results.hits being mapped into rendered product/result cards.`,
+          evidencePath: artifact.path,
+          remediation: "Render product cards from the same results.hits array that analytics uses.",
+          docs: ["quickstart/search/building-custom-ui"],
+          confidence: 0.82
+        })
+      );
+    }
+
+    if (!artifact.capabilities.responseFlow.rendersFacets) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_FACETS_NOT_RENDERED",
+          severity: "P2",
+          title: "Search UI does not show facet rendering",
+          message: `${artifact.path} does not show results.facets being rendered or updated.`,
+          evidencePath: artifact.path,
+          remediation: "Render facets from data.results.facets when the custom Search UI supports filters.",
+          docs: ["quickstart/search/building-custom-ui"],
+          confidence: 0.72
+        })
+      );
+    }
+
+    if (!artifact.capabilities.identityFlow.renderedIdentityUsesHitUrl) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_RENDERED_IDENTITY_NOT_HIT_URL",
+          severity: "P1",
+          title: "Rendered Search result identity may not match catalog identity",
+          message: `${artifact.path} does not show rendered result elements storing hit.url/result.url as the item identity.`,
+          evidencePath: artifact.path,
+          remediation: "Store the returned hit.url/result.url on rendered result links/buttons and reuse it for click analytics.",
+          docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+          confidence: 0.84
+        })
+      );
+    }
+
+    if (!artifact.capabilities.identityFlow.analyticsItemsUseHitUrl) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_ANALYTICS_IDENTITY_NOT_HIT_URL",
+          severity: "P1",
+          title: "Search analytics may not use returned hit identity",
+          message: `${artifact.path} does not show Search analytics items using hit.url as item_id/url.`,
+          evidencePath: artifact.path,
+          remediation: "Map Search Results analytics from hits with item_id/url set to hit.url so rendering and analytics use the same identity.",
+          docs: ["quickstart/search/building-custom-ui", "analytics/api/events"],
+          confidence: 0.86
+        })
+      );
+    }
+
+    return findings;
+  });
+}
+
 function validateAnalyticsMode(
   artifacts: FrontendArtifact[],
   profile: FrontendValidationProfile
@@ -282,7 +466,7 @@ function validateAnalyticsMode(
           frontendFinding({
             id: "FRONTEND_DATALAYER_COLLECTOR_SCRIPT_MISSING",
             severity: "P0",
-            title: "DataLayer autocomplete page is missing the collector script",
+            title: "DataLayer page is missing the collector script",
             message: `${artifact.path} uses dataLayer.push but does not include the Luigi's Box collector script.`,
             evidencePath: `${artifact.path}:head`,
             remediation: `Add ${collectorScriptSnippet(profile)} to the shared head.`,
@@ -492,6 +676,129 @@ function validateAutocompleteAnalytics(
   });
 }
 
+function validateSearchAnalytics(
+  artifacts: FrontendArtifact[],
+  profile: FrontendValidationProfile
+): ValidationFinding[] {
+  if (profile.features.search === "disabled") return [];
+
+  return artifacts.flatMap((artifact) => {
+    const findings: ValidationFinding[] = [];
+
+    if (!artifact.capabilities.analytics.searchResultsView) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_RESULTS_VIEW_ANALYTICS_MISSING",
+          severity: "P0",
+          title: "Search Results view analytics are missing",
+          message: `${artifact.path} does not show a Search Results list view after rendering Search API results.`,
+          evidencePath: artifact.path,
+          remediation: "After rendering results.hits, send a Search Results view event through DataLayer or Events API.",
+          docs: ["quickstart/search/building-custom-ui"],
+          confidence: 0.92
+        })
+      );
+    }
+
+    if (!artifact.capabilities.analytics.searchResultsQuery) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_QUERY_ANALYTICS_MISSING",
+          severity: "P1",
+          title: "Search Results analytics do not include the query",
+          message: `${artifact.path} does not show search_term or query.string populated from the user's search query.`,
+          evidencePath: artifact.path,
+          remediation: "Include the user's search query as search_term in DataLayer or query.string in Events API.",
+          docs: ["quickstart/search/building-custom-ui", "analytics/api/events"],
+          confidence: 0.86
+        })
+      );
+    }
+
+    if (!artifact.capabilities.analytics.analyticsItemsFromHits) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_ITEMS_NOT_FROM_HITS",
+          severity: "P1",
+          title: "Search Results analytics items are not mapped from hits",
+          message: `${artifact.path} does not show analytics items: hits.map(...).`,
+          evidencePath: artifact.path,
+          remediation: "Build Search Results analytics items from the same hits array rendered to the user.",
+          docs: ["quickstart/search/building-custom-ui"],
+          confidence: 0.86
+        })
+      );
+    }
+
+    if (!artifact.capabilities.analytics.itemPosition) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_ITEM_POSITION_MISSING",
+          severity: "P2",
+          title: "Search Results analytics item position is missing",
+          message: `${artifact.path} does not show index or position based on the rendered result order.`,
+          evidencePath: artifact.path,
+          remediation: "Send index/position as the rendered rank for every Search Results item.",
+          docs: ["quickstart/search/building-custom-ui", "analytics/api/events"],
+          confidence: 0.78
+        })
+      );
+    }
+
+    if (
+      artifact.capabilities.responseFlow.skipsNoResultsTracking ||
+      (artifact.capabilities.responseFlow.handlesNoResults && !artifact.capabilities.responseFlow.tracksNoResults)
+    ) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_NO_RESULTS_NOT_TRACKED",
+          severity: "P1",
+          title: "Search no-results branch is not tracked",
+          message: artifact.capabilities.responseFlow.skipsNoResultsTracking
+            ? `${artifact.path} appears to return early when hits is empty, before sending Search Results analytics.`
+            : `${artifact.path} handles empty hits but does not show a Search Results view with an empty items array.`,
+          evidencePath: artifact.path,
+          remediation: "When results.hits is empty, still send the Search Results view event with items: [].",
+          docs: ["quickstart/search/building-custom-ui"],
+          confidence: 0.9
+        })
+      );
+    }
+
+    if (!artifact.capabilities.analytics.clickEvent) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_CLICK_ANALYTICS_MISSING",
+          severity: "P1",
+          title: "Search result click analytics are missing",
+          message: `${artifact.path} does not show Search result click/select tracking.`,
+          evidencePath: artifact.path,
+          remediation: "Track selected Search results as DataLayer select_item or Events API click with the rendered result identity.",
+          docs: ["quickstart/search/building-custom-ui", "analytics/api/events"],
+          confidence: 0.88
+        })
+      );
+    }
+
+    if (!artifact.capabilities.identityFlow.clickUsesRenderedIdentity) {
+      findings.push(
+        frontendFinding({
+          id: "FRONTEND_SEARCH_CLICK_DOES_NOT_USE_RENDERED_IDENTITY",
+          severity: "P1",
+          title: "Search click analytics may not use rendered result identity",
+          message: `${artifact.path} does not show click analytics reading the selected result element's identity.`,
+          evidencePath: artifact.path,
+          remediation: "Read the selected result element's data identity and send it in the click/select event.",
+          docs: ["quickstart/search/building-custom-ui", "analytics/api/events"],
+          confidence: 0.84
+        })
+      );
+    }
+
+    return findings;
+  });
+}
+
 function validateTopItemsFlow(
   artifacts: FrontendArtifact[],
   profile: FrontendValidationProfile
@@ -664,6 +971,46 @@ function validateTrendingQueriesFlow(
 
     return findings;
   });
+}
+
+function validateSearchTypeFilters(artifact: FrontendArtifact, profile: FrontendValidationProfile): ValidationFinding[] {
+  const expectedTypes = profile.search?.expectedResultTypes ?? [];
+  const actualTypes = artifact.capabilities.requestParams.searchTypeFilters;
+
+  if (actualTypes.length === 0) {
+    return [
+      frontendFinding({
+        id: "FRONTEND_SEARCH_TYPE_FILTER_MISSING",
+        severity: expectedTypes.length > 0 ? "P1" : "P2",
+        title: "Search request does not scope result type",
+        message: expectedTypes.length > 0
+          ? `${artifact.path} expects ${expectedTypes.join(", ")} results but does not show f[]=type:<type>.`
+          : `${artifact.path} does not show f[]=type:<type> in the Search API request.`,
+        evidencePath: artifact.path,
+        remediation: expectedTypes.length > 0
+          ? `Add f[]=type:${expectedTypes[0]} so the UI asks for the indexed result type.`
+          : "Add f[]=type:<main-content-type> unless this Search UI intentionally mixes multiple result types.",
+        docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+        confidence: expectedTypes.length > 0 ? 0.88 : 0.76
+      })
+    ];
+  }
+
+  const missing = expectedTypes.filter((type) => !actualTypes.includes(type));
+  if (missing.length === 0) return [];
+
+  return [
+    frontendFinding({
+      id: "FRONTEND_SEARCH_TYPE_FILTER_MISMATCH",
+      severity: "P1",
+      title: "Search UI filters the wrong result type",
+      message: `${artifact.path} expects ${expectedTypes.join(", ")} results, but the Search request filters ${actualTypes.join(", ")}.`,
+      evidencePath: artifact.path,
+      remediation: `Use the indexed hit type in the Search request, for example f[]=type:${expectedTypes[0]}.`,
+      docs: ["search/api/v1/search", "quickstart/search/building-custom-ui"],
+      confidence: 0.9
+    })
+  ];
 }
 
 function requiredParamFinding(artifact: FrontendArtifact, param: string, remediation: string): ValidationFinding {

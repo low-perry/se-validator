@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Search UI good fixture</title>
+    <script async src="https://scripts.luigisbox.tech/LBX-1071971.js"></script>
+  </head>
+  <body>
+    <form id="search-form">
+      <input id="search-input" type="search" name="q" />
+    </form>
+    <aside id="facets-container"></aside>
+    <section id="results-container"></section>
+    <nav id="pagination-container"></nav>
+
+    <script>
+      window.dataLayer = window.dataLayer || [];
+
+      const TRACKER_ID = "757876-1071971";
+      const API_ENDPOINT = "https://live.luigisbox.com/search";
+      const RESULTS_PER_PAGE = 5;
+      const resultsContainer = document.getElementById("results-container");
+      const facetsContainer = document.getElementById("facets-container");
+      const paginationContainer = document.getElementById("pagination-container");
+      let currentPage = 1;
+
+      async function getSearchResults(query, page = 1) {
+        const params = {
+          tracker_id: TRACKER_ID,
+          q: query,
+          "f[]": ["type:digital-products"],
+          facets: "brand,category,price_amount",
+          hit_fields: "title,url,price_amount,image_link,brand,nested,id",
+          size: RESULTS_PER_PAGE,
+          page: page
+        };
+
+        const response = await axios.get(API_ENDPOINT, { params });
+        const data = response.data;
+        currentPage = page;
+
+        renderResults(data.results);
+        renderFacets(data.results.facets);
+        renderPagination(data.results.total_hits);
+        trackSearchView(query, data.results.hits);
+      }
+
+      function renderResults(resultsData) {
+        if (resultsData.hits.length === 0) {
+          resultsContainer.innerHTML = "<p>No results</p>";
+          return;
+        }
+
+        resultsContainer.innerHTML = resultsData.hits.map((result) => {
+          const { url, attributes } = result;
+          return `
+            <article class="result-card">
+              <a class="result-link" href="${url}" data-product-url="${url}">
+                ${attributes.title}
+              </a>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function renderFacets(facetsData) {
+        facetsContainer.innerHTML = (facetsData || []).map((facet) => `<h3>${facet.name}</h3>`).join("");
+      }
+
+      function renderPagination(totalHits) {
+        paginationContainer.textContent = `${Math.ceil(totalHits / RESULTS_PER_PAGE)} pages`;
+      }
+
+      function trackSearchView(query, hits) {
+        const items = hits.length === 0 ? [] : hits.map((hit, index) => ({
+          item_id: hit.url,
+          item_name: hit.attributes.title,
+          index: index + 1,
+          price: hit.attributes.price_amount
+        }));
+
+        window.dataLayer.push({
+          event: "view_item_list",
+          ecommerce: {
+            item_list_name: "Search Results",
+            search_term: query,
+            items
+          }
+        });
+      }
+
+      function trackClickEvent(productUrl) {
+        window.dataLayer.push({
+          event: "select_item",
+          ecommerce: {
+            items: [{ item_id: productUrl }]
+          }
+        });
+      }
+
+      resultsContainer.addEventListener("click", (event) => {
+        const link = event.target.closest(".result-link");
+        if (!link) return;
+        trackClickEvent(link.dataset.productUrl);
+      });
+
+      document.getElementById("search-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        getSearchResults(document.getElementById("search-input").value, 1);
+      });
+    </script>
+  </body>
+</html>

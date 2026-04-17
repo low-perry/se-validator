@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import type { ValidationFinding } from "../core/types.js";
-import { defaultFrontendValidationProfile, summarizeFrontendValidationProfile } from "../frontend/profile.js";
+import { defaultFrontendValidationProfile, normalizeFrontendValidationProfile, summarizeFrontendValidationProfile } from "../frontend/profile.js";
 import { validateFrontend } from "../frontend/validate.js";
 import { runBrowserReview } from "./browser.js";
 import { docsMarkdownLink, findRelevantDocs } from "./docs.js";
@@ -35,6 +35,21 @@ const FINDING_DEBUG_NOTES: Record<string, FindingDebugNote> = {
     whyItMatters: "Without the Autocomplete API call the search box cannot return Luigi's Box suggestions.",
     evidenceKind: "static"
   },
+  FRONTEND_SEARCH_ENDPOINT_MISSING: {
+    lookedFor: "a request to https://live.luigisbox.com/search or a declared Search API endpoint.",
+    whyItMatters: "Without a Search API call the custom search results page cannot show Luigi's Box-ranked results.",
+    evidenceKind: "static"
+  },
+  FRONTEND_SEARCH_TYPE_FILTER_MISSING: {
+    lookedFor: "an f[]=type:<indexed-type> filter on the Search API request.",
+    whyItMatters: "A missing type filter can mix objects or hide the exact catalog type the client expects to render.",
+    evidenceKind: "static"
+  },
+  FRONTEND_SEARCH_TYPE_FILTER_MISMATCH: {
+    lookedFor: "the Search API type filter matching the expected indexed hit type in the profile.",
+    whyItMatters: "If the UI asks for type:item while the feed indexed type:digital-products, the objects exist but never appear in that UI.",
+    evidenceKind: "static"
+  },
   FRONTEND_AUTOCOMPLETE_REQUIRED_PARAM_MISSING: {
     lookedFor: "tracker_id, q, and type query parameters on the autocomplete request.",
     whyItMatters: "Missing required params either skip the integration entirely or return wrong results under the wrong tracker.",
@@ -63,6 +78,26 @@ const FINDING_DEBUG_NOTES: Record<string, FindingDebugNote> = {
   FRONTEND_HITS_NOT_READ: {
     lookedFor: "code that reads response.hits (or equivalent) from the Autocomplete API response.",
     whyItMatters: "If the response hits array is never consumed, rendering and analytics cannot share the canonical data.",
+    evidenceKind: "static"
+  },
+  FRONTEND_SEARCH_HITS_WRONG_RESPONSE_SHAPE: {
+    lookedFor: "code reading data.results.hits from the Search API response.",
+    whyItMatters: "Search API wraps hits under results; reading root data.hits leaves rendering and analytics empty.",
+    evidenceKind: "static"
+  },
+  FRONTEND_SEARCH_RESULTS_VIEW_ANALYTICS_MISSING: {
+    lookedFor: "a Search Results view event fired after rendering results.hits.",
+    whyItMatters: "Without a Search Results impression, Luigi's Box cannot learn which ranked results were shown.",
+    evidenceKind: "static"
+  },
+  FRONTEND_SEARCH_NO_RESULTS_NOT_TRACKED: {
+    lookedFor: "a Search Results view event with items: [] when results.hits is empty.",
+    whyItMatters: "Untracked zero-result searches are invisible in reporting, so content gaps cannot be discovered.",
+    evidenceKind: "static"
+  },
+  FRONTEND_SEARCH_CLICK_ANALYTICS_MISSING: {
+    lookedFor: "a click/select_item handler for rendered Search result cards.",
+    whyItMatters: "Click events are the feedback signal for Search ranking; without them relevance cannot improve from usage.",
     evidenceKind: "static"
   },
   FRONTEND_HITS_NOT_RENDERED: {
@@ -208,7 +243,7 @@ const FINDING_DEBUG_NOTES: Record<string, FindingDebugNote> = {
 };
 
 export async function reviewUi(paths: string[], options: AgentReviewOptions): Promise<AgentUiReview> {
-  const profile = options.profile ?? defaultFrontendValidationProfile();
+  const profile = options.profile ?? normalizeFrontendValidationProfile({ service: options.service === "search" ? "search" : "autocomplete" });
   const validation = await validateFrontend(paths, { profile });
   const evidence = await locateFindingEvidence(paths, validation.findings);
   const docsHits = await findRelevantDocs({
@@ -238,7 +273,7 @@ export async function reviewUi(paths: string[], options: AgentReviewOptions): Pr
     evidence,
     docsHits,
     browser,
-    nextActions: buildNextActions(validation.findings),
+    nextActions: buildNextActions(validation.findings, options.service),
     promptForFollowUp: buildPromptForFollowUp(paths, options, validation.findings, profile)
   };
 }
@@ -331,6 +366,7 @@ export function formatAgentUiReview(review: AgentUiReview, options: FormatAgentU
         lines.push(`  - ${observation}`);
       }
       lines.push(`  - Autocomplete requests: ${result.requests.autocomplete.length}`);
+      lines.push(`  - Search requests: ${result.requests.search.length}`);
       lines.push(`  - Top Items requests: ${result.requests.topItems.length}`);
       lines.push(`  - Trending Queries requests: ${result.requests.trendingQueries.length}`);
       lines.push(`  - Analytics requests: ${result.requests.analytics.length}`);
@@ -416,6 +452,7 @@ export function formatAgentUiReviewExplain(review: AgentUiReview): string[] {
     for (const result of review.browser) {
       const total =
         result.requests.autocomplete.length +
+        result.requests.search.length +
         result.requests.topItems.length +
         result.requests.trendingQueries.length +
         result.requests.analytics.length;
@@ -450,8 +487,12 @@ function describeIntegrationPath(review: AgentUiReview): string[] {
   const analyticsMode = detectAnalyticsMode(capabilitiesText, artifactsText);
   if (analyticsMode) parts.push(analyticsMode);
 
-  if (/\bautocomplete\b/.test(capabilitiesText)) {
+  if (/endpoints=[^;]*\bautocomplete\b/.test(capabilitiesText)) {
     parts.push("Autocomplete API for query suggestions");
+  }
+
+  if (/endpoints=[^;]*\bsearch\b/.test(capabilitiesText)) {
+    parts.push("Search API for a custom search results page");
   }
 
   if (/top_items|top items/.test(capabilitiesText)) {
@@ -467,7 +508,7 @@ function describeIntegrationPath(review: AgentUiReview): string[] {
   }
 
   if (/click\/select/.test(capabilitiesText)) {
-    parts.push("Click/select analytics on suggestion selection");
+    parts.push(review.service === "search" ? "Click/select analytics on result selection" : "Click/select analytics on suggestion selection");
   }
 
   return parts;
@@ -482,8 +523,15 @@ function detectAnalyticsMode(capabilitiesText: string, artifactsText: string): s
   return undefined;
 }
 
-function buildNextActions(findings: ValidationFinding[]): string[] {
+function buildNextActions(findings: ValidationFinding[], service: AgentReviewOptions["service"]): string[] {
   if (findings.length === 0) {
+    if (service === "search") {
+      return [
+        "Run the sample in a browser and confirm the Search API request, rendered results, Search Results view event, and click event appear in DevTools.",
+        "Use the live dashboard/debugger to confirm Search Results events are accepted after the UI renders results."
+      ];
+    }
+
     return [
       "Run the sample in a browser and confirm the autocomplete request, rendered hits, view event, and click event appear in DevTools.",
       "Use the live dashboard/debugger to confirm events are accepted after the UI renders suggestions."
@@ -510,22 +558,36 @@ function buildPromptForFollowUp(
   const findingSummary = findings.length
     ? findings.map((finding) => `${finding.severity} ${finding.id}: ${finding.title}`).join("\n")
     : "No deterministic findings yet.";
+  const serviceName = options.service === "search" ? "search frontend" : "autocomplete frontend";
+  const checklist =
+    options.service === "search"
+      ? [
+          "- calls the Search API with tracker_id, q or filters, f[]=type:<indexed-type>, and relevant hit_fields;",
+          "- reads Search API responses from data.results.hits, data.results.facets, and data.results.total_hits;",
+          "- renders results.hits from the same data used for analytics;",
+          "- keeps item identity consistent with hit.url/url returned by the API;",
+          "- sends Search Results view and click analytics after results are rendered;",
+          "- tracks no-result Search responses with an empty items array."
+        ]
+      : [
+          "- calls the Autocomplete API with tracker_id, q, type, and relevant hit_fields;",
+          "- renders response hits from the same data used for analytics;",
+          "- keeps item identity consistent with the hit.url/url returned by the API;",
+          "- sends view and click analytics after results are rendered;",
+          "- tracks no-result autocomplete responses with an empty items array;",
+          "- tracks Top Items as Recommendation with autocomplete_popup when used;",
+          "- treats Trending Queries as dashboard-managed content and tracks resulting searches if they are clickable."
+        ];
 
   return [
-    "You are reviewing a Luigi's Box autocomplete frontend integration.",
+    `You are reviewing a Luigi's Box ${serviceName} integration.`,
     `Service: ${options.service}`,
     `Profile: ${summarizeFrontendValidationProfile(profile)}`,
     `Docs root: ${resolve(options.docsRoot)}`,
     `Files to inspect: ${paths.map((path) => resolve(path)).join(", ")}`,
     "",
     "Use the local docs and public examples first. Check whether the sample:",
-    "- calls the Autocomplete API with tracker_id, q, type, and relevant hit_fields;",
-    "- renders response hits from the same data used for analytics;",
-    "- keeps item identity consistent with the hit.url/url returned by the API;",
-    "- sends view and click analytics after results are rendered;",
-    "- tracks no-result autocomplete responses with an empty items array;",
-    "- tracks Top Items as Recommendation with autocomplete_popup when used;",
-    "- treats Trending Queries as dashboard-managed content and tracks resulting searches if they are clickable.",
+    ...checklist,
     "",
     "Current deterministic findings:",
     findingSummary

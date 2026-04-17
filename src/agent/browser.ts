@@ -52,6 +52,7 @@ async function reviewPathInBrowser(
   const page = await context.newPage();
   const requests = {
     autocomplete: [] as string[],
+    search: [] as string[],
     topItems: [] as string[],
     trendingQueries: [] as string[],
     analytics: [] as string[]
@@ -176,6 +177,12 @@ function buildBrowserObservations(
     observations.push(`Observed ${requests.autocomplete.length} Autocomplete API request(s).`);
   }
 
+  if (profile.features.search !== "disabled" && requests.search.length === 0) {
+    observations.push("Missing Search API request after submitting a query.");
+  } else if (requests.search.length > 0) {
+    observations.push(`Observed ${requests.search.length} Search API request(s).`);
+  }
+
   if (profile.features.topItems === "required" && requests.topItems.length === 0) {
     observations.push("Missing Top Items request even though profile requires it.");
   } else if (requests.topItems.length > 0) {
@@ -211,6 +218,7 @@ function buildBrowserObservations(
 
 function recordRequest(url: string, requests: BrowserReviewResult["requests"]): void {
   if (url.includes("live.luigisbox.com/autocomplete/v2")) requests.autocomplete.push(url);
+  if (url.includes("live.luigisbox.com/search")) requests.search.push(url);
   if (url.includes("live.luigisbox.com/v1/top_items")) requests.topItems.push(url);
   if (url.includes("live.luigisbox.com/v2/trending_queries")) requests.trendingQueries.push(url);
   if (url.includes("api.luigisbox.com")) requests.analytics.push(url);
@@ -246,6 +254,7 @@ function skippedBrowserResult(path: string, message: string): BrowserReviewResul
     message,
     requests: {
       autocomplete: [],
+      search: [],
       topItems: [],
       trendingQueries: [],
       analytics: []

@@ -2,7 +2,7 @@ import type { ValidationFinding, ValidationReport } from "../core/types.js";
 import type { CatalogValidationProfile } from "../catalog/profile.js";
 import type { FrontendValidationProfile } from "../frontend/types.js";
 
-export type AgentReviewService = "autocomplete" | "catalog";
+export type AgentReviewService = "autocomplete" | "search" | "catalog";
 
 export interface AgentReviewOptions {
   docsRoot: string;
@@ -81,6 +81,7 @@ export interface BrowserReviewResult {
   message: string;
   requests: {
     autocomplete: string[];
+    search: string[];
     topItems: string[];
     trendingQueries: string[];
     analytics: string[];

@@ -18,6 +18,14 @@ const DIRECT_DOCS_BY_SERVICE: Record<DocsSearchInput["service"], string[]> = {
     "platform-foundations/lbx-script",
     "autocomplete/guides/integration-best-practices"
   ],
+  search: [
+    "search/api/v1/search",
+    "quickstart/search/building-custom-ui",
+    "analytics/collector",
+    "analytics/api/events",
+    "analytics/api_guides/search-and-discovery",
+    "platform-foundations/lbx-script"
+  ],
   catalog: [
     "indexing/feeds",
     "indexing/data-layout",
@@ -40,6 +48,10 @@ const EXAMPLES_BY_SERVICE: Record<DocsSearchInput["service"], string[]> = {
     "public/examples/autocomplete/top-items-datalayer.html",
     "public/examples/autocomplete/trending-queries.html",
     "public/examples/autocomplete/trending-queries-datalayer.html"
+  ],
+  search: [
+    "public/examples/search/custom-search-ui.html",
+    "public/examples/search/custom-search-ui-datalayer.html"
   ],
   catalog: []
 };
@@ -81,6 +93,10 @@ function buildSearchTerms(input: DocsSearchInput): string[] {
     return buildCatalogSearchTerms(input);
   }
 
+  if (input.service === "search") {
+    return buildSearchApiSearchTerms(input);
+  }
+
   const terms = new Set<string>([
     "autocomplete",
     "autocomplete api",
@@ -107,6 +123,43 @@ function buildSearchTerms(input: DocsSearchInput): string[] {
     terms.add("trending_queries");
     terms.add("Trending Queries");
   }
+
+  for (const finding of input.findings) {
+    for (const token of finding.id.toLowerCase().split(/[^a-z0-9]+/)) {
+      if (token.length >= 4) terms.add(token);
+    }
+
+    for (const doc of finding.docs) {
+      for (const token of doc.split(/[/-]/)) {
+        if (token.length >= 4) terms.add(token);
+      }
+    }
+  }
+
+  return [...terms];
+}
+
+function buildSearchApiSearchTerms(input: DocsSearchInput): string[] {
+  const terms = new Set<string>([
+    "search",
+    "search api",
+    "tracker_id",
+    "`q`",
+    "f[]",
+    "type:product",
+    "hit_fields",
+    "results.hits",
+    "results.facets",
+    "total_hits",
+    "hit.url",
+    "analytics",
+    "Search Results",
+    "view_item_list",
+    "click",
+    "no results",
+    "dataLayer",
+    "Events API"
+  ]);
 
   for (const finding of input.findings) {
     for (const token of finding.id.toLowerCase().split(/[^a-z0-9]+/)) {
@@ -431,6 +484,16 @@ function isServiceRelevantPath(path: string, service: DocsSearchInput["service"]
       normalized.includes("/product-listing/guides/pairing") ||
       normalized.includes("/search/guides/variants") ||
       normalized.includes("/quickstart/indexing")
+    );
+  }
+
+  if (service === "search") {
+    return (
+      normalized.includes("/search/") ||
+      normalized.includes("/analytics/") ||
+      normalized.includes("/platform-foundations/") ||
+      normalized.includes("/quickstart/search") ||
+      normalized.includes("/public/examples/search/")
     );
   }
 
