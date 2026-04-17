@@ -22,6 +22,21 @@ Today, reviewing whether a new integration follows Luigi's Box conventions is a 
 
 All commands below are defined in `package.json` scripts and `src/cli/command.ts`. Each one maps to a report already in `results/` that was produced by the same invocation — the short excerpts are copied from those files.
 
+Before running the demo, load the shared path configuration:
+
+```bash
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+```
+
+By default this expects the docs repo at `../docs`. If your local layout is different, set `SE_VALIDATOR_DOCS_ROOT` before evaluating the script:
+
+```bash
+export SE_VALIDATOR_DOCS_ROOT=/path/to/docs
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+```
+
 ### 1. Good catalog (XML feed + category feed)
 
 ```bash
@@ -70,7 +85,7 @@ That is the whole point: every finding carries the file, the object path, a plai
 ```bash
 yarn agent review-ui \
   fixtures/frontend/autocomplete-events-api-good.html \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile fixtures/frontend/autocomplete-profile-full.json \
   --report results/agent-ui-review-good-report.md
 ```
@@ -88,11 +103,11 @@ Findings: P0=0 P1=0 P2=0
 
 ## Docs Consulted
 - Getting query suggestions via the Autocomplete API:
-  /Users/lowperry/projects/docs/src/content/docs/quickstart/autocomplete/query-suggestions.md:120
+  $SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/autocomplete/query-suggestions.md:120
 - Implementing top items with the API:
-  /Users/lowperry/projects/docs/src/content/docs/quickstart/autocomplete/top-items-api.md:23
+  $SE_VALIDATOR_DOCS_ROOT/src/content/docs/quickstart/autocomplete/top-items-api.md:23
 - DataLayer collector:
-  /Users/lowperry/projects/docs/src/content/docs/analytics/collector.md:344
+  $SE_VALIDATOR_DOCS_ROOT/src/content/docs/analytics/collector.md:344
 ```
 
 Even on a clean pass, the report lists the docs it consulted — so a reviewer can see *why* the validator is confident.
@@ -102,7 +117,7 @@ Even on a clean pass, the report lists the docs it consulted — so a reviewer c
 ```bash
 yarn agent review-ui \
   fixtures/frontend/autocomplete-bad.html \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile fixtures/frontend/autocomplete-profile-full.json \
   --report results/agent-ui-review-bad-report.md
 ```
@@ -132,7 +147,7 @@ Recommended fix: Add <script async src="https://scripts.luigisbox.tech/LBX-10719
 ```bash
 yarn agent review-ui \
   fixtures/frontend/autocomplete-bad.html \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --browser --browser-query "shirt" \
   --report results/agent-ui-review-browser-report.md
 ```
@@ -154,7 +169,7 @@ Reading `Analytics requests: 0` next to a `P0 FRONTEND_EXPECTED_EVENTS_API_ANALY
 
 ## What makes it agentic
 
-1. **Docs lookup, not hand-rolled messages.** The `agent review-ui` and `agent review-catalog` commands load the real docs repo (`--docs /Users/lowperry/projects/docs`), search for sections relevant to each detected capability and each finding, and cite them inline with file path and line number.
+1. **Docs lookup, not hand-rolled messages.** The `agent review-ui` and `agent review-catalog` commands load the real docs repo (`--docs "$SE_VALIDATOR_DOCS_ROOT"`), search for sections relevant to each detected capability and each finding, and cite them inline with file path and line number.
 2. **Evidence plumbing.** Every finding carries `path:line` plus a code snippet, and the report lists the docs it pulled *and the reason* (`Referenced by FRONTEND_…`, `Quickstart guidance for implementation flow`, etc.). That traceability is what lets a reviewer accept or challenge a call.
 3. **Profile awareness.** `--profile` files under `fixtures/frontend/` turn Top Items / Trending Queries into `required`, `optional`, or `disabled`. The same fixture file produces a different report depending on the contract the integration is actually signed up for.
 4. **Optional browser verification.** `--browser` launches Playwright, types a query, and records network + DOM activity. Findings and browser evidence sit side by side so a human can validate the static call.
@@ -167,13 +182,13 @@ Pulled straight from `results/fixture-eval/EVALUATION.md`, a from-scratch fixtur
 - **Regex detection is file-scoped.** `tracker_id` appearing in an HTML comment is enough to fool the "required param missing" check. Any string in a docstring, TODO, or commented-out block can silently pass a capability gate.
 - **Setter-vs-reader confusion.** `button.dataset.itemId = item.url` in the renderer will mark `clickUsesRenderedIdentity` true even when the click handler reads `textContent` instead. Capability checks need to see a *read* from the correct identity, not just a mention.
 - **Optional-feature noise.** `topItems=optional` and `trendingQueries=optional` still emit P2 `…_NOT_EVIDENCED` findings when those endpoints are not used. That dilutes the signal in minimal integrations.
-- **Default docs path is fragile.** The default `../docs` resolution is relative to CWD; from a worktree it can land on the repo's own `docs/` coverage notes instead of the real docs repo. Always pass `--docs` explicitly, or set `SE_VALIDATOR_DOCS_ROOT`.
+- **Docs path is local by design.** Different developers may keep the docs repo in different places. `scripts/agent-env.sh` centralizes that setup and supports `SE_VALIDATOR_DOCS_ROOT` overrides.
 - **Feed import parity is still manual.** The primary-category ordering mismatch between XML and Content Update catalogs (see `investigation-and-todos.md`) is a known open item that the validator flags but does not yet auto-diff against Search API results.
 
 ## Next steps
 
 - Strip comments from raw files before running capability regexes; scope the remaining regexes to the reader context (click handler, render loop) rather than file-global.
 - Fire `…_NOT_EVIDENCED` only when `expectation === "required"`; keep the `disabled` rule to catch unexpected endpoint use.
-- Teach the docs resolver to walk up from CWD until it finds a `src/content/docs` tree, and document `SE_VALIDATOR_DOCS_ROOT` in `--help`.
+- Add a first-class config command that prints the resolved validator/docs roots and diagnoses missing local docs.
 - Add an import-parity validator that pulls Search API responses for each catalog identity and diffs them across XML, JSON, and Content Update sources.
 - Make the agent review surface its confidence (high / low) when a finding relies on a heuristic the evaluation flagged as brittle.

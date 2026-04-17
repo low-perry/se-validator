@@ -11,6 +11,30 @@ The intended pattern is:
 
 The validator output is the source of truth. The LLM should not invent requirements that are not present in validator findings or cited docs.
 
+## Environment Bootstrap
+
+Path configuration lives in one place: `scripts/agent-env.sh`.
+
+Before running validator commands, evaluate it from the repo root:
+
+```bash
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+```
+
+The script exports:
+
+- `SE_VALIDATOR_ROOT`: this validator repo.
+- `SE_VALIDATOR_DOCS_ROOT`: the Luigi's Box docs repo.
+
+By default, the script assumes the docs repo is next to this repo at `../docs`. To use a different local layout, set the variables before evaluating it:
+
+```bash
+export SE_VALIDATOR_ROOT=/path/to/se-validator
+export SE_VALIDATOR_DOCS_ROOT=/path/to/docs
+eval "$("${SE_VALIDATOR_ROOT}/scripts/agent-env.sh")"
+```
+
 ## Source-Backed Fix Mode
 
 Use this mode when the user asks for corrected snippets or implementation guidance after a validator run.
@@ -23,7 +47,7 @@ You already ran SE Validator and found issues. Before suggesting corrected code,
 Hard rules:
 - Do not invent API fields, event names, payload shapes, or script tags.
 - Do not write corrected code from memory.
-- Prefer examples from /Users/lowperry/projects/docs/public/examples/.
+- Prefer examples from $SE_VALIDATOR_DOCS_ROOT/public/examples/.
 - For every corrected snippet, cite the exact local docs/example file path and line number used for the pattern.
 - If the cited docs/examples do not contain enough information, say: "I can explain the fix, but I cannot provide a source-backed snippet."
 
@@ -43,12 +67,13 @@ You are an SE Validation Agent for Luigi's Box integrations.
 Your job is to review integration evidence using the local validator CLI, then explain whether the integration is ready, risky, or blocked.
 
 Workspace:
-- Validator repo: /Users/lowperry/projects/se-validator
-- Docs repo: /Users/lowperry/projects/docs
+- Validator repo: $SE_VALIDATOR_ROOT
+- Docs repo: $SE_VALIDATOR_DOCS_ROOT
 
 Rules:
-- Always run commands from /Users/lowperry/projects/se-validator.
-- Always pass --docs /Users/lowperry/projects/docs for agent reviews.
+- Run `eval "$(scripts/agent-env.sh)"` before running validator commands.
+- Always run commands from `$SE_VALIDATOR_ROOT`.
+- Always pass `--docs "$SE_VALIDATOR_DOCS_ROOT"` for agent reviews.
 - Do not invent requirements. Use validator findings and docs citations.
 - Treat P0 as blocking, P1 as important, P2 as advisory.
 - If the validator gives line-level evidence, include the file, line, and snippet in your explanation.
@@ -69,26 +94,26 @@ yarn validate catalog <files...>
 
 Catalog doc-aware review:
 yarn agent review-catalog <files...> \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile <catalog-profile.json> \
   --report results/<name>.md
 
 Frontend autocomplete review:
 yarn agent review-ui <html-or-js-files...> \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile <frontend-profile.json> \
   --report results/<name>.md
 
 Frontend autocomplete review with explanations:
 yarn agent review-ui <html-or-js-files...> \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile <frontend-profile.json> \
   --explain \
   --report results/<name>.md
 
 Frontend autocomplete review with browser evidence:
 yarn agent review-ui <html-file> \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile <frontend-profile.json> \
   --browser \
   --browser-query "shirt" \
@@ -122,10 +147,11 @@ Intended integration profile:
 Review this frontend autocomplete integration.
 
 Run:
-cd /Users/lowperry/projects/se-validator
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
 yarn agent review-ui \
   fixtures/frontend/autocomplete-bad.html \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile fixtures/frontend/autocomplete-profile-full.json \
   --explain \
   --report results/llm-ui-review.md
@@ -144,11 +170,12 @@ Then read results/llm-ui-review.md and tell me:
 Review this catalog integration.
 
 Run:
-cd /Users/lowperry/projects/se-validator
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
 yarn agent review-catalog \
   fixtures/catalog/good-feed.xml \
   fixtures/catalog/good-feed-cat.xml \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile fixtures/catalog/catalog-profile-xml-feed.json \
   --report results/llm-catalog-review.md
 
@@ -179,8 +206,8 @@ First inspect the file names and contents enough to classify them:
 Then choose the right validator command. If it is frontend evidence, use --explain. If it is catalog evidence and there is no profile, run the generic validator first and then propose a profile.
 
 Use:
-- docs root: /Users/lowperry/projects/docs
-- validator repo: /Users/lowperry/projects/se-validator
+- docs root: $SE_VALIDATOR_DOCS_ROOT
+- validator repo: $SE_VALIDATOR_ROOT
 
 Return:
 - command run,

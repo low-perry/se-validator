@@ -8,11 +8,18 @@ alwaysApply: true
 
 Use `docs/llm-operator-prompts.md` as the operating procedure.
 
+Before running commands, evaluate the shared environment bootstrap:
+
+```bash
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+```
+
 When reviewing Luigi's Box integration evidence:
 
 - Run SE Validator before making quality claims.
-- Run commands from `/Users/lowperry/projects/se-validator`.
-- Pass `--docs /Users/lowperry/projects/docs` for doc-aware reviews.
+- Run commands from `$SE_VALIDATOR_ROOT`.
+- Pass `--docs "$SE_VALIDATOR_DOCS_ROOT"` for doc-aware reviews.
 - Treat P0 as blocking, P1 as important, and P2 as advisory.
 - Do not invent corrected code snippets. Open cited docs/examples first and cite the exact local path and line used.
 
@@ -20,7 +27,7 @@ Frontend autocomplete review:
 
 ```bash
 yarn agent review-ui <file> \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile fixtures/frontend/autocomplete-profile-full.json \
   --explain \
   --report results/llm-review.md
@@ -30,7 +37,7 @@ Catalog review:
 
 ```bash
 yarn agent review-catalog <files...> \
-  --docs /Users/lowperry/projects/docs \
+  --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile <catalog-profile.json> \
   --report results/llm-catalog-review.md
 ```
