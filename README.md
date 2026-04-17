@@ -47,3 +47,7 @@ yarn validate service <paths...>
 yarn validate frontend <paths...>
 yarn validate catalog "https://example.com/path/to/feed.xml"
 ```
+
+## Fixture Guides
+
+Catalog fixtures have per-group explainers with intended structure, expected rule IDs, and copy-pasteable commands. Start at [fixtures/catalog/README.md](fixtures/catalog/README.md).
