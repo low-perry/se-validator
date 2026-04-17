@@ -1,7 +1,14 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { Command } from "commander";
+import { z } from "zod";
 import type { ValidationFinding } from "../core/types.js";
+import {
+  agentCatalogReviewSchema,
+  agentUiReviewSchema,
+  catalogValidationReportSchema,
+  frontendValidationReportSchema
+} from "../core/schemas.js";
 import { validateCatalog } from "../catalog/validate.js";
 import { validateAnalytics } from "../analytics/validate.js";
 import { validateService } from "../service/validate.js";
@@ -31,9 +38,10 @@ export async function runCli(argv: string[]): Promise<void> {
       const report = await validateCatalog(paths);
 
       if (options.json) {
-        console.log(JSON.stringify(report, null, 2));
+        const json = serializeJsonReport(catalogValidationReportSchema, "catalogValidationReport", report);
+        console.log(json);
         if (options.report) {
-          await writeReport(options.report, JSON.stringify(report, null, 2));
+          await writeReport(options.report, json);
           console.error(`Report written to ${options.report}`);
         }
         return;
@@ -126,9 +134,10 @@ export async function runCli(argv: string[]): Promise<void> {
       const report = await validateFrontend(paths, profile ? { profile } : {});
 
       if (options.json) {
-        console.log(JSON.stringify(report, null, 2));
+        const json = serializeJsonReport(frontendValidationReportSchema, "frontendValidationReport", report);
+        console.log(json);
         if (options.report) {
-          await writeReport(options.report, JSON.stringify(report, null, 2));
+          await writeReport(options.report, json);
           console.error(`Report written to ${options.report}`);
         }
         return;
@@ -192,9 +201,10 @@ export async function runCli(argv: string[]): Promise<void> {
         });
 
         if (options.json) {
-          console.log(JSON.stringify(review, null, 2));
+          const json = serializeJsonReport(agentUiReviewSchema, "agentUiReview", review);
+          console.log(json);
           if (options.report) {
-            await writeReport(options.report, JSON.stringify(review, null, 2));
+            await writeReport(options.report, json);
             console.error(`Report written to ${options.report}`);
           }
           return;
@@ -229,9 +239,10 @@ export async function runCli(argv: string[]): Promise<void> {
       });
 
       if (options.json) {
-        console.log(JSON.stringify(review, null, 2));
+        const json = serializeJsonReport(agentCatalogReviewSchema, "agentCatalogReview", review);
+        console.log(json);
         if (options.report) {
-          await writeReport(options.report, JSON.stringify(review, null, 2));
+          await writeReport(options.report, json);
           console.error(`Report written to ${options.report}`);
         }
         return;
@@ -257,6 +268,29 @@ async function writeReport(path: string, content: string): Promise<void> {
   const absolutePath = resolve(process.cwd(), path);
   await mkdir(dirname(absolutePath), { recursive: true });
   await writeFile(absolutePath, `${content.trimEnd()}\n`, "utf8");
+}
+
+/**
+ * Parse a report object through a Zod schema and return the pretty-printed
+ * JSON. If validation fails we surface a helpful error that names the schema
+ * and lists each offending path, so CLI consumers learn about contract drift
+ * before downstream tooling chokes on a malformed payload.
+ */
+function serializeJsonReport<Schema extends z.ZodTypeAny>(
+  schema: Schema,
+  schemaName: string,
+  report: unknown
+): string {
+  const result = schema.safeParse(report);
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((issue) => `- ${issue.path.join(".") || "<root>"}: ${issue.message}`)
+      .join("\n");
+    throw new Error(
+      `Report failed ${schemaName} schema validation. This usually means a field was added or renamed without updating src/core/schemas.ts.\n${issues}`
+    );
+  }
+  return JSON.stringify(result.data, null, 2);
 }
 
 function formatAnalyticsReport(report: Awaited<ReturnType<typeof validateAnalytics>>): string {
