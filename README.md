@@ -6,6 +6,22 @@ It reads integration evidence such as catalog feeds, Content Update payloads, an
 
 The goal is simple: catch integration gaps early and give clients a clear feedback loop before review turns into back-and-forth.
 
+## Contents
+
+- [What It Validates](#what-it-validates)
+- [Severity Model](#severity-model)
+- [Requirements](#requirements)
+- [Setup](#setup)
+- [Quick Start](#quick-start)
+- [Profile Generators](#profile-generators)
+- [Pasted Evidence Workflow](#pasted-evidence-workflow)
+- [Report Viewer](#report-viewer)
+- [LLM And Agent Usage](#llm-and-agent-usage)
+- [Main Commands](#main-commands)
+- [Useful Fixtures](#useful-fixtures)
+- [Project Map](#project-map)
+- [Current Limitations](#current-limitations)
+
 ## What It Validates
 
 - **Catalog indexing**: XML feeds, JSON feeds, and Content Update payloads.
