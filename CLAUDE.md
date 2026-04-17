@@ -13,6 +13,8 @@ Hard rules:
 
 - Do not review integration evidence from memory. Run SE Validator first.
 - For doc-aware commands, pass `--docs "$SE_VALIDATOR_DOCS_ROOT"`.
+- Before making docs/support claims, run `scripts/docs-search.sh '<term-or-rg-pattern>'` and open relevant lines with `scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8`.
+- If docs and validator behavior disagree, call it a docs-validator mismatch.
 - If asked for corrected snippets, open the docs/examples cited by the report before writing code.
 - Do not invent API fields, event names, payload shapes, or script tags.
 - If no docs-backed snippet exists, say so and provide a plain-English fix only.
@@ -41,6 +43,13 @@ yarn agent review-catalog <files...> \
 ```
 
 Final summaries should say whether the integration is READY, RISKY, or BLOCKED and list the P0/P1/P2 findings with evidence lines and cited docs.
+
+## Skills
+
+Use repo-local skills when the tool supports them:
+
+- `skills/se-validator-review/SKILL.md` for validator-backed reviews.
+- `skills/se-validator-docs-verify/SKILL.md` for docs-backed claims and corrected snippets.
 
 ## Pasted Evidence
 

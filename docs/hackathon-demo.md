@@ -173,7 +173,8 @@ Reading `Analytics requests: 0` next to a `P0 FRONTEND_EXPECTED_EVENTS_API_ANALY
 2. **Evidence plumbing.** Every finding carries `path:line` plus a code snippet, and the report lists the docs it pulled *and the reason* (`Referenced by FRONTEND_…`, `Quickstart guidance for implementation flow`, etc.). That traceability is what lets a reviewer accept or challenge a call.
 3. **Profile awareness.** `--profile` files under `fixtures/frontend/` turn Top Items / Trending Queries into `required`, `optional`, or `disabled`. The same fixture file produces a different report depending on the contract the integration is actually signed up for.
 4. **Optional browser verification.** `--browser` launches Playwright, types a query, and records network + DOM activity. Findings and browser evidence sit side by side so a human can validate the static call.
-5. **LLM operator prompt.** [`docs/llm-operator-prompts.md`](./llm-operator-prompts.md) gives another LLM the repo paths, command contract, severity policy, and expected output format so it can operate the validator instead of guessing from raw evidence.
+5. **LLM operator prompt plus skills.** [`docs/llm-operator-prompts.md`](./llm-operator-prompts.md) gives another LLM the repo paths, command contract, severity policy, and expected output format so it can operate the validator instead of guessing from raw evidence. Repo-local skills under `skills/` make that reusable for agents that support skill attachments.
+6. **Docs verification tools.** `scripts/docs-search.sh` and `scripts/docs-context.sh` force a docs-backed workflow before an agent says a structure is supported or unsupported. If docs and validator output disagree, the agent is told to label that as a docs-validator mismatch instead of guessing.
 
 ## Known limitations (honest list)
 

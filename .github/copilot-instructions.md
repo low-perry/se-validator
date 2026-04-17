@@ -16,6 +16,8 @@ cd "$SE_VALIDATOR_ROOT"
 - Run validator commands from `$SE_VALIDATOR_ROOT`.
 - Always pass `--docs "$SE_VALIDATOR_DOCS_ROOT"` for `yarn agent ...` reviews.
 - Do not invent integration requirements. Use validator findings and cited docs.
+- Before making docs/support claims, run `scripts/docs-search.sh '<term-or-rg-pattern>'` and open relevant lines with `scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8`.
+- If docs and validator behavior disagree, call it a docs-validator mismatch.
 - Do not provide corrected snippets from memory. Open the docs/examples cited in the generated report first.
 - If a source-backed snippet is not available, explain the fix without fabricating code.
 
@@ -41,6 +43,13 @@ yarn agent review-catalog <files...> \
 ```
 
 Summaries should classify the integration as READY, RISKY, or BLOCKED and include P0/P1/P2 findings, file/line evidence, recommended fixes, and docs cited by the report.
+
+## Skills
+
+Repo-local skills:
+
+- `skills/se-validator-review/SKILL.md` for validator-backed reviews.
+- `skills/se-validator-docs-verify/SKILL.md` for docs-backed claims and corrected snippets.
 
 ## Pasted Evidence
 

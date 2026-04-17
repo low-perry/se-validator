@@ -14,6 +14,8 @@ cd "$SE_VALIDATOR_ROOT"
 - Do not judge Luigi's Box integration quality before running SE Validator.
 - Run commands from `$SE_VALIDATOR_ROOT`.
 - For doc-aware reviews, always pass `--docs "$SE_VALIDATOR_DOCS_ROOT"`.
+- Before saying what the docs support, run `scripts/docs-search.sh '<term-or-rg-pattern>'` and open the relevant lines with `scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8`.
+- If docs and validator behavior disagree, label it a docs-validator mismatch instead of guessing.
 - Treat P0 as blocking, P1 as important, and P2 as advisory.
 - Keep API keys and secrets out of responses and report snippets.
 - Do not invent corrected snippets. If the user asks for fixes, enter source-backed fix mode: open the docs/examples cited by the generated report first, then cite the exact local file path and line used for the snippet.
@@ -40,6 +42,13 @@ yarn agent review-catalog <files...> \
 ```
 
 After running a review, read the report and summarize readiness as READY, RISKY, or BLOCKED with P0/P1/P2 findings, likely code lines, recommended fixes, and cited docs.
+
+## Skills
+
+Repo-local skills live under `skills/`:
+
+- `skills/se-validator-review/SKILL.md` for validator-backed reviews.
+- `skills/se-validator-docs-verify/SKILL.md` for docs-backed claims and corrected snippets.
 
 ## Pasted Evidence
 

@@ -59,6 +59,48 @@ For each P0/P1:
 5. Explain which parts are client-specific placeholders.
 ```
 
+## Docs Verification Mode
+
+Use this mode whenever the user asks whether the docs support something, challenges a docs claim, asks "are you sure", asks for corrected snippets, or when validator behavior appears to conflict with the docs.
+
+```text
+You are now in docs verification mode.
+
+You must verify documentation claims with local tools before answering.
+
+Setup:
+eval "$(scripts/agent-env.sh)"
+cd "$SE_VALIDATOR_ROOT"
+
+Required tools:
+- Search docs and examples:
+  scripts/docs-search.sh '<term-or-rg-pattern>'
+
+- Open relevant lines:
+  scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8
+
+Rules:
+- Do not say "the docs say", "the docs do not mention", "supported", or "not supported" from memory.
+- Do not rely on search result snippets alone when wording matters; open the context lines.
+- Cite exact local file path and line number for every docs-backed claim.
+- If no docs match is found, say which terms were searched and that no local docs evidence was found.
+- If the validator and docs disagree, call it a docs-validator mismatch. Do not guess which source is right.
+- If asked for a corrected snippet, use docs/examples as the pattern and explain any client-specific placeholders.
+
+Answer format:
+Docs evidence:
+- <file>:<line> ...
+
+Validator evidence:
+- <command/report> ...
+
+Conclusion:
+- Supported / not supported / ambiguous / docs-validator mismatch.
+
+Next action:
+- <one concrete next step>
+```
+
 ## General Operator Prompt
 
 ```text
@@ -75,6 +117,7 @@ Rules:
 - Always run commands from `$SE_VALIDATOR_ROOT`.
 - Always pass `--docs "$SE_VALIDATOR_DOCS_ROOT"` for agent reviews.
 - Do not invent requirements. Use validator findings and docs citations.
+- Before making a docs/support claim, enter Docs Verification Mode and run `scripts/docs-search.sh` plus `scripts/docs-context.sh`.
 - Treat P0 as blocking, P1 as important, P2 as advisory.
 - If the validator gives line-level evidence, include the file, line, and snippet in your explanation.
 - If the evidence does not match the intended integration path, say so clearly and recommend updating either the implementation or the profile.
@@ -97,6 +140,10 @@ yarn agent review-catalog <files...> \
   --docs "$SE_VALIDATOR_DOCS_ROOT" \
   --profile <catalog-profile.json> \
   --report results/<name>.md
+
+Docs claim verification:
+scripts/docs-search.sh '<term-or-rg-pattern>'
+scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8
 
 Frontend autocomplete review:
 yarn agent review-ui <html-or-js-files...> \
@@ -241,6 +288,7 @@ Rules:
 - Do not judge pasted content before running the validator.
 - Do not invent corrected snippets.
 - If asked for corrected snippets, use Source-Backed Fix Mode.
+- If asked whether a specific structure or field is supported by docs, use Docs Verification Mode before answering.
 - Temporary pasted inputs under tmp/ and pasted reports under results/pasted-*.md are ignored by git.
 ```
 
@@ -274,6 +322,15 @@ Return:
 - docs cited,
 - any uncertainty or missing evidence.
 ```
+
+## Repo-Local Skills
+
+Reusable skills live in:
+
+- `skills/se-validator-review/SKILL.md`: run validator-backed reviews for feeds, Content Update payloads, frontend evidence, analytics payloads, and service profiles.
+- `skills/se-validator-docs-verify/SKILL.md`: verify docs claims with `scripts/docs-search.sh` and `scripts/docs-context.sh` before answering or generating fixes.
+
+When using an agent that supports skills, attach the relevant skill before giving the review prompt. For pasted XML/JSON/HTML/JS, attach `se-validator-review`. For "do the docs support this?" or "fix this snippet" questions, attach `se-validator-docs-verify` as well.
 
 ## Agent Adapters
 

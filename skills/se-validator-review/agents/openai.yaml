@@ -1,0 +1,4 @@
+interface:
+  display_name: "SE Validator Review"
+  short_description: "Run validator-backed integration reviews."
+  default_prompt: "Review this Luigi Box integration evidence with SE Validator. Save pasted content to a temporary file if needed, run the matching validator command, and summarize READY, RISKY, or BLOCKED with cited evidence."

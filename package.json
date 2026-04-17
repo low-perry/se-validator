@@ -6,6 +6,8 @@
     "dev": "tsx src/index.ts",
     "agent": "tsx src/index.ts agent",
     "validate": "tsx src/index.ts validate",
+    "docs:search": "bash scripts/docs-search.sh",
+    "docs:context": "bash scripts/docs-context.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

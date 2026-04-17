@@ -20,6 +20,8 @@ When reviewing Luigi's Box integration evidence:
 - Run SE Validator before making quality claims.
 - Run commands from `$SE_VALIDATOR_ROOT`.
 - Pass `--docs "$SE_VALIDATOR_DOCS_ROOT"` for doc-aware reviews.
+- Before making docs/support claims, run `scripts/docs-search.sh '<term-or-rg-pattern>'` and open relevant lines with `scripts/docs-context.sh '<absolute-docs-file-path>' <line> 8`.
+- If docs and validator behavior disagree, call it a docs-validator mismatch.
 - Treat P0 as blocking, P1 as important, and P2 as advisory.
 - Do not invent corrected code snippets. Open cited docs/examples first and cite the exact local path and line used.
 
@@ -43,6 +45,13 @@ yarn agent review-catalog <files...> \
 ```
 
 After running the tool, read the generated report and summarize READY, RISKY, or BLOCKED with evidence lines, P0/P1/P2 findings, fixes, and cited docs.
+
+## Skills
+
+Repo-local skills:
+
+- `skills/se-validator-review/SKILL.md` for validator-backed reviews.
+- `skills/se-validator-docs-verify/SKILL.md` for docs-backed claims and corrected snippets.
 
 ## Pasted Evidence
 

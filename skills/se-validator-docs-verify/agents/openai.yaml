@@ -1,0 +1,4 @@
+interface:
+  display_name: "SE Validator Docs Verify"
+  short_description: "Verify docs claims before answering."
+  default_prompt: "Verify this Luigi Box docs claim with the local docs-search tool before answering. Cite exact local file paths and lines, and report docs or validator mismatches explicitly."
