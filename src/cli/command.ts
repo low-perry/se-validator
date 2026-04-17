@@ -160,6 +160,7 @@ export async function runCli(argv: string[]): Promise<void> {
     .option("--browser", "Run optional browser/live evidence capture")
     .option("--browser-query <query>", "Query to type during browser/live capture", "shirt")
     .option("--browser-timeout <ms>", "Browser/live wait timeout in milliseconds", parsePositiveInteger, 2500)
+    .option("--explain", "Append educational sections explaining severities, integration path, and evidence sources")
     .option("--json", "Print machine-readable JSON")
     .option("--report <path>", "Write a Markdown report file")
     .action(
@@ -173,6 +174,7 @@ export async function runCli(argv: string[]): Promise<void> {
           browser?: boolean;
           browserQuery: string;
           browserTimeout: number;
+          explain?: boolean;
           json?: boolean;
           report?: string;
         }
@@ -200,7 +202,7 @@ export async function runCli(argv: string[]): Promise<void> {
           return;
         }
 
-        const output = formatAgentUiReview(review);
+        const output = formatAgentUiReview(review, { explain: options.explain === true });
         console.log(output);
 
         if (options.report) {
