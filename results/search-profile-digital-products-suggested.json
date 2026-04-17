@@ -1,0 +1,16 @@
+{
+  "service": "search",
+  "trackerId": "757876-1071971",
+  "analyticsMode": "datalayer",
+  "features": {
+    "autocomplete": "disabled",
+    "search": "required",
+    "topItems": "disabled",
+    "trendingQueries": "disabled"
+  },
+  "search": {
+    "expectedResultTypes": [
+      "digital-products"
+    ]
+  }
+}

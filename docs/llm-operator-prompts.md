@@ -160,6 +160,21 @@ Search API visibility validation:
 yarn validate service fixtures/service/search-visibility-good.json \
   --report results/search-visibility-good-report.md
 
+Search frontend profile suggestion:
+yarn suggest search-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --analytics-mode datalayer \
+  --out results/search-profile-suggested.json
+
+Search frontend profile suggestion for one suspected type:
+yarn suggest search-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --filter type:<indexed-type> \
+  --analytics-mode datalayer \
+  --out results/search-profile-<indexed-type>.json
+
 Search API type-mismatch validation:
 yarn validate service fixtures/service/search-visibility-bad.json \
   --report results/search-visibility-bad-report.md
@@ -267,6 +282,8 @@ Before giving corrected snippets, verify against:
 - `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui.html`
 - `$SE_VALIDATOR_DOCS_ROOT/public/examples/search/custom-search-ui-datalayer.html`
 ```
+
+If the expected Search hit type is unknown, run `yarn suggest search-profile` first, then use the generated profile for the Search UI review.
 
 ## Search UI Review
 

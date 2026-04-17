@@ -54,6 +54,27 @@ When a catalog object is indexed under a custom type, validate that Search API r
 
 For pasted Search UI snippets, save the snippet exactly under `tmp/agent-input/search-ui.html` or `tmp/agent-input/search-ui.js`, then run `yarn agent review-ui ... --service search`. Do not review pasted Search code from memory.
 
+If the expected Search hit type is unknown, generate a profile first:
+
+```bash
+yarn suggest search-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --analytics-mode datalayer \
+  --out results/search-profile-suggested.json
+```
+
+If a custom type is suspected, sample it explicitly:
+
+```bash
+yarn suggest search-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --filter type:<indexed-type> \
+  --analytics-mode datalayer \
+  --out results/search-profile-<indexed-type>.json
+```
+
 ## Fixes
 
 When asked for corrected snippets, switch to source-backed fix mode from `docs/llm-operator-prompts.md` and use the `se-validator-docs-verify` skill. Do not invent API fields, payload shapes, event names, script tags, or XML/JSON structures from memory.

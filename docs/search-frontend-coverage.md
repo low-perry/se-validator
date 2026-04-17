@@ -11,6 +11,31 @@ The frontend validator can now review custom Search API HTML/JS evidence.
 
 When no profile is passed, the validator auto-detects Search UI evidence if the artifact calls `/search` and does not call Autocomplete. For custom indexed types, pass a profile so the validator knows which `f[]=type:<type>` should appear.
 
+## Profile Generator
+
+When the expected indexed type is unknown, sample the live Search API and generate a frontend profile:
+
+```bash
+yarn suggest search-profile \
+  --tracker-id 757876-1071971 \
+  --query shirt \
+  --analytics-mode datalayer \
+  --out results/search-profile-suggested.json
+```
+
+If you already suspect the UI should render one custom type, add a Search API type filter to sample only that type:
+
+```bash
+yarn suggest search-profile \
+  --tracker-id 757876-1071971 \
+  --query shirt \
+  --filter type:digital-products \
+  --analytics-mode datalayer \
+  --out results/search-profile-digital-products-suggested.json
+```
+
+The generator writes a normal frontend profile with `search.expectedResultTypes` populated from the hit `type` values returned by `/search`.
+
 ## What It Validates
 
 - Search API endpoint usage.

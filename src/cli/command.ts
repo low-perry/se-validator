@@ -15,6 +15,8 @@ import { validateAnalytics } from "../analytics/validate.js";
 import { validateService } from "../service/validate.js";
 import { validateFrontend } from "../frontend/validate.js";
 import { loadFrontendValidationProfile } from "../frontend/profile.js";
+import { formatSearchFrontendProfileSuggestion, suggestSearchFrontendProfile } from "../frontend/search-profile-suggest.js";
+import type { FrontendExpectedAnalyticsMode } from "../frontend/types.js";
 import { formatAgentCatalogReview, reviewCatalog } from "../agent/review-catalog.js";
 import { formatAgentUiReview, reviewUi } from "../agent/review-ui.js";
 import { locateCatalogEvidence } from "../agent/evidence.js";
@@ -269,6 +271,51 @@ export async function runCli(argv: string[]): Promise<void> {
       }
     });
 
+  const suggest = program.command("suggest").description("Generate helper profiles from live integration evidence");
+
+  suggest
+    .command("search-profile")
+    .description("Suggest a frontend Search profile by sampling live Search API hit types")
+    .requiredOption("--tracker-id <trackerId>", "Luigi's Box tracker_id to query")
+    .option("--query <query>", "Search query used to sample hit types", "shirt")
+    .option("--filter <filter>", "Add an f[] filter such as category:Shoes; repeatable", collectOption, [])
+    .option("--size <count>", "Number of hits to sample, max 200", parsePositiveInteger, 10)
+    .option("--analytics-mode <mode>", "Expected analytics mode: any, datalayer, or events-api", "any")
+    .option("--out <path>", "Write suggested frontend profile JSON to this path")
+    .option("--json", "Print only the suggested frontend profile JSON")
+    .action(
+      async (options: {
+        trackerId: string;
+        query: string;
+        filter: string[];
+        size: number;
+        analyticsMode: string;
+        out?: string;
+        json?: boolean;
+      }) => {
+        const analyticsMode = parseFrontendAnalyticsMode(options.analyticsMode);
+        const suggestion = await suggestSearchFrontendProfile({
+          trackerId: options.trackerId,
+          query: options.query,
+          filters: options.filter,
+          size: Math.min(options.size, 200),
+          analyticsMode
+        });
+        const profileJson = JSON.stringify(suggestion.profile, null, 2);
+
+        if (options.out) {
+          await writeReport(options.out, profileJson);
+          console.error(`Profile written to ${options.out}`);
+        }
+
+        if (options.json) {
+          console.log(profileJson);
+        } else {
+          console.log(formatSearchFrontendProfileSuggestion(suggestion));
+        }
+      }
+    );
+
   await program.parseAsync(argv);
 }
 
@@ -521,4 +568,13 @@ function parsePositiveInteger(value: string): number {
     throw new Error(`Expected a positive integer, got ${value}`);
   }
   return parsed;
+}
+
+function collectOption(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
+
+function parseFrontendAnalyticsMode(value: string): FrontendExpectedAnalyticsMode {
+  if (value === "any" || value === "datalayer" || value === "events-api") return value;
+  throw new Error(`Unsupported analytics mode: ${value}. Use any, datalayer, or events-api.`);
 }

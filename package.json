@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "agent": "tsx src/index.ts agent",
+    "suggest": "tsx src/index.ts suggest",
     "validate": "tsx src/index.ts validate",
     "docs:search": "bash scripts/docs-search.sh",
     "docs:context": "bash scripts/docs-context.sh",

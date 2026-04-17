@@ -48,6 +48,15 @@ yarn agent review-ui <file> \
 
 If the client indexed a custom Search type, pass a profile such as `fixtures/frontend/search-profile-digital-products.json` so Claude can catch wrong `f[]=type:<type>` filters.
 
+If the expected Search type is unknown, generate one from live Search API hits first:
+
+```bash
+yarn suggest search-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --out results/search-profile-suggested.json
+```
+
 Default catalog review:
 
 ```bash

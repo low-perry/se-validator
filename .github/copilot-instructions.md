@@ -48,6 +48,15 @@ yarn agent review-ui <file> \
 
 When the expected indexed type is known, pass a profile such as `fixtures/frontend/search-profile-digital-products.json`.
 
+When the expected Search type is unknown, generate a profile from live Search API hits:
+
+```bash
+yarn suggest search-profile \
+  --tracker-id <tracker-id> \
+  --query <sample-query> \
+  --out results/search-profile-suggested.json
+```
+
 Catalog:
 
 ```bash
