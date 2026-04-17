@@ -225,61 +225,70 @@
         </div>
       </section>
 
-      <!-- Slide 5: agentic loop -->
-      <section class="slide" data-slide="5" data-title="The agentic loop">
+      <!-- Slide 5: feed validation workflow storyboard -->
+      <section class="slide" data-slide="5" data-title="Feed validation workflow">
         <div class="slide-body">
-          <h2>What makes it agentic</h2>
+          <h2>Feed validation workflow — paste to production</h2>
           <p class="muted">
-            The validator doesn't just score — it opens the docs, matches sections,
-            and cites them next to each finding.
+            Real Claude session using SE Validator as a skill. Click any panel to enlarge.
           </p>
 
-          <ol class="loop">
-            <li>
-              <div class="loop-step">1. Evidence</div>
-              <div class="loop-body">
-                Pasted into <code>tmp/agent-input/</code>, or a path inside
-                <code>fixtures/</code>. HTML, JSON, XML, JS.
-              </div>
+          <ol class="storyboard">
+            <li class="story-panel">
+              <div class="story-n">1</div>
+              <img src="./assets/workflow-01-blocked.png" alt="Validator marks the pasted feed BLOCKED with score 0 out of 100" />
+              <figcaption>
+                <strong>Paste XML → BLOCKED 0/100</strong>
+                <span class="muted">P0=3 · P1=8 · P2=2, every finding with a fix.</span>
+              </figcaption>
             </li>
-            <li>
-              <div class="loop-step">2. Deterministic rules</div>
-              <div class="loop-body">
-                <code>yarn validate</code> or <code>yarn agent review-*</code> runs the rule
-                set. Each rule fires with priority, fix, and evidence path.
-              </div>
+            <li class="story-panel">
+              <div class="story-n">2</div>
+              <img src="./assets/workflow-02-findings.png" alt="P1 findings table with rule, item, and line-number evidence" />
+              <figcaption>
+                <strong>Findings with <code>path:line</code> evidence</strong>
+                <span class="muted">Every row names the SKU, the rule, and the exact line.</span>
+              </figcaption>
             </li>
-            <li>
-              <div class="loop-step">3. Doc lookup</div>
-              <div class="loop-body">
-                For every finding and every detected capability, the agent searches
-                <code>$SE_VALIDATOR_DOCS_ROOT</code> and records the section it matched
-                plus the reason.
-              </div>
+            <li class="story-panel">
+              <div class="story-n">3</div>
+              <img src="./assets/workflow-03-fixes-applied.png" alt="Score went from 0 to 98 out of 100 after one fix pass, with issue-to-fix diff table" />
+              <figcaption>
+                <strong>One fix pass → 98/100</strong>
+                <span class="muted">Dedupe IDs, add missing <code>web_url</code>, clamp rank, reorder variants.</span>
+              </figcaption>
             </li>
-            <li>
-              <div class="loop-step">4. Report</div>
-              <div class="loop-body">
-                Markdown (for humans / report-viewer) or JSON (for other agents).
-                Docs cited with absolute <code>docs.luigisbox.com</code> links.
-              </div>
+            <li class="story-panel">
+              <div class="story-n">4</div>
+              <img src="./assets/workflow-04-pivot.png" alt="User asks to convert feed to digital-products type; agent re-validates cleanly" />
+              <figcaption>
+                <strong>Pivot: "actually digital-products" → clean</strong>
+                <span class="muted">Root wrapper swap, <code>-dig</code> suffix, re-validates 98/100.</span>
+              </figcaption>
+            </li>
+            <li class="story-panel">
+              <div class="story-n">5</div>
+              <img src="./assets/workflow-05-ingested.png" alt="Luigi's Box feeds dashboard showing the corrected feed ingested successfully" />
+              <figcaption>
+                <strong>Ingested in LBX platform</strong>
+                <span class="muted">Feed succeeded. 9 sec duration. 0 cache misses.</span>
+              </figcaption>
+            </li>
+            <li class="story-panel">
+              <div class="story-n">6</div>
+              <img src="./assets/workflow-06-catalog-browser.png" alt="Catalog Browser showing items searchable under digital-products type" />
+              <figcaption>
+                <strong>Searchable as <code>type:digital-products</code></strong>
+                <span class="muted">Items returned for the filter the custom Search UI uses.</span>
+              </figcaption>
             </li>
           </ol>
 
-          <div class="citation-card">
-            <div class="citation-head">
-              <span class="badge">Real citation</span>
-              <span class="muted">Excerpt from <code>agent-ui-review-good-report.md</code></span>
-            </div>
-            <div class="citation-title" id="slide-5-citation-title">…</div>
-            <div class="citation-path mono" id="slide-5-citation-path">…</div>
-            <div class="citation-reason" id="slide-5-citation-reason"></div>
-            <div class="citation-excerpt" id="slide-5-citation-excerpt"></div>
-          </div>
-
           <p class="takeaway">
-            If a reviewer disagrees with a finding, they can follow the cited
-            <code>path:line</code> and challenge the validator with facts — not opinions.
+            <strong>Paste in. Fix guided by findings. Pivot when reality changes.</strong>
+            The feed lands in production, indexed with the correct type, and the
+            Search UI's <code>f[]=type:digital-products</code> filter returns hits —
+            one session, zero back-and-forth.
           </p>
         </div>
       </section>
@@ -454,6 +463,12 @@
       <button id="next-btn" class="nav-btn" type="button" aria-label="Next slide">›</button>
       <span class="nav-hint muted">← → to navigate · 1–8 to jump</span>
     </nav>
+  </div>
+
+  <div id="lightbox" class="lightbox" hidden aria-hidden="true" role="dialog" aria-label="Enlarged screenshot">
+    <button id="lightbox-close" class="lightbox-close" type="button" aria-label="Close">✕</button>
+    <img id="lightbox-img" alt="" />
+    <div id="lightbox-caption" class="lightbox-caption"></div>
   </div>
 
   <script type="module" src="./deck.js"></script>
