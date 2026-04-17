@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>se-validator Report Viewer</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>se-validator Report Viewer</h1>
+    <p class="subtitle">
+      Renders Markdown/JSON reports produced by <code>validate</code> and <code>agent review-*</code>.
+    </p>
+  </header>
+
+  <section class="loader">
+    <div class="loader-row">
+      <label class="loader-label">
+        Open a local file
+        <input id="file-input" type="file" accept=".md,.markdown,.json,.txt" />
+      </label>
+      <button id="clear-btn" class="ghost-btn" type="button">Clear</button>
+    </div>
+
+    <details class="loader-row">
+      <summary>Or paste raw report text</summary>
+      <textarea
+        id="paste-area"
+        rows="8"
+        placeholder="Paste Markdown or JSON report content here, then click Load."
+      ></textarea>
+      <div class="loader-actions">
+        <button id="paste-load-btn" type="button">Load pasted text</button>
+      </div>
+    </details>
+
+    <div class="loader-row">
+      <span class="loader-label">Sample reports</span>
+      <div id="sample-buttons" class="sample-buttons" aria-live="polite">
+        <span class="muted">Loading samples from ../../results/...</span>
+      </div>
+    </div>
+
+    <div id="loader-status" class="loader-status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section id="summary" class="summary hidden" aria-labelledby="summary-title">
+    <h2 id="summary-title">Summary</h2>
+    <div class="summary-grid">
+      <div>
+        <span class="summary-key">Report</span>
+        <span id="summary-name" class="summary-value">-</span>
+      </div>
+      <div>
+        <span class="summary-key">Type</span>
+        <span id="summary-type" class="summary-value">-</span>
+      </div>
+      <div>
+        <span class="summary-key">Score</span>
+        <span id="summary-score" class="summary-value">-</span>
+      </div>
+      <div>
+        <span class="summary-key">P0</span>
+        <span id="summary-p0" class="summary-value badge p0">-</span>
+      </div>
+      <div>
+        <span class="summary-key">P1</span>
+        <span id="summary-p1" class="summary-value badge p1">-</span>
+      </div>
+      <div>
+        <span class="summary-key">P2</span>
+        <span id="summary-p2" class="summary-value badge p2">-</span>
+      </div>
+      <div>
+        <span class="summary-key">Generated</span>
+        <span id="summary-generated" class="summary-value">-</span>
+      </div>
+    </div>
+  </section>
+
+  <nav class="tabs hidden" id="tab-bar" role="tablist">
+    <button class="tab" role="tab" data-tab="catalog" aria-selected="false">Catalog Review</button>
+    <button class="tab" role="tab" data-tab="ui" aria-selected="false">UI Review</button>
+    <button class="tab" role="tab" data-tab="findings" aria-selected="false">Findings</button>
+    <button class="tab" role="tab" data-tab="docs" aria-selected="false">Docs Consulted</button>
+    <button class="tab" role="tab" data-tab="structure" aria-selected="false">Structure Summary</button>
+    <button class="tab" role="tab" data-tab="raw" aria-selected="false">Raw Report</button>
+  </nav>
+
+  <main id="panels" class="panels hidden">
+    <section class="panel" id="panel-catalog" role="tabpanel" hidden>
+      <h2>Catalog Review</h2>
+      <div id="catalog-content" class="panel-content"></div>
+    </section>
+
+    <section class="panel" id="panel-ui" role="tabpanel" hidden>
+      <h2>UI Review</h2>
+      <div id="ui-content" class="panel-content"></div>
+    </section>
+
+    <section class="panel" id="panel-findings" role="tabpanel" hidden>
+      <h2>Findings</h2>
+      <div id="findings-content" class="panel-content"></div>
+    </section>
+
+    <section class="panel" id="panel-docs" role="tabpanel" hidden>
+      <h2>Docs Consulted</h2>
+      <div id="docs-content" class="panel-content"></div>
+    </section>
+
+    <section class="panel" id="panel-structure" role="tabpanel" hidden>
+      <h2>Structure Summary</h2>
+      <div id="structure-content" class="panel-content"></div>
+    </section>
+
+    <section class="panel" id="panel-raw" role="tabpanel" hidden>
+      <h2>Raw Report</h2>
+      <pre id="raw-content" class="raw"></pre>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>
+      Static viewer. No server, no tracking. Open
+      <code>tools/report-viewer/index.html</code> in any browser to use.
+    </p>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
