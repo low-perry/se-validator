@@ -1,0 +1,89 @@
+<!doctype html>
+<!--
+  BAD: DataLayer collector script placed at end of <body> instead of in <head>, and without async.
+  Expected findings: FRONTEND_DATALAYER_COLLECTOR_SCRIPT_NOT_IN_HEAD,
+                     FRONTEND_DATALAYER_COLLECTOR_SCRIPT_NOT_ASYNC.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bad: collector in body</title>
+    <link rel="dns-prefetch" href="//live.luigisbox.com" />
+  </head>
+  <body>
+    <input id="search-input" type="search" autocomplete="off" />
+    <div id="autocomplete-results"></div>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      const TRACKER_ID = "757876-1071971";
+      const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";
+      const searchInput = document.getElementById("search-input");
+      const resultsContainer = document.getElementById("autocomplete-results");
+
+      function debounce(fn, delay) {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+      }
+
+      async function getSuggestions(query) {
+        const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+          q: query,
+          type: "item:6",
+          hit_fields: "title,web_url,price",
+        })}`);
+        const { hits } = await response.json();
+
+        if (!hits || hits.length === 0) {
+          resultsContainer.textContent = "No results";
+          trackAutocompleteView(query, []);
+          return;
+        }
+
+        renderResults(hits);
+        trackAutocompleteView(query, hits);
+      }
+
+      function renderResults(hits) {
+        resultsContainer.innerHTML = "";
+        hits.forEach((item, index) => {
+          const button = document.createElement("button");
+          button.className = "result-item";
+          button.dataset.itemId = item.url || item.attributes.title;
+          button.dataset.position = index + 1;
+          button.textContent = item.attributes.title;
+          resultsContainer.appendChild(button);
+        });
+      }
+
+      function trackAutocompleteView(query, hits) {
+        window.dataLayer.push({
+          event: "view_item_list",
+          ecommerce: {
+            item_list_name: "Autocomplete",
+            search_term: query,
+            items: hits.map((hit, index) => ({
+              item_id: hit.url || hit.attributes.title,
+              item_name: hit.attributes.title,
+              index: index + 1,
+            })),
+          },
+        });
+      }
+
+      function trackClickEvent(itemId) {
+        window.dataLayer.push({ event: "select_item", ecommerce: { items: [{ item_id: itemId }] } });
+      }
+
+      searchInput.addEventListener("input", debounce((e) => getSuggestions(e.target.value), 250));
+      resultsContainer.addEventListener("click", (e) => {
+        const item = e.target.closest(".result-item");
+        if (item) trackClickEvent(item.dataset.itemId);
+      });
+    </script>
+
+    <script src="_debug-panel.js"></script>
+    <!-- BUG: DataLayer collector script placed at end of body and WITHOUT async attribute. -->
+    <script src="https://scripts.luigisbox.tech/LBX-1071971.js"></script>
+  </body>
+</html>

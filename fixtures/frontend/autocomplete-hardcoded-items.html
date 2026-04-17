@@ -1,0 +1,87 @@
+<!doctype html>
+<!--
+  BAD: analytics "items" array is a static literal, disconnected from the hits that render.
+  Expected findings: FRONTEND_AUTOCOMPLETE_ITEMS_NOT_FROM_HITS (plus likely identity rules).
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bad: hardcoded analytics items</title>
+    <link rel="dns-prefetch" href="//live.luigisbox.com" />
+    <script async src="https://scripts.luigisbox.tech/LBX-1071971.js"></script>
+  </head>
+  <body>
+    <input id="search-input" type="search" autocomplete="off" />
+    <div id="autocomplete-results"></div>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      const TRACKER_ID = "757876-1071971";
+      const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";
+      const searchInput = document.getElementById("search-input");
+      const resultsContainer = document.getElementById("autocomplete-results");
+
+      function debounce(fn, delay) {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+      }
+
+      async function getSuggestions(query) {
+        const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+          q: query,
+          type: "item:6",
+          hit_fields: "title,web_url,price",
+        })}`);
+        const { hits } = await response.json();
+
+        if (!hits || hits.length === 0) {
+          resultsContainer.textContent = "No results";
+          trackAutocompleteView(query, []);
+          return;
+        }
+
+        renderResults(hits);
+        trackAutocompleteView(query, hits);
+      }
+
+      function renderResults(hits) {
+        resultsContainer.innerHTML = "";
+        hits.forEach((item, index) => {
+          const button = document.createElement("button");
+          button.className = "result-item";
+          button.dataset.itemId = item.url || item.attributes.title;
+          button.dataset.position = index + 1;
+          button.textContent = item.attributes.title;
+          resultsContainer.appendChild(button);
+        });
+      }
+
+      function trackAutocompleteView(query, _hits) {
+        // BUG: items list is hardcoded — ignores the actual rendered hits entirely.
+        window.dataLayer.push({
+          event: "view_item_list",
+          ecommerce: {
+            item_list_name: "Autocomplete",
+            search_term: query,
+            items: [
+              { item_id: "static-001", item_name: "Static Sample 1", index: 1 },
+              { item_id: "static-002", item_name: "Static Sample 2", index: 2 },
+              { item_id: "static-003", item_name: "Static Sample 3", index: 3 },
+            ],
+          },
+        });
+      }
+
+      function trackClickEvent(itemId) {
+        window.dataLayer.push({ event: "select_item", ecommerce: { items: [{ item_id: itemId }] } });
+      }
+
+      searchInput.addEventListener("input", debounce((e) => getSuggestions(e.target.value), 250));
+      resultsContainer.addEventListener("click", (e) => {
+        const item = e.target.closest(".result-item");
+        if (item) trackClickEvent(item.dataset.itemId);
+      });
+    </script>
+    <script src="_debug-panel.js"></script>
+  </body>
+</html>

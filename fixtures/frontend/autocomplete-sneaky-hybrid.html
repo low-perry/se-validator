@@ -1,39 +1,51 @@
 <!doctype html>
+<!--
+  SNEAKY: looks fine at a glance but contains subtle problems.
+  - Autocomplete fetch uses `search` param instead of `q` (silent failure in production).
+  - Renders item.attributes.title as the data-item-id (not hit.url).
+  - Analytics item_id uses hit.attributes.title — no continuity with hit.url.
+  - Top Items fetch exists but fires on page load instead of on input focus.
+  - Trending queries fetched but never mapped to anything visible.
+
+  Expected findings (subset): FRONTEND_AUTOCOMPLETE_REQUIRED_PARAM_MISSING,
+  FRONTEND_RENDERED_IDENTITY_NOT_HIT_URL, FRONTEND_ANALYTICS_IDENTITY_NOT_HIT_URL,
+  FRONTEND_TOP_ITEMS_FOCUS_LISTENER_MISSING, FRONTEND_TRENDING_QUERY_TITLES_NOT_MAPPED / USE_NOT_CLEAR.
+-->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <title>Sneaky hybrid: looks right, acts wrong</title>
     <link rel="dns-prefetch" href="//live.luigisbox.com" />
     <script async src="https://scripts.luigisbox.tech/LBX-1071971.js"></script>
+    <style>
+      body { font: 14px system-ui; padding: 2rem; }
+      .result-item { display: block; padding: 6px 0; }
+    </style>
   </head>
   <body>
-    <input id="search-input" autocomplete="off" />
+    <input id="search-input" type="search" autocomplete="off" placeholder="Search..." />
     <div id="autocomplete-results"></div>
-
     <script>
       window.dataLayer = window.dataLayer || [];
-
       const TRACKER_ID = "757876-1071971";
       const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";
       const TOP_ITEMS_API_URL = "https://live.luigisbox.com/v1/top_items";
       const TRENDING_QUERIES_API_URL = "https://live.luigisbox.com/v2/trending_queries";
       const searchInput = document.getElementById("search-input");
       const resultsContainer = document.getElementById("autocomplete-results");
-      const placeholderAnimator = { queries: [] };
 
       function debounce(fn, delay) {
-        let timeout;
-        return (...args) => {
-          clearTimeout(timeout);
-          timeout = setTimeout(() => fn(...args), delay);
-        };
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
       }
 
       async function getSuggestions(query) {
+        // BUG: param is "search" but the API expects "q".
         const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({
           tracker_id: TRACKER_ID,
-          q: query,
-          type: "item:6,category:3,query:5",
-          hit_fields: "title,web_url,price,image_link_l",
+          search: query,
+          type: "item:6",
+          hit_fields: "title,web_url,price",
         })}`);
         const { hits } = await response.json();
 
@@ -50,32 +62,30 @@
       async function getTopItemsSuggestions() {
         const response = await fetch(`${TOP_ITEMS_API_URL}?${new URLSearchParams({
           tracker_id: TRACKER_ID,
-          type: "item:5,category:3",
-          hit_fields: "title,web_url,price,image_link_l",
+          type: "item:5",
+          hit_fields: "title,web_url,price",
         })}`);
         const { hits } = await response.json();
+        if (!hits || hits.length === 0) return;
         renderResults(hits);
         trackTopItemsView(hits);
       }
 
       async function getTrendingQueries() {
-        const response = await fetch(`${TRENDING_QUERIES_API_URL}?${new URLSearchParams({
-          tracker_id: TRACKER_ID,
-        })}`);
-        const items = await response.json();
-        placeholderAnimator.queries = items.map((item) => item.title);
-        searchInput.placeholder = placeholderAnimator.queries[0] || "Search";
+        // BUG: response is fetched but never used anywhere visible.
+        await fetch(`${TRENDING_QUERIES_API_URL}?${new URLSearchParams({ tracker_id: TRACKER_ID })}`);
       }
 
       function renderResults(hits) {
         resultsContainer.innerHTML = "";
         hits.forEach((item, index) => {
-          const itemButton = document.createElement("button");
-          itemButton.className = "result-item";
-          itemButton.dataset.itemId = item.url || item.attributes.title;
-          itemButton.dataset.position = index + 1;
-          itemButton.textContent = item.attributes.title;
-          resultsContainer.appendChild(itemButton);
+          const button = document.createElement("button");
+          button.className = "result-item";
+          // BUG: uses title (display text) as identity instead of hit.url.
+          button.dataset.itemId = item.attributes.title;
+          button.dataset.position = index + 1;
+          button.textContent = item.attributes.title;
+          resultsContainer.appendChild(button);
         });
       }
 
@@ -85,8 +95,9 @@
           ecommerce: {
             item_list_name: "Autocomplete",
             search_term: query,
+            // BUG: item_id uses the title — no continuity with hit.url.
             items: hits.map((hit, index) => ({
-              item_id: hit.url || hit.attributes.title,
+              item_id: hit.attributes.title,
               item_name: hit.attributes.title,
               index: index + 1,
             })),
@@ -104,7 +115,7 @@
               Recommender: "autocomplete_popup",
             },
             items: hits.map((hit, index) => ({
-              item_id: hit.url || hit.attributes.title,
+              item_id: hit.attributes.title,
               item_name: hit.attributes.title,
               index: index + 1,
             })),
@@ -113,24 +124,20 @@
       }
 
       function trackClickEvent(itemId) {
-        window.dataLayer.push({
-          event: "select_item",
-          ecommerce: {
-            items: [{ item_id: itemId }],
-          },
-        });
+        window.dataLayer.push({ event: "select_item", ecommerce: { items: [{ item_id: itemId }] } });
       }
 
-      searchInput.addEventListener("input", debounce((event) => getSuggestions(event.target.value), 250));
-      searchInput.addEventListener("focus", () => {
-        if (searchInput.value === "") getTopItemsSuggestions();
+      searchInput.addEventListener("input", debounce((e) => getSuggestions(e.target.value), 250));
+      resultsContainer.addEventListener("click", (e) => {
+        const item = e.target.closest(".result-item");
+        if (item) trackClickEvent(item.dataset.itemId);
       });
-      resultsContainer.addEventListener("click", (event) => {
-        const resultItem = event.target.closest(".result-item");
-        if (!resultItem) return;
-        trackClickEvent(resultItem.dataset.itemId);
+
+      // BUG: Top Items fetched on page load, not on focus.
+      document.addEventListener("DOMContentLoaded", () => {
+        getTopItemsSuggestions();
+        getTrendingQueries();
       });
-      document.addEventListener("DOMContentLoaded", getTrendingQueries);
     </script>
     <script src="_debug-panel.js"></script>
   </body>

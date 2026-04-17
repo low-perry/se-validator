@@ -1,0 +1,271 @@
+<!doctype html>
+<!--
+  Polished DataLayer integration showcase.
+  Expected: clean pass.
+  Covers: dns-prefetch, async collector in <head>, debounced input, Top Items on focus,
+          Trending Queries placeholder, Autocomplete/Recommendation view events, click event,
+          no-results tracking, hit.url identity.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Acme Shop — Autocomplete (DataLayer)</title>
+    <link rel="dns-prefetch" href="//live.luigisbox.com" />
+    <script async src="https://scripts.luigisbox.tech/LBX-1071971.js"></script>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font: 14px/1.5 -apple-system, "Inter", system-ui, sans-serif;
+        margin: 0;
+        background: linear-gradient(180deg, #f7f8fb 0%, #eef1f7 100%);
+        min-height: 100vh;
+        color: #1f2937;
+      }
+      header {
+        background: #111827;
+        color: white;
+        padding: 1rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+      }
+      header h1 { font-size: 1.1rem; margin: 0; font-weight: 600; letter-spacing: 0.04em; }
+      .search-box {
+        position: relative;
+        flex: 1;
+        max-width: 520px;
+      }
+      #search-input {
+        width: 100%;
+        padding: 0.6rem 0.9rem;
+        border-radius: 8px;
+        border: 1px solid #374151;
+        background: #1f2937;
+        color: white;
+        font-size: 0.95rem;
+      }
+      #search-input:focus { outline: 2px solid #60a5fa; outline-offset: 1px; }
+      #autocomplete-results {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        background: white;
+        color: #1f2937;
+        border-radius: 10px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+        max-height: 380px;
+        overflow-y: auto;
+        display: none;
+        padding: 6px;
+      }
+      #autocomplete-results[data-open="true"] { display: block; }
+      .result-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        width: 100%;
+        cursor: pointer;
+        text-align: left;
+      }
+      .result-item:hover, .result-item[data-active="true"] { background: #f3f4f6; }
+      .result-item__thumb {
+        width: 40px; height: 40px;
+        border-radius: 6px;
+        background: linear-gradient(135deg, #93c5fd, #c4b5fd);
+        flex-shrink: 0;
+      }
+      .result-item__body { flex: 1; display: grid; gap: 2px; }
+      .result-item__title { font-weight: 600; }
+      .result-item__meta { color: #6b7280; font-size: 0.85rem; }
+      .result-item__price { color: #111827; font-variant-numeric: tabular-nums; }
+      .empty-state { padding: 14px; color: #6b7280; text-align: center; }
+      main { padding: 3rem 2rem; max-width: 960px; margin: 0 auto; }
+      main h2 { margin-top: 0; }
+      .hint { color: #6b7280; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>ACME STORE</h1>
+      <div class="search-box">
+        <input
+          id="search-input"
+          type="search"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="autocomplete-results"
+          autocomplete="off"
+          placeholder="Search products..."
+        />
+        <div id="autocomplete-results" role="listbox" data-open="false"></div>
+      </div>
+    </header>
+
+    <main>
+      <h2>Product catalog</h2>
+      <p class="hint">Try typing in the search bar above — press focus to see top picks, type to search.</p>
+    </main>
+
+    <script>
+      window.dataLayer = window.dataLayer || [];
+
+      const TRACKER_ID = "757876-1071971";
+      const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";
+      const TOP_ITEMS_API_URL = "https://live.luigisbox.com/v1/top_items";
+      const TRENDING_QUERIES_API_URL = "https://live.luigisbox.com/v2/trending_queries";
+
+      const searchInput = document.getElementById("search-input");
+      const resultsContainer = document.getElementById("autocomplete-results");
+      const placeholderAnimator = { queries: [] };
+
+      function debounce(fn, delay) {
+        let timeout;
+        return (...args) => {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => fn(...args), delay);
+        };
+      }
+
+      async function getSuggestions(query) {
+        if (!query) {
+          resultsContainer.setAttribute("data-open", "false");
+          searchInput.setAttribute("aria-expanded", "false");
+          return;
+        }
+
+        const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+          q: query,
+          type: "item:6,category:3,query:5",
+          hit_fields: "title,web_url,price,image_link_l",
+        })}`);
+        const { hits } = await response.json();
+
+        if (!hits || hits.length === 0) {
+          renderEmpty(query);
+          trackAutocompleteView(query, []);
+          return;
+        }
+
+        renderResults(hits, "Autocomplete");
+        trackAutocompleteView(query, hits);
+      }
+
+      async function getTopItemsSuggestions() {
+        const response = await fetch(`${TOP_ITEMS_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+          type: "item:5,category:3",
+          hit_fields: "title,web_url,price,image_link_l",
+        })}`);
+        const { hits } = await response.json();
+        if (!hits || hits.length === 0) return;
+        renderResults(hits, "TopItems");
+        trackTopItemsView(hits);
+      }
+
+      async function getTrendingQueries() {
+        const response = await fetch(`${TRENDING_QUERIES_API_URL}?${new URLSearchParams({
+          tracker_id: TRACKER_ID,
+        })}`);
+        const items = await response.json();
+        placeholderAnimator.queries = items.map((item) => item.title);
+        if (placeholderAnimator.queries.length > 0) {
+          searchInput.placeholder = `Try "${placeholderAnimator.queries[0]}"`;
+        }
+      }
+
+      function renderResults(hits, listSource) {
+        resultsContainer.innerHTML = "";
+        resultsContainer.setAttribute("data-open", "true");
+        searchInput.setAttribute("aria-expanded", "true");
+
+        hits.forEach((item, index) => {
+          const itemButton = document.createElement("button");
+          itemButton.className = "result-item";
+          itemButton.role = "option";
+          itemButton.dataset.itemId = item.url || item.attributes.title;
+          itemButton.dataset.position = index + 1;
+          itemButton.dataset.listSource = listSource;
+          itemButton.innerHTML = `
+            <span class="result-item__thumb" aria-hidden="true"></span>
+            <span class="result-item__body">
+              <span class="result-item__title"></span>
+              <span class="result-item__meta">
+                <span class="result-item__price"></span>
+              </span>
+            </span>
+          `;
+          itemButton.querySelector(".result-item__title").textContent = item.attributes.title;
+          itemButton.querySelector(".result-item__price").textContent = item.attributes.price ? `$${item.attributes.price}` : "";
+          resultsContainer.appendChild(itemButton);
+        });
+      }
+
+      function renderEmpty(query) {
+        resultsContainer.innerHTML = `<div class="empty-state">No results for &ldquo;${query}&rdquo;</div>`;
+        resultsContainer.setAttribute("data-open", "true");
+        searchInput.setAttribute("aria-expanded", "true");
+      }
+
+      function trackAutocompleteView(query, hits) {
+        window.dataLayer.push({
+          event: "view_item_list",
+          ecommerce: {
+            item_list_name: "Autocomplete",
+            search_term: query,
+            items: hits.map((hit, index) => ({
+              item_id: hit.url || hit.attributes.title,
+              item_name: hit.attributes.title,
+              index: index + 1,
+            })),
+          },
+        });
+      }
+
+      function trackTopItemsView(hits) {
+        window.dataLayer.push({
+          event: "view_item_list",
+          ecommerce: {
+            item_list_name: "Recommendation",
+            filters: {
+              RecommenderClientId: "autocomplete_popup",
+              Recommender: "autocomplete_popup",
+            },
+            items: hits.map((hit, index) => ({
+              item_id: hit.url || hit.attributes.title,
+              item_name: hit.attributes.title,
+              index: index + 1,
+            })),
+          },
+        });
+      }
+
+      function trackClickEvent(itemId) {
+        window.dataLayer.push({
+          event: "select_item",
+          ecommerce: {
+            items: [{ item_id: itemId }],
+          },
+        });
+      }
+
+      searchInput.addEventListener("input", debounce((event) => getSuggestions(event.target.value), 250));
+      searchInput.addEventListener("focus", () => {
+        if (searchInput.value === "") getTopItemsSuggestions();
+      });
+      resultsContainer.addEventListener("click", (event) => {
+        const resultItem = event.target.closest(".result-item");
+        if (!resultItem) return;
+        trackClickEvent(resultItem.dataset.itemId);
+      });
+      document.addEventListener("DOMContentLoaded", getTrendingQueries);
+    </script>
+    <script src="_debug-panel.js"></script>
+  </body>
+</html>

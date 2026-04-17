@@ -1,0 +1,88 @@
+<!doctype html>
+<!--
+  BAD: URLSearchParams omits the mandatory tracker param.
+  Expected findings: FRONTEND_AUTOCOMPLETE_REQUIRED_PARAM_MISSING.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bad: missing tracker param</title>
+    <link rel="dns-prefetch" href="//live.luigisbox.com" />
+    <script async src="https://scripts.luigisbox.tech/LBX-1071971.js"></script>
+  </head>
+  <body>
+    <input id="search-input" type="search" autocomplete="off" />
+    <div id="autocomplete-results"></div>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";
+      const searchInput = document.getElementById("search-input");
+      const resultsContainer = document.getElementById("autocomplete-results");
+
+      function debounce(fn, delay) {
+        let timeout;
+        return (...args) => {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => fn(...args), delay);
+        };
+      }
+
+      async function getSuggestions(query) {
+        // BUG: the tracker parameter is omitted. Request will be rejected by the Autocomplete API.
+        const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({
+          q: query,
+          type: "item:6",
+          hit_fields: "title,web_url,price",
+        })}`);
+        const { hits } = await response.json();
+
+        if (!hits || hits.length === 0) {
+          resultsContainer.textContent = "No results";
+          trackAutocompleteView(query, []);
+          return;
+        }
+
+        renderResults(hits);
+        trackAutocompleteView(query, hits);
+      }
+
+      function renderResults(hits) {
+        resultsContainer.innerHTML = "";
+        hits.forEach((item, index) => {
+          const button = document.createElement("button");
+          button.className = "result-item";
+          button.dataset.itemId = item.url || item.attributes.title;
+          button.dataset.position = index + 1;
+          button.textContent = item.attributes.title;
+          resultsContainer.appendChild(button);
+        });
+      }
+
+      function trackAutocompleteView(query, hits) {
+        window.dataLayer.push({
+          event: "view_item_list",
+          ecommerce: {
+            item_list_name: "Autocomplete",
+            search_term: query,
+            items: hits.map((hit, index) => ({
+              item_id: hit.url || hit.attributes.title,
+              item_name: hit.attributes.title,
+              index: index + 1,
+            })),
+          },
+        });
+      }
+
+      function trackClickEvent(itemId) {
+        window.dataLayer.push({ event: "select_item", ecommerce: { items: [{ item_id: itemId }] } });
+      }
+
+      searchInput.addEventListener("input", debounce((e) => getSuggestions(e.target.value), 250));
+      resultsContainer.addEventListener("click", (e) => {
+        const item = e.target.closest(".result-item");
+        if (item) trackClickEvent(item.dataset.itemId);
+      });
+    </script>
+    <script src="_debug-panel.js"></script>
+  </body>
+</html>

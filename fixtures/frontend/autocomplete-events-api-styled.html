@@ -1,20 +1,122 @@
 <!doctype html>
+<!--
+  Polished Events API integration showcase.
+  Expected: clean pass with analyticsMode=events-api.
+  Covers: dns-prefetch, Events API POST with client_id + id, Autocomplete/Recommendation lists,
+          click event with resource_identifier, no-results tracking, trending queries placeholder.
+-->
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <title>Boutique — Autocomplete (Events API)</title>
     <link rel="dns-prefetch" href="//live.luigisbox.com" />
+    <link rel="dns-prefetch" href="//api.luigisbox.com" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font: 14px/1.5 -apple-system, "Inter", system-ui, sans-serif;
+        margin: 0;
+        background: #fff7ed;
+        color: #292524;
+        min-height: 100vh;
+      }
+      header {
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        border-bottom: 1px solid #fed7aa;
+        background: white;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 1.15rem;
+        letter-spacing: 0.05em;
+        color: #9a3412;
+      }
+      .search-box { position: relative; flex: 1; max-width: 560px; }
+      #search-input {
+        width: 100%;
+        padding: 0.65rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid #fdba74;
+        font-size: 0.95rem;
+        background: #fffbeb;
+      }
+      #search-input:focus { outline: 2px solid #fb923c; }
+      #autocomplete-results {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0; right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 40px rgba(154, 52, 18, 0.15);
+        display: none;
+        padding: 6px;
+        max-height: 420px;
+        overflow-y: auto;
+      }
+      #autocomplete-results[data-open="true"] { display: block; }
+      .result-item {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        border: none;
+        background: transparent;
+        padding: 8px 10px;
+        border-radius: 10px;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+      }
+      .result-item:hover { background: #fff7ed; }
+      .result-item__thumb {
+        width: 44px; height: 44px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #fdba74, #fb7185);
+      }
+      .result-item__body { flex: 1; display: grid; gap: 2px; }
+      .result-item__title { font-weight: 600; }
+      .result-item__meta { font-size: 0.85rem; color: #78716c; }
+      .empty-state { padding: 14px; color: #78716c; text-align: center; }
+      main { padding: 3rem 2rem; max-width: 960px; margin: 0 auto; }
+    </style>
   </head>
   <body>
-    <input id="search-input" autocomplete="off" />
-    <div id="autocomplete-results"></div>
+    <header>
+      <h1>LA BOUTIQUE</h1>
+      <div class="search-box">
+        <input
+          id="search-input"
+          type="search"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="autocomplete-results"
+          autocomplete="off"
+          placeholder="Find something beautiful..."
+        />
+        <div id="autocomplete-results" role="listbox" data-open="false"></div>
+      </div>
+    </header>
+
+    <main>
+      <h2>Handpicked essentials</h2>
+      <p>Focus the search to see our top picks, or type to explore the catalog.</p>
+    </main>
 
     <script>
       const TRACKER_ID = "757876-1071971";
-      const CLIENT_ID = window.localStorage.getItem("lbx_client_id") || crypto.randomUUID();
+      const CLIENT_ID = window.localStorage.getItem("lbx_client_id") || (() => {
+        const id = crypto.randomUUID();
+        window.localStorage.setItem("lbx_client_id", id);
+        return id;
+      })();
       const AUTOCOMPLETE_API_URL = "https://live.luigisbox.com/autocomplete/v2";
       const TOP_ITEMS_API_URL = "https://live.luigisbox.com/v1/top_items";
       const TRENDING_QUERIES_API_URL = "https://live.luigisbox.com/v2/trending_queries";
       const ANALYTICS_API_URL = "https://api.luigisbox.com/";
+
       const searchInput = document.getElementById("search-input");
       const resultsContainer = document.getElementById("autocomplete-results");
       const placeholderAnimator = { queries: [] };
@@ -36,6 +138,11 @@
       }
 
       async function getSuggestions(query) {
+        if (!query) {
+          resultsContainer.setAttribute("data-open", "false");
+          return;
+        }
+
         const response = await fetch(`${AUTOCOMPLETE_API_URL}?${new URLSearchParams({
           tracker_id: TRACKER_ID,
           q: query,
@@ -45,7 +152,7 @@
         const { hits } = await response.json();
 
         if (!hits || hits.length === 0) {
-          resultsContainer.textContent = "No results";
+          renderEmpty(query);
           sendAutocompleteViewAnalytics(query, []);
           return;
         }
@@ -61,6 +168,7 @@
           hit_fields: "title,web_url,price,image_link_l",
         })}`);
         const { hits } = await response.json();
+        if (!hits || hits.length === 0) return;
         renderResults(hits);
         sendTopItemsViewAnalytics(hits);
       }
@@ -71,19 +179,36 @@
         })}`);
         const items = await response.json();
         placeholderAnimator.queries = items.map((item) => item.title);
-        searchInput.placeholder = placeholderAnimator.queries[0] || "Search";
+        if (placeholderAnimator.queries.length > 0) {
+          searchInput.placeholder = `Try "${placeholderAnimator.queries[0]}"`;
+        }
       }
 
       function renderResults(hits) {
         resultsContainer.innerHTML = "";
+        resultsContainer.setAttribute("data-open", "true");
         hits.forEach((item, index) => {
           const itemButton = document.createElement("button");
           itemButton.className = "result-item";
+          itemButton.role = "option";
           itemButton.dataset.itemId = item.url || item.attributes.title;
           itemButton.dataset.position = index + 1;
-          itemButton.textContent = item.attributes.title;
+          itemButton.innerHTML = `
+            <span class="result-item__thumb" aria-hidden="true"></span>
+            <span class="result-item__body">
+              <span class="result-item__title"></span>
+              <span class="result-item__meta"></span>
+            </span>
+          `;
+          itemButton.querySelector(".result-item__title").textContent = item.attributes.title;
+          itemButton.querySelector(".result-item__meta").textContent = item.attributes.price ? `$${item.attributes.price}` : "";
           resultsContainer.appendChild(itemButton);
         });
+      }
+
+      function renderEmpty(query) {
+        resultsContainer.innerHTML = `<div class="empty-state">No results for &ldquo;${query}&rdquo;</div>`;
+        resultsContainer.setAttribute("data-open", "true");
       }
 
       function sendAutocompleteViewAnalytics(query, hits) {
